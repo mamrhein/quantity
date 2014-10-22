@@ -21,8 +21,8 @@
 ##              or write to the Free Software Foundation, Inc.,
 ##              59 Temple Place, Suite 330, Boston MA 02111-1307, USA
 ##----------------------------------------------------------------------------
-## $Source:$
-## $Revision:$
+## $Source: $
+## $Revision: $
 
 
 """Unit-safe computations with quantities.
@@ -45,8 +45,10 @@ International System of Units, 8th edition, 2006)
 
 from .quantity import Quantity, Unit
 from .quantity import IncompatibleUnitsError, UndefinedResultError
+from .quantity import TableConverter
 
 __all__ = ['Quantity',
            'Unit',
            'IncompatibleUnitsError',
-           'UndefinedResultError']
+           'UndefinedResultError',
+           'TableConverter']

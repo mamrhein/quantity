@@ -8,8 +8,8 @@
 ##
 ## Copyright:   (c) Michael Amrhein
 ##****************************************************************************
-## $Source:$
-## $Revision:$
+## $Source: $
+## $Revision: $
 
 
 from __future__ import absolute_import, division, unicode_literals
@@ -18,8 +18,7 @@ import operator
 from pickle import dumps, loads
 from decimal import Decimal, InvalidOperation
 from quantity import (Quantity, Unit, IncompatibleUnitsError,
-                      UndefinedResultError)
-from quantity.quantity import TableConverter
+                      UndefinedResultError, TableConverter)
 from quantity.quantity import MetaQuantity, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
