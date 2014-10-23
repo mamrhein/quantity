@@ -10,8 +10,8 @@
 ##              details please read the file LICENSE.TXT provided together
 ##              with the application.
 ##----------------------------------------------------------------------------
-## $Source:$
-## $Revision:$
+## $Source$
+## $Revision$
 
 
 """Define commonly used quantities."""
