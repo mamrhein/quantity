@@ -235,14 +235,20 @@ class Test2_Unit(unittest.TestCase):
         self.assertRaises(IncompatibleUnitsError, operator.le, x, y)
         self.assertRaises(IncompatibleUnitsError, operator.gt, x, y)
         self.assertRaises(IncompatibleUnitsError, operator.ge, x, y)
+        self.assertFalse(X(1) == x)
+        self.assertFalse(x == X(1))
 
     def testAddition(self):
         self.assertRaises(TypeError, operator.add, x, 3)
         self.assertRaises(TypeError, operator.add, x, x)
+        self.assertRaises(TypeError, operator.add, X(1), x)
+        self.assertRaises(TypeError, operator.add, x, X(1))
 
     def testSubtraction(self):
         self.assertRaises(TypeError, operator.sub, x, 3)
         self.assertRaises(TypeError, operator.sub, x, x)
+        self.assertRaises(TypeError, operator.sub, X(1), x)
+        self.assertRaises(TypeError, operator.sub, x, X(1))
 
     def testMultiplication(self):
         self.assertEqual(3 * z, QTerm(((3, 1), (z, 1))))

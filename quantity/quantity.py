@@ -281,9 +281,6 @@ class MetaQuantity(type):
         return self.__name__
 
 
-#TODO: Redesign: Units do not behave like Quantities
-
-
 @withMetaCls(MetaQuantity)
 class AbstractQuantity:
 
@@ -381,23 +378,13 @@ class AbstractQuantity:
     def __deepcopy__(self, memo):
         return self.__copy__()
 
-    def __eq__(self, other):
-        """self == other"""
-        if isinstance(other, (self.Quantity, self.Unit)):
-            try:
-                return self.amount == self.unit(other)
-            except IncompatibleUnitsError:
-                pass
-        return False
-
     def _compare(self, other, op):
         """Compare self and other using operator op."""
-        if isinstance(other, (self.Quantity, self.Unit)):
-            return op(self.amount, self.unit(other))
-        elif isinstance(other, AbstractQuantity):
-            raise IncompatibleUnitsError("Can't compare a %s and a %s",
-                                         self, other)
         return NotImplemented
+
+    def __eq__(self, other):
+        """self == other"""
+        return self._compare(other, operator.eq)
 
     def __lt__(self, other):
         """self < other"""
@@ -467,6 +454,15 @@ class Quantity(AbstractQuantity):
     @property
     def unit(self):
         return self._unit
+
+    def _compare(self, other, op):
+        """Compare self and other using operator op."""
+        if isinstance(other, self.Quantity):
+            return op(self.amount, self.unit(other))
+        elif isinstance(other, Quantity):
+            raise IncompatibleUnitsError("Can't compare a %s and a %s",
+                                         self, other)
+        return NotImplemented
 
     def __hash__(self):
         return hash((self.amount, self.unit))
@@ -737,6 +733,24 @@ class Unit(AbstractQuantity):
 
     def isDerivedUnit(self):
         return self._definition is not None
+
+    def __eq__(self, other):
+        """self == other"""
+        if isinstance(other, self.Unit):
+            try:
+                return self.amount == self(other)
+            except IncompatibleUnitsError:
+                pass
+        return False
+
+    def _compare(self, other, op):
+        """Compare self and other using operator op."""
+        if isinstance(other, self.Unit):
+            return op(self.amount, self(other))
+        elif isinstance(other, Unit):
+            raise IncompatibleUnitsError("Can't compare a %s and a %s",
+                                         self, other)
+        return NotImplemented
 
     def __hash__(self):
         return hash((self.Quantity.__name__, self.symbol))
