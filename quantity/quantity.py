@@ -35,6 +35,12 @@ from decimal import Decimal
 import operator
 from .term import Term
 
+
+__version__ = 0, 0, 1
+
+__metaclass__ = type
+
+
 # unicode handling and dict iterator Python 2 / Python 3
 typearg = str       # first argument for type must be str in both
 try:
@@ -43,14 +49,17 @@ try:
 except NameError:
     itervalues = lambda d: d.values()
 
-# because decimal.Decimal is nor registered as number, we have test it
+
+# decorator defining meta class, portable between Python 2 / Python 3
+def withMetaCls(metaCls):
+    def _createCls(cls):
+        return metaCls(cls.__name__, cls.__bases__, dict(cls.__dict__))
+    return _createCls
+
+
+# because decimal.Decimal is not registered as number, we have to test it
 # explicitly
 NUM_TYPES = (Real, Decimal)
-
-
-__version__ = 0, 0, 1
-
-__metaclass__ = type
 
 
 class QuantityError(TypeError):
@@ -60,7 +69,7 @@ class QuantityError(TypeError):
 
 class IncompatibleUnitsError(QuantityError):
 
-    """Exception raised when operand do not have compatible units."""
+    """Exception raised when operands do not have compatible units."""
 
     def __init__(self, msg, operand1, operand2):
         if isinstance(operand1, AbstractQuantity):
@@ -272,16 +281,11 @@ class MetaQuantity(type):
         return self.__name__
 
 
-# to be portable between Python 2.x and 3.x
-# create class with meta class
-_MQ = MetaQuantity(typearg('_MQ'), (), {})
-
-
-#TODO: combine _MQ and AbstractQuantity
 #TODO: Redesign: Units do not behave like Quantities
 
 
-class AbstractQuantity(_MQ):
+@withMetaCls(MetaQuantity)
+class AbstractQuantity:
 
     """Abstract base class for Quantity and Unit."""
 
