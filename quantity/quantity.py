@@ -378,13 +378,13 @@ class AbstractQuantity:
     def __deepcopy__(self, memo):
         return self.__copy__()
 
-    def _compare(self, other, op):
-        """Compare self and other using operator op."""
-        return NotImplemented
-
     def __eq__(self, other):
         """self == other"""
-        return self._compare(other, operator.eq)
+        raise NotImplementedError
+
+    def _compare(self, other, op):
+        """Compare self and other using operator op."""
+        raise NotImplementedError
 
     def __lt__(self, other):
         """self < other"""
@@ -454,6 +454,15 @@ class Quantity(AbstractQuantity):
     @property
     def unit(self):
         return self._unit
+
+    def __eq__(self, other):
+        """self == other"""
+        if isinstance(other, self.Quantity):
+            try:
+                return self.amount == self.unit(other)
+            except IncompatibleUnitsError:
+                pass
+        return False
 
     def _compare(self, other, op):
         """Compare self and other using operator op."""

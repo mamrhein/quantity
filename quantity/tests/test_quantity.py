@@ -22,10 +22,11 @@ from quantity import (Quantity, Unit, IncompatibleUnitsError,
 from quantity.quantity import MetaQuantity, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
-# rounding Python 2 / Python 3
+# Python 2 / Python 3: determine version and support __round__ in 2.x
 try:
     int.__round__
 except AttributeError:
+    PY_VERSION = 2
     import __builtin__
     py2_round = __builtin__.round
 
@@ -34,6 +35,8 @@ except AttributeError:
             return number.__round__(ndigits)
         except AttributeError:
             return py2_round(number, ndigits)
+else:
+    PY_VERSION = 3
 
 
 __version__ = 0, 0, 1
@@ -217,7 +220,7 @@ class Test2_Unit(unittest.TestCase):
         self.assertEqual(Mx(q500x), Decimal('0.0005'))
         xtz2py = XtZ2pY.refUnit
         q = (X('3', Mx) / Y('1', ssy)) * Z('3') ** 2
-        self.assertEqual(round(xtz2py(q), 24), 7500)
+        self.assertEqual(round(xtz2py(q)), 7500)
         self.assertRaises(IncompatibleUnitsError, Mx, y)
         self.assertRaises(IncompatibleUnitsError, u1, u2)
 
@@ -235,8 +238,29 @@ class Test2_Unit(unittest.TestCase):
         self.assertRaises(IncompatibleUnitsError, operator.le, x, y)
         self.assertRaises(IncompatibleUnitsError, operator.gt, x, y)
         self.assertRaises(IncompatibleUnitsError, operator.ge, x, y)
-        self.assertFalse(X(1) == x)
-        self.assertFalse(x == X(1))
+        q1x = X(1)
+        self.assertFalse(q1x == x)
+        self.assertFalse(x == q1x)
+        self.assertTrue(q1x != x)
+        self.assertTrue(x != q1x)
+        if PY_VERSION == 2:
+            self.assertEqual(x.__lt__(q1x), NotImplemented)
+            self.assertEqual(x.__le__(q1x), NotImplemented)
+            self.assertEqual(x.__gt__(q1x), NotImplemented)
+            self.assertEqual(x.__ge__(q1x), NotImplemented)
+            self.assertEqual(q1x.__lt__(x), NotImplemented)
+            self.assertEqual(q1x.__le__(x), NotImplemented)
+            self.assertEqual(q1x.__gt__(x), NotImplemented)
+            self.assertEqual(q1x.__ge__(x), NotImplemented)
+        else:
+            self.assertRaises(TypeError, operator.lt, x, q1x)
+            self.assertRaises(TypeError, operator.le, x, q1x)
+            self.assertRaises(TypeError, operator.gt, x, q1x)
+            self.assertRaises(TypeError, operator.ge, x, q1x)
+            self.assertRaises(TypeError, operator.lt, q1x, x)
+            self.assertRaises(TypeError, operator.le, q1x, x)
+            self.assertRaises(TypeError, operator.gt, q1x, x)
+            self.assertRaises(TypeError, operator.ge, q1x, x)
 
     def testAddition(self):
         self.assertRaises(TypeError, operator.add, x, 3)
