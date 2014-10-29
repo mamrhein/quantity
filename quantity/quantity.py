@@ -156,7 +156,7 @@ class MetaQuantity(type):
         @staticmethod
         def normSortKey(qCls):
             """Return sort key for qCls."""
-            return qCls.Quantity.regIdx
+            return qCls.Quantity._regIdx
 
     def __init__(self, name, bases, clsdict):
         type.__init__(self, name, bases, clsdict)
@@ -171,7 +171,7 @@ class MetaQuantity(type):
             # add reference to self
             self.Quantity = self
             #register self
-            self.regIdx = _registry.registerQuantityCls(self)
+            self._regIdx = _registry.registerQuantityCls(self)
             # unit class given?
             try:
                 unitCls = self.Unit
@@ -303,7 +303,7 @@ class AbstractQuantity:
         def normSortKey(qty):
             """Return sort key for qty."""
             try:
-                return qty.Quantity.regIdx
+                return qty.Quantity._regIdx
             except AttributeError:
                 return 0
 
@@ -405,6 +405,8 @@ class AbstractQuantity:
 
 class Quantity(AbstractQuantity):
 
+    """Base class used to define types of quantities."""
+
     __slots__ = ['_amount', '_unit']
 
     # default format spec used in __format__
@@ -449,10 +451,12 @@ class Quantity(AbstractQuantity):
 
     @property
     def amount(self):
+        """Return the amount, i. e. the numeribal part of the quantity."""
         return self._amount
 
     @property
     def unit(self):
+        """Return the unit of the quantity."""
         return self._unit
 
     def __eq__(self, other):
@@ -493,7 +497,7 @@ class Quantity(AbstractQuantity):
         if isinstance(other, self.Quantity):
             return self.Quantity(self.amount + self.unit(other), self.unit)
         elif isinstance(other, Quantity):
-            raise IncompatibleUnitsError("Can't add a %s and a %s",
+            raise IncompatibleUnitsError("Can't add a '%s' and a '%s'",
                                          self, other)
         return NotImplemented
 
@@ -505,7 +509,7 @@ class Quantity(AbstractQuantity):
         if isinstance(other, self.Quantity):
             return self.Quantity(self.amount - self.unit(other), self.unit)
         elif isinstance(other, Quantity):
-            raise IncompatibleUnitsError("Can't subtract a %s from a %s",
+            raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'",
                                          other, self)
         return NotImplemented
 
@@ -514,7 +518,7 @@ class Quantity(AbstractQuantity):
         if isinstance(other, self.Quantity):
             return self.Quantity(other.amount - other.unit(self), other.unit)
         elif isinstance(other, Quantity):
-            raise IncompatibleUnitsError("Can't subtract a %s from a %s",
+            raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'",
                                          self, other)
         return NotImplemented
 
@@ -619,10 +623,12 @@ class Quantity(AbstractQuantity):
             fmtSpec = self.dfltFormatSpec
         return fmtSpec.format(a=self.amount, u=self.unit)
 
-#TODO: implement Quantity.allocate
+#TODO: implement Quantity.parse
 
 
 class Unit(AbstractQuantity):
+
+    """Base class used to define types of quantity units."""
 
     __slots__ = ['_symbol', '_name', '_definition']
 
@@ -711,19 +717,25 @@ class Unit(AbstractQuantity):
 
     @property
     def definition(self):
+        """Return the definition of the unit."""
         if self._definition is None:
             return self.QTerm(((self, 1),))
         return self._definition
 
     @property
     def symbol(self):
-        """Unique string representation of self.
+        """Return the units symbol, a unique string representation of the
+        unit.
 
-        Used for str, repr, format, hash and unit registry."""
+        Used for the functions str, repr, format, hash and the unit
+        registry."""
         return self._symbol
 
     @property
     def name(self):
+        """Return the units name.
+
+        If the unit was not given a name, its symbol is returned."""
         return self._name or self._symbol
 
     @property
@@ -735,12 +747,16 @@ class Unit(AbstractQuantity):
         return self
 
     def isRefUnit(self):
+        """Return True if the unit is a reference unit."""
         return self is self.refUnit
 
     def isBaseUnit(self):
+        """Return True if the unit is a base unit, i. e. it's not derived
+        from another unit."""
         return self._definition is None
 
     def isDerivedUnit(self):
+        """Return True if the unit is derived from another unit."""
         return self._definition is not None
 
     def __eq__(self, other):
@@ -771,7 +787,7 @@ class Unit(AbstractQuantity):
         if qty.unit is self:            # same unit
             return qty.amount
         if self.Unit != qty.Unit:       # different Unit classes
-            raise IncompatibleUnitsError("Can't convert %s to %s",
+            raise IncompatibleUnitsError("Can't convert '%s' to '%s'",
                                          qty.Quantity, self.Quantity)
         # try registered converters:
         for conv in self.registeredConverters():
@@ -786,7 +802,7 @@ class Unit(AbstractQuantity):
             if len(resDef) <= 1:
                 return qty.amount * resDef.amount
         # no success, give up
-        raise IncompatibleUnitsError("Can't convert %s to %s",
+        raise IncompatibleUnitsError("Can't convert '%s' to '%s'",
                                      qty.unit.name, self.name)
 
     def __mul__(self, other):
