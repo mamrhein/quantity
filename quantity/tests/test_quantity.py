@@ -322,11 +322,11 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(hash(q3x), hash((3, x)))
 
     def testConversions(self):
-        r = kx.convert(x)
+        r = (1 ^ kx).convert(x)
         self.assertEqual((r.amount, r.unit), (1000, x))
-        r = x.convert(kx)
+        r = (1 ^ x).convert(kx)
         self.assertEqual((r.amount, r.unit), (Decimal('0.001'), kx))
-        r = kx.convert(Mx)
+        r = (1 ^ kx).convert(Mx)
         self.assertEqual((r.amount, r.unit), (Decimal('0.001'), Mx))
         q5kx = X(5, kx)
         r = q5kx.convert(x)
@@ -335,7 +335,7 @@ class Test3_Quantity(unittest.TestCase):
         r = q500x.convert(Mx)
         self.assertEqual((r.amount, r.unit), (Decimal('0.0005'), Mx))
         self.assertRaises(IncompatibleUnitsError, q500x.convert, y)
-        self.assertRaises(IncompatibleUnitsError, u1.convert, u2)
+        self.assertRaises(IncompatibleUnitsError, (1 ^ u1).convert, u2)
         q7u2pkx = QpX(Decimal(7), u2pkx)
         self.assertRaises(IncompatibleUnitsError, q7u2pkx.convert, u1px)
         U.registerConverter(uConv)

@@ -198,6 +198,7 @@ class MetaQuantity(type):
                     unitCls._refUnit = unitCls(symbol, name)
                     # register reference unit converter
                     unitCls.registerConverter(RefUnitConverter())
+                #TODO: set Quantity.refUnitSymbol if not defined
         # new Unit class:
         if 'Unit' in baseNames:
             # add reference to self
@@ -364,13 +365,6 @@ class AbstractQuantity:
         """Return reference unit of Quantity, if defined, otherwise None."""
         return self.Unit.refUnit
 
-    def convert(self, toUnit):
-        """Return quantity q where q == self and q.unit is toUnit.
-
-        Raises IncompatibleUnitsError if self can't be converted to given
-        unit."""
-        return self.Quantity(toUnit(self), toUnit)
-
     def __copy__(self):
         """Return self (AbstractQuantity instances are immutable)."""
         return self
@@ -458,6 +452,13 @@ class Quantity(AbstractQuantity):
     def unit(self):
         """Return the unit of the quantity."""
         return self._unit
+
+    def convert(self, toUnit):
+        """Return quantity q where q == self and q.unit is toUnit.
+
+        Raises IncompatibleUnitsError if self can't be converted to given
+        unit."""
+        return self.Quantity(toUnit(self), toUnit)
 
     def __eq__(self, other):
         """self == other"""
