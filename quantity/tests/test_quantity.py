@@ -42,7 +42,7 @@ else:
 __version__ = 0, 0, 1
 
 
-QTerm = Quantity.QTerm
+QTerm = Quantity._QTerm
 
 
 class X(Quantity):
@@ -144,13 +144,13 @@ class Test1_MetaQuantity(unittest.TestCase):
 
     def testConstructor(self):
         self.assertTrue(X._clsDefinition is None)
-        self.assertEqual(X.clsDefinition, X.QClsDefinition([(X, 1)]))
+        self.assertEqual(X.clsDefinition, X._QClsDefinition([(X, 1)]))
         self.assertTrue(X.Unit._clsDefinition is None)
         self.assertEqual(X.Unit.clsDefinition,
-                         X.Unit.QClsDefinition([(X.Unit, 1)]))
-        self.assertEqual(Xinv.clsDefinition, Xinv.QClsDefinition([(X, -1)]))
+                         X.Unit._QClsDefinition([(X.Unit, 1)]))
+        self.assertEqual(Xinv.clsDefinition, Xinv._QClsDefinition([(X, -1)]))
         self.assertEqual(Xinv.Unit.clsDefinition,
-                         Xinv.Unit.QClsDefinition([(X.Unit, -1)]))
+                         Xinv.Unit._QClsDefinition([(X.Unit, -1)]))
         self.assertTrue(XpY._clsDefinition is defXpY)
         self.assertTrue(XpY.Unit.Quantity is XpY)
         self.assertTrue(isinstance(XpY.refUnit, XpY.Unit))
@@ -176,7 +176,7 @@ class Test1_MetaQuantity(unittest.TestCase):
         self.assertTrue(X.Unit._symDict['kx'] is kx)
         self.assertRaises(ValueError, X.Unit, 'xx')
         self.assertEqual(K._refUnitDef,
-                         K.QTerm(((qtyCls.refUnit, exp)
+                         K._QTerm(((qtyCls.refUnit, exp)
                          for qtyCls, exp in K.clsDefinition)))
         self.assertTrue(K.Unit._symDict['k'] is K.refUnit)
         self.assertTrue(Q.Unit('u1') is u1)

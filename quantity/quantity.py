@@ -139,7 +139,7 @@ class MetaQuantity(type):
 
     """Meta class that provides operators to construct derived quantities."""
 
-    class QClsDefinition(Term):
+    class _QClsDefinition(Term):
 
         """Definition of quantity classes."""
 
@@ -184,7 +184,7 @@ class MetaQuantity(type):
                 qtyClsDef = self._clsDefinition
                 if qtyClsDef:
                     items = ((qtyCls.Unit, exp) for qtyCls, exp in qtyClsDef)
-                    unitClsDef = self.QClsDefinition(items)
+                    unitClsDef = self._QClsDefinition(items)
                 else:
                     unitClsDef = None
                 unitCls = self.Unit = MetaQuantity(typearg(name + 'Unit'),
@@ -210,7 +210,7 @@ class MetaQuantity(type):
             self._converters = []
 
     def _asClsDefinition(self):
-        return self.QClsDefinition([(self, 1)])
+        return self._QClsDefinition([(self, 1)])
 
     @property
     def clsDefinition(self):
@@ -245,11 +245,11 @@ class MetaQuantity(type):
         # check whether all base classes have a reference unit
         if any((qtyCls.refUnit is None for qtyCls, exp in qtyDef)):
             return None
-        return self.QTerm(((qtyCls.refUnit, exp) for qtyCls, exp in qtyDef))
+        return self._QTerm(((qtyCls.refUnit, exp) for qtyCls, exp in qtyDef))
 
     def __mul__(self, other):
         """self * other"""
-        if isinstance(other, self.QClsDefinition):
+        if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() * other
         else:
             return self._asClsDefinition() * other._asClsDefinition()
@@ -258,7 +258,7 @@ class MetaQuantity(type):
 
     def __div__(self, other):
         """self / other"""
-        if isinstance(other, self.QClsDefinition):
+        if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() / other
         else:
             return self._asClsDefinition() / other._asClsDefinition()
@@ -267,7 +267,7 @@ class MetaQuantity(type):
 
     def __rdiv__(self, other):
         """other / self"""
-        if isinstance(other, self.QClsDefinition):
+        if isinstance(other, self._QClsDefinition):
             return other / self._asClsDefinition()
         else:
             return other._asClsDefinition() / self._asClsDefinition()
@@ -287,7 +287,7 @@ class AbstractQuantity:
 
     """Abstract base class for Quantity and Unit."""
 
-    class QTerm(Term):
+    class _QTerm(Term):
         """Definition of quantities."""
 
         @staticmethod
@@ -338,7 +338,7 @@ class AbstractQuantity:
 
     @property
     def definition(self):
-        cls = self.QTerm
+        cls = self._QTerm
         if self.amount == 1:
             return cls([(self.unit, 1)])
         return cls([(self.amount, 1), (self.unit, 1)])
@@ -642,7 +642,7 @@ class Unit(AbstractQuantity):
                     refUnitDef = cls._refUnitDef
                     if refUnitDef:
                         symbol = str(refUnitDef)
-            elif isinstance(defineAs, cls.QTerm):
+            elif isinstance(defineAs, cls._QTerm):
                 # try to generate symbol from definition:
                 if defineAs.amount == 1:
                     symbol = str(defineAs)
@@ -673,11 +673,11 @@ class Unit(AbstractQuantity):
                 unit._definition = cls._refUnitDef
         elif isinstance(defineAs, cls.Quantity):
             unit._definition = defineAs.definition
-        elif isinstance(defineAs, cls.QTerm):
+        elif isinstance(defineAs, cls._QTerm):
             unit._definition = defineAs
         else:
             raise TypeError("'defineAs' must be of type %s or %s; %s given"
-                            % (cls.Quantity, cls.QTerm, type(defineAs)))
+                            % (cls.Quantity, cls._QTerm, type(defineAs)))
         # register new unit
         cls._symDict[symbol] = unit
         normDef = unit.normalizedDefinition
@@ -720,7 +720,7 @@ class Unit(AbstractQuantity):
     def definition(self):
         """Return the definition of the unit."""
         if self._definition is None:
-            return self.QTerm(((self, 1),))
+            return self._QTerm(((self, 1),))
         return self._definition
 
     @property
@@ -809,9 +809,9 @@ class Unit(AbstractQuantity):
     def __mul__(self, other):
         """self * other"""
         if isinstance(other, NUM_TYPES):
-            return self.QTerm(((other, 1), (self, 1)))
+            return self._QTerm(((other, 1), (self, 1)))
         elif isinstance(other, Unit):
-            return self.QTerm(((self, 1), (other, 1)))
+            return self._QTerm(((self, 1), (other, 1)))
         return NotImplemented
 
     # other * self
@@ -820,9 +820,9 @@ class Unit(AbstractQuantity):
     def __div__(self, other):
         """self / other"""
         if isinstance(other, NUM_TYPES):
-            return self.QTerm(((1 / other, 1), (self, 1)))
+            return self._QTerm(((1 / other, 1), (self, 1)))
         elif isinstance(other, Unit):
-            return self.QTerm(((self, 1), (other, -1)))
+            return self._QTerm(((self, 1), (other, -1)))
         return NotImplemented
 
     __truediv__ = __div__
@@ -830,7 +830,7 @@ class Unit(AbstractQuantity):
     def __rdiv__(self, other):
         """other / self"""
         if isinstance(other, NUM_TYPES):
-            return self.QTerm(((other, 1), (self, -1)))
+            return self._QTerm(((other, 1), (self, -1)))
         return NotImplemented
 
     __rtruediv__ = __rdiv__
@@ -839,7 +839,7 @@ class Unit(AbstractQuantity):
         """self ** exp"""
         if not isinstance(exp, Integral):
             return NotImplemented
-        return self.QTerm(((self, exp),))
+        return self._QTerm(((self, exp),))
 
     def __rxor__(self, other):
         """other ^ self
@@ -877,7 +877,7 @@ class _Unitless(Quantity):
 
     Used to implement reversed operator rdiv."""
 
-    defineAs = MetaQuantity.QClsDefinition()
+    defineAs = MetaQuantity._QClsDefinition()
     Unit = None
 
     def __init__(self, amount):
