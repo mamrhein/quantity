@@ -198,7 +198,9 @@ class MetaQuantity(type):
                     unitCls._refUnit = unitCls(symbol, name)
                     # register reference unit converter
                     unitCls.registerConverter(RefUnitConverter())
-                #TODO: set Quantity.refUnitSymbol if not defined
+                    # set Quantity.refUnitSymbol if not given
+                    if not symbol:
+                        self.refUnitSymbol = unitCls._refUnit.symbol
         # new Unit class:
         if 'Unit' in baseNames:
             # add reference to self

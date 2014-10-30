@@ -162,6 +162,7 @@ class Test1_MetaQuantity(unittest.TestCase):
         self.assertEqual(XtZ2pY.Unit._clsDefinition, XpY.Unit * Z2.Unit)
         self.assertEqual(XtZ2pY.refUnit.symbol, ''.join(('x', _mulSign,
                          'z', _SUPERSCRIPT_CHARS[0], '/y')))
+        self.assertEqual(XtZ2pY.refUnitSymbol, XtZ2pY.refUnit.symbol)
         self.assertRaises((ValueError, InvalidOperation), X, 'a')
         self.assertRaises(TypeError, X, 5, y)
         self.assertTrue(Q.refUnit is None)
@@ -199,6 +200,8 @@ class Test2_Unit(unittest.TestCase):
         self.assertEqual(kx.definition.unitTerm, x.definition)
         self.assertEqual(Mx.definition.amount, 1000)
         self.assertEqual(list(Mx.definition.unitTerm), [(kx, 1)])
+        sypkx = YpX.Unit('', 'sypkx', sy / kx)
+        self.assertEqual(sypkx.symbol, str(sy / kx))
 
     def testHash(self):
         self.assertEqual(hash(x), hash(('X', 'x')))
