@@ -47,11 +47,13 @@ types of quantities raised by some exponend.
 
 Examples:
 
-| Volume = Length ** 3
-| Velocity = Length ** 1 * Duration ** -1
-| Acceleration = Length ** 1 * Duration ** -2
-| Force = Mass ** 1 * Acceleration ** 1
-|
+* Volume = Length ** 3
+
+* Velocity = Length ** 1 * Duration ** -1
+
+* Acceleration = Length ** 1 * Duration ** -2
+
+* Force = Mass ** 1 * Acceleration ** 1
 
 Each type of quantity may have one special unit which is used as a reference
 for the definition of all other units, for example Meter, Kilogram and
@@ -64,10 +66,12 @@ that follows the formula defining the type of quantity.
 
 Examples:
 
-| Velocity -> Meter per Second = Meter ** 1 * Second ** -1
-| Acceleration -> Meter per Second squared = Meter ** 1 * Second ** -2
-| Force -> Newton = Kilogram ** 1 * Meter ** 1 * Second ** -2
-|
+* Velocity -> Meter per Second = Meter ** 1 * Second ** -1
+
+* Acceleration -> Meter per Second squared = Meter ** 1 * Second ** -2
+
+* Force -> Newton = Kilogram ** 1 * Meter ** 1 * Second ** -2
+
 
 "Systems of measure"
 --------------------
@@ -78,8 +82,7 @@ relations between these units in a different way.
 This is not directly supported by this module. For each type of quantity there
 can be only no or exactly one reference unit. But, if you have units from
 different systems for the same type of quantity, you can define these units
-and provide mechanisms to convert between them (see :ref:`Converters
-converters`).
+and provide mechanisms to convert between them (see :ref:`converters_label`).
 
 Defining a quantity class
 =========================
@@ -141,7 +144,7 @@ a definition by multiplying a scaling factor with that unit:
 
 Using one unit as a reference and defining all other units by giving
 a scaling factor is only possible if the units have the same scale. Otherwise,
-units have to instantiated via the coresponding :class:`Unit` sub-class
+units have to be instantiated via the coresponding :class:`Unit` sub-class
 without giving a definition.
 
     >>> class Temperature(Quantity):
@@ -180,7 +183,7 @@ Converting between units
 ========================
 
 A quantity can be converted to a quantity using a different unit by calling
-the :meth:`Quantity.convert`:
+the method :meth:`Quantity.convert`:
 
     >>> l5cm = Length(Decimal(5), CENTIMETER)
     >>> l5cm.convert(MILLIMETER)
@@ -205,7 +208,7 @@ of converting between units.
     quantity.quantity.IncompatibleUnitsError: Can't convert 'Degree Celsius'
     to 'Degree Fahrenheit'
 
-.. _converters:
+.. _converters_label:
 
 Converters
 ----------
@@ -247,6 +250,11 @@ TODO: document TableConverter
 
 Unit-safe computations
 ======================
+
+Comparison
+----------
+
+TODO
 
 Addition and subtraction
 ------------------------

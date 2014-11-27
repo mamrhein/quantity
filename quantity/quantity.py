@@ -108,7 +108,20 @@ class QuantityRegistry():
         self._qtyIdx = 0
 
     def registerQuantityCls(self, qtyCls):
-        """Register Quantity class."""
+        """Register Quantity class.
+
+        Registers a sub-class of :class:`Quantity` by its normalized
+        definition.
+
+        Args:
+            qtyCls (MetaQuantity): sub-class of Quantity to be registered
+
+        Returns:
+            int: index of registered class
+
+        Raises:
+            ValueError: class with same definition already registered
+        """
         qtyDef = qtyCls.normalizedClsDefinition
         try:
             regCls, idx = self._qtyReg[qtyDef]
@@ -123,11 +136,29 @@ class QuantityRegistry():
             return idx
 
     def getQuantityCls(self, qtyDef):
-        """Get Quantity class by definition."""
+        """Get Quantity class by definition.
+
+        Args:
+            qtyDef (MetaQuantity._QClsDefinition): definition of class to
+                be looked-up
+
+        Returns:
+            MetaQuantity: sub-class of :class:`Quantity` registered with
+                definition *qtyDef*
+        """
         return self._qtyReg[qtyDef][0]
 
     def getQuantityClsAndIdx(self, qtyDef):
-        """Get Quantity class and its index by definition."""
+        """Get Quantity class and its index by definition.
+
+        Args:
+            qtyDef (MetaQuantity._QClsDefinition): definition of class to
+                be looked-up
+
+        Returns:
+            tuple: sub-class of :class:`Quantity` registered with definition
+                *qtyDef*, index of registered class
+        """
         return self._qtyReg[qtyDef]
 
 
@@ -340,6 +371,7 @@ class AbstractQuantity:
 
     @property
     def definition(self):
+        """The quantity's definition."""
         cls = self._QTerm
         if self.amount == 1:
             return cls([(self.unit, 1)])
@@ -347,6 +379,10 @@ class AbstractQuantity:
 
     @property
     def normalizedDefinition(self):
+        """The quantity's normalized definition.
+
+        The normalized definition defines the quantity in terms of base units
+        only."""
         if self.unit.isBaseUnit():
             return self.definition
         else:
@@ -401,7 +437,24 @@ class AbstractQuantity:
 
 class Quantity(AbstractQuantity):
 
-    """Base class used to define types of quantities."""
+    """Base class used to define types of quantities.
+
+    Args:
+        amount: the numerical part of the quantity
+        unit: the quantity's unit
+
+    *amount* must be of type number.Real or Decimal or be convertable to the
+    latter. *unit* must be an instance of the :class:`Unit` sub-class
+    corresponding to the :class:`Quantity` sub-class.
+
+    Raises:
+        ValueError: *amount* is not a Real or Decimal number and can not be
+            converted to a Decimal number
+        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
+            define a reference unit
+        TypeError: *unit* is not an instance of the :class:`Unit` sub-class
+            corresponding to the :class:`Quantity` sub-class
+    """
 
     __slots__ = ['_amount', '_unit']
 
@@ -419,7 +472,7 @@ class Quantity(AbstractQuantity):
             raise TypeError("Given unit is not a %s." % self.Unit.__name__)
 
     @classmethod
-    def fromQTerm(cls, qTerm):
+    def _fromQTerm(cls, qTerm):
         """Create quantity from qTerm."""
         unitCls = cls.Unit
         normUnitTerm = qTerm.unitTerm.normalized()
@@ -447,7 +500,7 @@ class Quantity(AbstractQuantity):
 
     @property
     def amount(self):
-        """Return the amount, i. e. the numeribal part of the quantity."""
+        """The quantity's amount, i.e. the numerical part of the quantity."""
         return self._amount
 
     @property
@@ -458,8 +511,15 @@ class Quantity(AbstractQuantity):
     def convert(self, toUnit):
         """Return quantity q where q == self and q.unit is toUnit.
 
-        Raises IncompatibleUnitsError if self can't be converted to given
-        unit."""
+        Args:
+            toUnit (Unit): unit to be converted to
+
+        Returns:
+            Quantity: resulting quantity (of same type)
+
+        Raises:
+            IncompatibleUnitsError: self can't be converted to unit *toUnit*.
+        """
         return self.Quantity(toUnit(self), toUnit)
 
     def __eq__(self, other):
@@ -481,6 +541,7 @@ class Quantity(AbstractQuantity):
         return NotImplemented
 
     def __hash__(self):
+        """hash(self)"""
         return hash((self.amount, self.unit))
 
     def __abs__(self):
@@ -551,7 +612,7 @@ class Quantity(AbstractQuantity):
             if resQtyCls is _Unitless:
                 return resQTerm.normalized().amount
             else:
-                return resQtyCls.fromQTerm(resQTerm)
+                return resQtyCls._fromQTerm(resQTerm)
         return NotImplemented
 
     # other * self
@@ -569,7 +630,7 @@ class Quantity(AbstractQuantity):
             if resQtyCls is _Unitless:
                 return resQTerm.normalized().amount
             else:
-                return resQtyCls.fromQTerm(resQTerm)
+                return resQtyCls._fromQTerm(resQTerm)
         return NotImplemented
 
     __truediv__ = __div__
@@ -592,7 +653,7 @@ class Quantity(AbstractQuantity):
         except KeyError:
             raise UndefinedResultError(operator.pow, self, exp)
         resQTerm = self.amount ** exp * self.unit ** exp
-        return resQtyCls.fromQTerm(resQTerm)
+        return resQtyCls._fromQTerm(resQTerm)
 
     def __round__(self, precision=0):
         """round(self)
@@ -608,9 +669,11 @@ class Quantity(AbstractQuantity):
                                    repr(self.unit))
 
     def __str__(self):
+        """Return a string representation of self."""
         return "%s %s" % (self.amount, self.unit)
 
     def __lstr__(self):
+        """Return a default locale specific string representation of self."""
         return self.__format__('{a:n} {u}')
 
     def __format__(self, fmtSpec=""):
@@ -894,7 +957,7 @@ class _Unitless(Quantity):
         if isinstance(other, Quantity):
             resQtyCls = self._getResQtyCls(other, operator.truediv)
             resQTerm = (self.amount / other.amount) / other.unit
-            return resQtyCls.fromQTerm(resQTerm)
+            return resQtyCls._fromQTerm(resQTerm)
         return NotImplemented
 
     __truediv__ = __div__
