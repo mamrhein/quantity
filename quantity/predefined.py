@@ -16,6 +16,7 @@
 
 """Define commonly used quantities."""
 
+#TODO: add more units
 
 from __future__ import absolute_import, division, unicode_literals
 from decimal import Decimal
@@ -78,6 +79,7 @@ class Velocity(Quantity):
     refUnitName = 'Meter per Second'
 
 METER_PER_SECOND = Velocity.refUnit
+KILOMETER_PER_HOUR = Velocity.Unit('', 'Kilometer per hour', KILOMETER / HOUR)
 
 
 class Acceleration(Quantity):
@@ -123,3 +125,13 @@ class DataThroughput(Quantity):
     refUnitName = 'Bytes per Second'
 
 BYTES_PER_SECOND = DataThroughput.refUnit
+
+
+class Temperature(Quantity):
+    pass
+
+CELSIUS = Temperature.Unit('°C', 'Degree Celsius')
+KELVIN = Temperature.Unit('°K', 'Degree Kelvin')
+FAHRENHEIT = Temperature.Unit('°F', 'Degree Fahrenheit')
+
+#TODO: provide converter for Temperature
