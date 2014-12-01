@@ -340,4 +340,4 @@ epub_exclude_files = ['search.html']
 # -- Options for ext.autodoc ----------------------------------------------
 
 autoclass_content = 'both'
-autodoc_member_order = 'groupwise'
+autodoc_member_order = 'bysource'
