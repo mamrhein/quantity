@@ -20,7 +20,7 @@
 #TODO: add more units
 
 from __future__ import absolute_import, division, unicode_literals
-from decimal import Decimal
+from decimalfp import Decimal
 from .quantity import Quantity
 
 

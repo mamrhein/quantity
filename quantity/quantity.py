@@ -20,9 +20,11 @@
 #TODO: more documentation
 
 from __future__ import absolute_import, division, unicode_literals
-from numbers import Integral, Real
-from decimal import Decimal
 import operator
+from numbers import Integral, Real
+from fractions import Fraction
+from decimal import Decimal as StdLibDecimal
+from decimalfp import Decimal
 from .term import Term
 
 
@@ -32,12 +34,23 @@ __metaclass__ = type
 
 
 # unicode handling and dict iterator Python 2 / Python 3
-typearg = str       # first argument for type must be str in both
-try:
-    str = unicode   # make all strings unicode in Python 2
+import sys
+PY_VERSION = sys.version_info[0]
+del sys
+typearg = str       # first argument for type must be native str in both
+if PY_VERSION < 3:
+    str = unicode
+    bytes = type(b'')
     itervalues = lambda d: d.itervalues()
-except NameError:
+else:
     itervalues = lambda d: d.values()
+# Compatible testing for strings
+str_types = (bytes, str)
+
+
+# because decimal.Decimal is not registered as number, we have to test it
+# explicitly
+NUM_TYPES = (Real, StdLibDecimal)
 
 
 # decorator defining meta class, portable between Python 2 / Python 3
@@ -45,11 +58,6 @@ def withMetaCls(metaCls):
     def _createCls(cls):
         return metaCls(cls.__name__, cls.__bases__, dict(cls.__dict__))
     return _createCls
-
-
-# because decimal.Decimal is not registered as number, we have to test it
-# explicitly
-NUM_TYPES = (Real, Decimal)
 
 
 class QuantityError(TypeError):
@@ -94,8 +102,8 @@ class QuantityRegistry():
     """Registers Quantity classes by definition."""
 
     def __init__(self):
-        self._qtyReg = {}
-        self._qtyIdx = 0
+        self._qtyDefMap = {}
+        self._qtyList = []
 
     def registerQuantityCls(self, qtyCls):
         """Register Quantity class.
@@ -104,7 +112,8 @@ class QuantityRegistry():
         definition.
 
         Args:
-            qtyCls (MetaQuantity): sub-class of Quantity to be registered
+            qtyCls (MetaQuantity): sub-class of :class:`Quantity` to be
+            registered
 
         Returns:
             int: index of registered class
@@ -114,16 +123,20 @@ class QuantityRegistry():
         """
         qtyDef = qtyCls.normalizedClsDefinition
         try:
-            regCls, idx = self._qtyReg[qtyDef]
+            idx = self._qtyDefMap[qtyDef]
+        except KeyError:
+            qtyList = self._qtyList
+            qtyList.append(qtyCls)
+            idx = len(qtyList) - 1
+            self._qtyDefMap[qtyDef] = idx
+            return idx
+        else:
+            regCls = self._qtyList[idx]
             if regCls == qtyCls:
                 return idx
             else:
                 raise ValueError(
                     "Class with same definition already registered.")
-        except KeyError:
-            idx = self._qtyIdx = self._qtyIdx + 1
-            self._qtyReg[qtyDef] = (qtyCls, idx)
-            return idx
 
     def getQuantityCls(self, qtyDef):
         """Get Quantity class by definition.
@@ -134,22 +147,39 @@ class QuantityRegistry():
 
         Returns:
             MetaQuantity: sub-class of :class:`Quantity` registered with
-                definition *qtyDef*
-        """
-        return self._qtyReg[qtyDef][0]
+                definition `qtyDef`
 
-    def getQuantityClsAndIdx(self, qtyDef):
-        """Get Quantity class and its index by definition.
+        Raises:
+            ValueError: no sub-class of :class:`Quantity` registered with
+                definition `qtyDef`
+        """
+        normQtyDef = qtyDef.normalized()
+        try:
+            idx = self._qtyDefMap[normQtyDef]
+        except KeyError:
+            raise ValueError('No quantity class registered with given '
+                             'definition.')
+        return self._qtyList[idx]
+
+    def getUnitBySymbol(self, symbol):
+        """Return the unit with symbol `symbol`.
 
         Args:
-            qtyDef (MetaQuantity._QClsDefinition): definition of class to
-                be looked-up
+            symbol (str): symbol to look-up
 
         Returns:
-            tuple: sub-class of :class:`Quantity` registered with definition
-                *qtyDef*, index of registered class
+            :class:`Unit` sub-class: if a unit with given `symbol` exists in
+                one of the registered quantities' `Unit` class
+            None: otherwise
         """
-        return self._qtyReg[qtyDef]
+        for qty in self:
+            unit = qty.getUnitBySymbol(symbol)
+            if unit:
+                return unit
+        return None
+
+    def __iter__(self):
+        return iter(self._qtyList)
 
 
 # Global registry of Quantities
@@ -213,8 +243,8 @@ class MetaQuantity(type):
                                                    {'Quantity': self,
                                                    'defineAs': unitClsDef})
                 # create and register reference unit
-                symbol = clsdict.get('refUnitSymbol', '')
-                name = clsdict.get('refUnitName', '')
+                symbol = clsdict.get('refUnitSymbol')
+                name = clsdict.get('refUnitName')
                 if symbol or self._refUnitDef:
                     unitCls._refUnit = unitCls(symbol, name)
                     # register reference unit converter
@@ -274,7 +304,7 @@ class MetaQuantity(type):
         """self * other"""
         if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() * other
-        else:
+        else:   # TODO: check type of other
             return self._asClsDefinition() * other._asClsDefinition()
 
     __rmul__ = __mul__
@@ -283,7 +313,7 @@ class MetaQuantity(type):
         """self / other"""
         if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() / other
-        else:
+        else:   # TODO: check type of other
             return self._asClsDefinition() / other._asClsDefinition()
 
     __truediv__ = __div__
@@ -292,7 +322,7 @@ class MetaQuantity(type):
         """other / self"""
         if isinstance(other, self._QClsDefinition):
             return other / self._asClsDefinition()
-        else:
+        else:   # TODO: check type of other
             return other._asClsDefinition() / self._asClsDefinition()
 
     __rtruediv__ = __rdiv__
@@ -433,16 +463,16 @@ class Quantity(AbstractQuantity):
         amount: the numerical part of the quantity
         unit: the quantity's unit
 
-    *amount* must be of type number.Real or Decimal or be convertable to the
-    latter. *unit* must be an instance of the :class:`Unit` sub-class
-    corresponding to the :class:`Quantity` sub-class.
+    `amount` must be of type `number.Real` or be convertable to a
+    `decimalfp.Decimal`. `unit` must be an instance of the :class:`Unit`
+    sub-class corresponding to the :class:`Quantity` sub-class.
 
     Raises:
-        ValueError: *amount* is not a Real or Decimal number and can not be
+        ValueError: `amount` is not a Real or Decimal number and can not be
             converted to a Decimal number
         ValueError: no unit given and the :class:`Quantity` sub-class doesn't
             define a reference unit
-        TypeError: *unit* is not an instance of the :class:`Unit` sub-class
+        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
             corresponding to the :class:`Quantity` sub-class
     """
 
@@ -452,9 +482,23 @@ class Quantity(AbstractQuantity):
     dfltFormatSpec = '{a} {u}'
 
     def __init__(self, amount, unit=None):
-        if not isinstance(amount, NUM_TYPES):
-            amount = Decimal(amount)
-        self._amount = amount
+        if isinstance(amount, (Decimal, Fraction)):
+            self._amount = amount
+        elif isinstance(amount, (Integral, StdLibDecimal)):
+            self._amount = Decimal(amount)      # convert to decimalfp.Decimal
+        elif isinstance(amount, float):
+            try:
+                self._amount = Decimal(amount)
+            except ValueError:
+                self._amount = Fraction(amount)
+        elif isinstance(amount, str_types):
+            num = _conv2number(amount)
+            if num is None:
+                raise TypeError("Can't convert '%s' to a number.")
+            self._amount = num
+        else:
+            raise TypeError('Given amount must be a number or a string that '
+                            'can be converted to a number.')
         self._unit = unit = unit or self.refUnit
         if not unit:
             raise ValueError("A unit must be given.")
@@ -479,6 +523,21 @@ class Quantity(AbstractQuantity):
         else:
             amount = qTerm.amount
         return cls.Quantity(amount, unit)
+
+    @classmethod
+    def getUnitBySymbol(cls, symbol):
+        """Return the unit with symbol `symbol`.
+
+        Args:
+            symbol (str): symbol to look-up
+
+        Returns:
+            :class:`Unit` sub-class: if a unit with given `symbol` exists
+                within the :class:`Unit` sub-class associated with this
+                :class:`Quantity` sub-class
+            None: otherwise
+        """
+        return cls.Unit._symDict.get(symbol)
 
     def __getstate__(self):
         return self._amount, self._unit.symbol
@@ -586,8 +645,8 @@ class Quantity(AbstractQuantity):
                        other.Quantity.clsDefinition)
         if resQtyDef:
             try:
-                return _registry.getQuantityCls(resQtyDef.normalized())
-            except KeyError:
+                return _registry.getQuantityCls(resQtyDef)
+            except ValueError:
                 raise UndefinedResultError(op, self, other)
         else:
             return _Unitless
@@ -640,7 +699,7 @@ class Quantity(AbstractQuantity):
         resQtyDef = self.Quantity ** exp
         try:
             resQtyCls = _registry.getQuantityCls(resQtyDef)
-        except KeyError:
+        except ValueError:
             raise UndefinedResultError(operator.pow, self, exp)
         resQTerm = self.amount ** exp * self.unit ** exp
         return resQtyCls._fromQTerm(resQTerm)
@@ -652,18 +711,33 @@ class Quantity(AbstractQuantity):
         return self.Quantity(round(self.amount, precision), self.unit)
 
     def __repr__(self):
+        """repr(self)"""
         if self.unit.isRefUnit():
             return "%s(%s)" % (self.__class__.__name__, repr(self.amount))
         else:
             return "%s(%s, %s)" % (self.__class__.__name__, repr(self.amount),
                                    repr(self.unit))
 
-    def __str__(self):
-        """Return a string representation of self."""
-        return "%s %s" % (self.amount, self.unit)
+    if PY_VERSION < 3:
+
+        def __unicode__(self):
+            """unicode(self)"""
+            return "%s %s" % (self.amount, self.unit)
+
+        def __str__(self):
+            """str(self)"""
+            return self.__unicode__().encode('utf8')
+
+    else:
+
+        def __str__(self):
+            """str(self)"""
+            return "%s %s" % (self.amount, self.unit)
 
     def __lstr__(self):
-        """Return a default locale specific string representation of self."""
+        """locale.str(self)
+
+        Returns a default locale specific string representation of self."""
         return self.__format__('{a:n} {u}')
 
     def __format__(self, fmtSpec=""):
@@ -679,7 +753,33 @@ class Quantity(AbstractQuantity):
             fmtSpec = self.dfltFormatSpec
         return fmtSpec.format(a=self.amount, u=self.unit)
 
-#TODO: implement Quantity.parse
+
+# factory function that creates a Quantity sub-class instance from a string
+def QuantityFromString(qRepr):
+    """Parse `qRepr` and return instance of :class:`Quantity` sub-class.
+
+    Args:
+        qRepr (str): string representation of a quantity
+
+    Returns:
+        instance of :class:`Quantity` sub-class corresponding to symbol in
+        `qRepr`
+
+    Raises:
+        ValueError: given string does not represent a Quantity
+    """
+    parts = str(qRepr).lstrip().split(' ', 1)
+    if len(parts) > 1:
+        sVal = parts[0]
+        val = _conv2number(sVal)
+        if val is None:
+            raise ValueError("'%s' does not represent a Quantity." % qRepr)
+        sSym = parts[1].strip()
+        sym = _registry.getUnitBySymbol(sSym)
+        if sym:
+            return sym.Quantity(val, sym)
+        raise ValueError("Unknown symbol '%s'." % sSym)
+    raise ValueError("'%s' does not represent a Quantity." % qRepr)
 
 
 class Unit(AbstractQuantity):
@@ -688,8 +788,8 @@ class Unit(AbstractQuantity):
 
     __slots__ = ['_symbol', '_name', '_definition']
 
-    def __new__(cls, symbol, name=None, defineAs=None):
-        if not symbol:
+    def __new__(cls, symbol=None, name=None, defineAs=None):
+        if symbol is None:
             if defineAs is None:
                 if cls.Quantity.isDerivedQuantity():
                     # try to generate symbol for reference unit of derived
@@ -701,8 +801,11 @@ class Unit(AbstractQuantity):
                 # try to generate symbol from definition:
                 if defineAs.amount == 1:
                     symbol = str(defineAs)
+        else:
+            if not isinstance(symbol, str):
+                raise TypeError('Symbol must be a unicode string.')
         if not symbol:
-            raise ValueError("Symbol must be given for unit.")
+            raise ValueError("A symbol must be given for the unit.")
         # return unit with symbol if already registered
         try:
             unit = cls._symDict[symbol]
@@ -749,6 +852,20 @@ class Unit(AbstractQuantity):
     def registeredUnits(cls):
         """Return an iterator over the units registered in cls."""
         return itervalues(cls._symDict)
+
+    @classmethod
+    def getUnitBySymbol(cls, symbol):
+        """Return the unit with symbol `symbol`.
+
+        Args:
+            symbol (str): symbol to look-up
+
+        Returns:
+            :class:`Unit` sub-class: if a unit with given `symbol` exists
+                within this :class:`Unit` sub-class
+            None: otherwise
+        """
+        return cls._symDict.get(symbol)
 
     @classmethod
     def registerConverter(cls, conv):
@@ -908,10 +1025,24 @@ class Unit(AbstractQuantity):
         return NotImplemented
 
     def __repr__(self):
+        """repr(self)"""
         return "%s.Unit(%s)" % (self.Quantity.__name__, repr(self.symbol))
 
-    def __str__(self):
-        return "%s" % self.symbol
+    if PY_VERSION < 3:
+
+        def __unicode__(self):
+            """unicode(self)"""
+            return "%s" % self.symbol
+
+        def __str__(self):
+            """str(self)"""
+            return self.__unicode__().encode('utf8')
+
+    else:
+
+        def __str__(self):
+            """str(self)"""
+            return "%s" % self.symbol
 
     def __format__(self, fmtSpec):
         """Convert to string (according to fmtSpec).
@@ -926,6 +1057,18 @@ class Unit(AbstractQuantity):
 #
 
 
+def _conv2number(s):
+    """Return Decimal or Fraction from str."""
+    for numType in (Decimal, Fraction):
+        try:
+            val = numType(s)
+        except:
+            pass
+        else:
+            return val
+    return None
+
+
 class _Unitless(Quantity):
 
     """Fake quantity without unit.
@@ -937,6 +1080,10 @@ class _Unitless(Quantity):
 
     def __init__(self, amount):
         self._amount = amount
+
+    @classmethod
+    def getUnitBySymbol(cls, symbol):
+        return None
 
     @property
     def unit(self):

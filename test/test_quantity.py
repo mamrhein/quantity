@@ -16,17 +16,23 @@ from __future__ import absolute_import, division, unicode_literals
 import unittest
 import operator
 from pickle import dumps, loads
-from decimal import Decimal, InvalidOperation
-from quantity import (Quantity, Unit, IncompatibleUnitsError,
-                      UndefinedResultError, TableConverter)
+from fractions import Fraction
+from decimal import Decimal as StdLibDecimal
+from decimalfp import Decimal
+from quantity import (Quantity, QuantityFromString, Unit,
+                      IncompatibleUnitsError, UndefinedResultError,
+                      TableConverter)
 from quantity.quantity import MetaQuantity, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
-# Python 2 / Python 3: determine version and support __round__ in 2.x
+# Python 2 / Python 3:
+typearg = str           # first argument for type must be native str in both
 try:
     int.__round__
 except AttributeError:
     PY_VERSION = 2
+
+    # support __round__ in 2.x
     import __builtin__
     py2_round = __builtin__.round
 
@@ -35,6 +41,10 @@ except AttributeError:
             return number.__round__(ndigits)
         except AttributeError:
             return py2_round(number, ndigits)
+
+    # unicode handling
+    bytes = str
+    str = unicode
 else:
     PY_VERSION = 3
 
@@ -163,14 +173,14 @@ class Test1_MetaQuantity(unittest.TestCase):
         self.assertEqual(XtZ2pY.refUnit.symbol, ''.join(('x', _mulSign,
                          'z', _SUPERSCRIPT_CHARS[0], '/y')))
         self.assertEqual(XtZ2pY.refUnitSymbol, XtZ2pY.refUnit.symbol)
-        self.assertRaises((ValueError, InvalidOperation), X, 'a')
+        self.assertRaises(TypeError, X, 'a')
         self.assertRaises(TypeError, X, 5, y)
         self.assertTrue(Q.refUnit is None)
 
     def testQuantityReg(self):
         self.assertTrue(_registry.getQuantityCls(X.clsDefinition) is X)
-        self.assertRaises(ValueError, MetaQuantity, str('X_Y'), (Quantity,),
-                          {str('defineAs'): defXpY})
+        self.assertRaises(ValueError, MetaQuantity, typearg('X_Y'),
+                          (Quantity,), {typearg('defineAs'): defXpY})
 
     def testUnitReg(self):
         self.assertTrue(X.Unit._symDict[X.refUnit.symbol] is X.refUnit)
@@ -184,6 +194,11 @@ class Test1_MetaQuantity(unittest.TestCase):
         self.assertTrue(sorted([u.symbol for u in U.registeredUnits()])
                         == ['u1', 'u2', 'u3'])
 
+    def testGetUnitBySymbol(self):
+        for qty in [X, Xinv, Y, XpY, YpX, Z, Z2, XtZ2pY, K, Q]:
+            for unit in qty.Unit.registeredUnits():
+                self.assertEqual(unit, _registry.getUnitBySymbol(unit.symbol))
+
 
 class Test2_Unit(unittest.TestCase):
 
@@ -193,6 +208,8 @@ class Test2_Unit(unittest.TestCase):
         self.assertEqual(u2.symbol, u2.name)
         self.assertTrue(u1._definition is None)
         self.assertTrue(U('u3') is u3)
+        self.assertRaises(TypeError, X.Unit, b'ax', '', X(10))
+        self.assertRaises(TypeError, X.Unit, 5, 'xxx', X(10))
         self.assertRaises(ValueError, X.Unit, '', '', X(10))
         self.assertEqual(kx.name, 'kilox')
         self.assertEqual(kx.symbol, 'kx')
@@ -200,7 +217,7 @@ class Test2_Unit(unittest.TestCase):
         self.assertEqual(kx.definition.unitTerm, x.definition)
         self.assertEqual(Mx.definition.amount, 1000)
         self.assertEqual(list(Mx.definition.unitTerm), [(kx, 1)])
-        sypkx = YpX.Unit('', 'sypkx', sy / kx)
+        sypkx = YpX.Unit(None, 'sypkx', sy / kx)
         self.assertEqual(sypkx.symbol, str(sy / kx))
 
     def testHash(self):
@@ -307,12 +324,18 @@ class Test2_Unit(unittest.TestCase):
 class Test3_Quantity(unittest.TestCase):
 
     def testConstructor(self):
-        q3x = X(3)
-        self.assertTrue(q3x.unit is x)
-        self.assertEqual(q3x.amount, 3)
-        q3x = X('3.2')
-        self.assertTrue(q3x.unit is x)
-        self.assertEqual(q3x.amount, Decimal('3.2'))
+        qx = X(3)
+        self.assertTrue(qx.unit is x)
+        self.assertEqual(qx.amount, 3)
+        qx = X(Decimal('3.2'))
+        self.assertTrue(qx.unit is x)
+        self.assertEqual(qx.amount, Decimal('3.2'))
+        qx = X('32')
+        self.assertEqual(qx.amount, 32)
+        qx = X('32.89')
+        self.assertEqual(qx.amount, Decimal('32.89'))
+        qx = X('1/7')
+        self.assertEqual(qx.amount, Fraction(1, 7))
 
     def testAlternateConstructor(self):
         q3x = 3 ^ x
@@ -444,6 +467,8 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(str(q), "%s %s" % (str(q.amount), q.unit.symbol))
         q = XpY('5.9')
         self.assertEqual(str(q), "%s %s" % (str(q.amount), q.unit.symbol))
+        q = Z2('57.99999999999999999999999999999999999')
+        self.assertEqual(str(q), "%s %s" % (str(q.amount), q.unit.symbol))
 
     def testRepr(self):
         self.assertEqual(repr(x), "X.Unit(%s)" % repr(x.symbol))
@@ -459,6 +484,17 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(format(q), '3.943 z\xb2')
         self.assertEqual(format(q, '{a:*>7.2f} {u:>3}'), '***3.94  z\xb2')
         self.assertEqual(format(q, 'abc'), 'abc')
+
+    def testQuantityFromString(self):
+        q = X(Decimal('3.94'), kx)
+        self.assertEqual(q, QuantityFromString(str(q)))
+        q = XpY('5.9')
+        self.assertEqual(q, QuantityFromString(str(q)))
+        q = Z2('57.99999999999999999999999999999999999')
+        self.assertEqual(q, QuantityFromString(str(q)))
+        q = Z2('1/4')
+        self.assertEqual(q, QuantityFromString(str(q)))
+
 
 if __name__ == '__main__':
     unittest.main()

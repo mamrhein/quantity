@@ -18,16 +18,16 @@
 """Terms of tuples of elements and corresponding exponents."""
 
 
-from __future__ import absolute_import
-from decimal import Decimal
+from __future__ import absolute_import, unicode_literals
 from numbers import Real
 from itertools import chain
 
 # unicode handling Python 2 / Python 3
-try:
-    unicode('a')
-except NameError:
-    basestring = unicode = str
+import sys
+PY_VERSION = sys.version_info[0]
+del sys
+if PY_VERSION < 3:
+    str = unicode
 
 
 __version__ = 0, 0, 1
@@ -69,11 +69,11 @@ class Term:
         """Return sort key for elem; used for normalized form of term.
 
         The type of the returned must be the same for all elements, either
-        int (<= 0) or str. Numerical elements must get the lowest sort key:
+        int (>= 0) or str. Numerical elements must get the lowest sort key:
         0 if int, '' if str."""
         if Term.isNumerical(elem):
-            return unicode('')
-        return unicode(elem)
+            return ''
+        return str(elem)
 
     @staticmethod
     def convert(elem, into):
@@ -85,9 +85,7 @@ class Term:
     @staticmethod
     def isNumerical(elem):
         """Return True if elem is a Real number"""
-        # because decimal.Decimal is nor registered as number, we have test it
-        # explicitly
-        return isinstance(elem, (Real, Decimal))
+        return isinstance(elem, Real)
 
     def __init__(self, items=[]):
         self._items = self._reduceItems(items)
@@ -100,10 +98,7 @@ class Term:
         """(elem1, exp1) * (elem2, exp2)"""
         (elem1, exp1), (elem2, exp2) = item1, item2
         if self.isNumerical(elem1) and self.isNumerical(elem2):
-            try:
-                return [(elem1 ** exp1 * elem2 ** exp2, 1)]
-            except TypeError:
-                return [(Decimal(elem1) ** exp1 * Decimal(elem2) ** exp2, 1)]
+            return [(elem1 ** exp1 * elem2 ** exp2, 1)]
         if elem1 is elem2:
             return [(elem1, exp1 + exp2)]
         if type(elem1) == type(elem2):
@@ -138,8 +133,8 @@ class Term:
             else:
                 return tuple(sorted(items, key=sortKey))
         itemDict = {}
-        sortMap = {unicode(''): 0, 0: 0}  # initialize for both, integer and
-                                          # string keys
+        sortMap = {'': 0, 0: 0}     # initialize for both, integer and
+                                    # string keys
         n = 0
         for (elem, exp) in itemList:
             key = self._mapItem((elem, exp))
@@ -276,13 +271,13 @@ class Term:
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self._items))
 
-    def __str__(self):
+    def __unicode__(self):
         elemsPosExp = []
         elemsNegExp = []
         expMap = [1, -1]
         for (elem, exp) in self:
             absexp = abs(exp)
-            elemStr = unicode(elem)
+            elemStr = str(elem)
             # if string representation of elem contains div-sign, split it:
             for i, s in enumerate(elemStr.split(_divSign)):
                 e = exp * expMap[i]
@@ -300,3 +295,9 @@ class Term:
         else:
             divSign = negExpPart = ''
         return posExpPart + divSign + negExpPart
+
+    if PY_VERSION < 3:
+        def __str__(self):
+            return self.__unicode__().encode('utf8')
+    else:
+        __str__ = __unicode__

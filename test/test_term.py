@@ -19,9 +19,9 @@ from quantity.term import _mulSign, _powerChars, Term
 
 # unicode handling Python 2 / Python 3
 try:
-    unicode('a')
+    str = unicode
 except NameError:
-    basestring = unicode = str
+    pass
 
 
 __version__ = 0, 0, 1
@@ -65,9 +65,9 @@ class XTerm(Term):
 
         The value returned should be either an int > 0 or a string."""
         if Term.isNumerical(elem):
-            return unicode('')
+            return ''
         num, base = XTerm._splitElem(elem)
-        return unicode(base)
+        return str(base)
 
     @staticmethod
     def convert(elem, into):
@@ -177,7 +177,7 @@ class TermTest(unittest.TestCase):
 
     def testStr(self):
         t1 = Term([('y', 2), ('x', 1)])
-        self.assertEqual(unicode(t1), 'x%sy%s' % (_mulSign, _powerChars[2]))
+        self.assertEqual(str(t1), 'x%sy%s' % (_mulSign, _powerChars[2]))
 
     def testRepr(self):
         t1 = Term([('y', 2), ('x', 1)])
