@@ -85,7 +85,7 @@ xpy = XpY.refUnit
 x30py = XpY.Unit('30x/y', '', Decimal(30) * xpy)
 
 
-defYpX = Y / X
+defYpX = Y * X ** -1
 class YpX(Quantity):
     defineAs = defYpX
 
@@ -193,6 +193,25 @@ class Test1_MetaQuantity(unittest.TestCase):
         self.assertTrue(Q.Unit('u1') is u1)
         self.assertTrue(sorted([u.symbol for u in U.registeredUnits()])
                         == ['u1', 'u2', 'u3'])
+
+    def testOperandTypeErrors(self):
+        self.assertRaises(TypeError, operator.mul, X, 5)
+        self.assertRaises(TypeError, operator.mul, X, X(1))
+        self.assertRaises(TypeError, operator.mul, 5, X)
+        self.assertRaises(TypeError, operator.mul, X(1), X)
+        if PY_VERSION < 3:
+            self.assertRaises(TypeError, operator.div, X, 5)
+            self.assertRaises(TypeError, operator.div, X, X(1))
+            self.assertRaises(TypeError, operator.div, 5, X)
+            self.assertRaises(TypeError, operator.div, X(1), X)
+        self.assertRaises(TypeError, operator.truediv, X, 5)
+        self.assertRaises(TypeError, operator.truediv, X, X(1))
+        self.assertRaises(TypeError, operator.truediv, 5, X)
+        self.assertRaises(TypeError, operator.truediv, X(1), X)
+        self.assertRaises(TypeError, operator.pow, X, 5.)
+        self.assertRaises(TypeError, operator.pow, X, X(1))
+        self.assertRaises(TypeError, operator.pow, 5, X)
+        self.assertRaises(TypeError, operator.pow, X(1), X)
 
     def testGetUnitBySymbol(self):
         for qty in [X, Xinv, Y, XpY, YpX, Z, Z2, XtZ2pY, K, Q]:

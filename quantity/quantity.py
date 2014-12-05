@@ -302,34 +302,39 @@ class MetaQuantity(type):
 
     def __mul__(self, other):
         """self * other"""
+        if isinstance(other, MetaQuantity):
+            return self._asClsDefinition() * other._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() * other
-        else:   # TODO: check type of other
-            return self._asClsDefinition() * other._asClsDefinition()
+        return NotImplemented
 
     __rmul__ = __mul__
 
     def __div__(self, other):
         """self / other"""
+        if isinstance(other, MetaQuantity):
+            return self._asClsDefinition() / other._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() / other
-        else:   # TODO: check type of other
-            return self._asClsDefinition() / other._asClsDefinition()
+        return NotImplemented
 
     __truediv__ = __div__
 
     def __rdiv__(self, other):
         """other / self"""
+        if isinstance(other, MetaQuantity):
+            return other._asClsDefinition() / self._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return other / self._asClsDefinition()
-        else:   # TODO: check type of other
-            return other._asClsDefinition() / self._asClsDefinition()
+        return NotImplemented
 
     __rtruediv__ = __rdiv__
 
     def __pow__(self, exp):
         """self ** exp"""
-        return self.clsDefinition ** exp
+        if isinstance(exp, Integral):
+            return self.clsDefinition ** exp
+        return NotImplemented
 
     def __str__(self):
         return self.__name__
@@ -755,6 +760,7 @@ class Quantity(AbstractQuantity):
 
 
 # factory function that creates a Quantity sub-class instance from a string
+# XXX better: integrat in constructor?
 def QuantityFromString(qRepr):
     """Parse `qRepr` and return instance of :class:`Quantity` sub-class.
 
@@ -768,6 +774,7 @@ def QuantityFromString(qRepr):
     Raises:
         ValueError: given string does not represent a Quantity
     """
+    # FIXME: restrict to unicode
     parts = str(qRepr).lstrip().split(' ', 1)
     if len(parts) > 1:
         sVal = parts[0]
