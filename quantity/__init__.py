@@ -400,6 +400,8 @@ from .quantity import Quantity, Unit
 from .quantity import IncompatibleUnitsError, UndefinedResultError
 from .quantity import Converter, TableConverter
 
+__version__ = 0, 5, 0
+
 __all__ = ['Quantity',
            'Unit',
            'IncompatibleUnitsError',

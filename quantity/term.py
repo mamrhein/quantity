@@ -30,7 +30,7 @@ if PY_VERSION < 3:
     str = unicode
 
 
-__version__ = 0, 0, 1
+__version__ = 0, 5, 0
 
 __metaclass__ = type
 

@@ -24,7 +24,7 @@ from decimalfp import Decimal
 from .quantity import Quantity
 
 
-__version__ = 0, 0, 1
+__version__ = 0, 5, 0
 
 __metaclass__ = type
 
