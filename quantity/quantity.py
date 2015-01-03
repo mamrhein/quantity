@@ -70,9 +70,9 @@ class IncompatibleUnitsError(QuantityError):
     """Exception raised when operands do not have compatible units."""
 
     def __init__(self, msg, operand1, operand2):
-        if isinstance(operand1, AbstractQuantity):
+        if isinstance(operand1, QTermElem):
             operand1 = operand1.__class__.__name__
-        if isinstance(operand2, AbstractQuantity):
+        if isinstance(operand2, QTermElem):
             operand2 = operand2.__class__.__name__
         QuantityError.__init__(self, msg % (operand1, operand2))
 
@@ -89,9 +89,9 @@ class UndefinedResultError(QuantityError):
              }
 
     def __init__(self, op, operand1, operand2):
-        if isinstance(operand1, AbstractQuantity):
+        if isinstance(operand1, QTermElem):
             operand1 = operand1.__class__.__name__
-        if isinstance(operand2, AbstractQuantity):
+        if isinstance(operand2, QTermElem):
             operand2 = operand2.__class__.__name__
         QuantityError.__init__(self, "Undefined result: %s %s %s" %
                               (operand1, self.opSym[op], operand2))
@@ -289,7 +289,10 @@ class MetaQuantity(type):
 
     @property
     def refUnit(self):
-        return self.Unit.__dict__.get('_refUnit')
+        try:
+            return self.Unit.__dict__.get('_refUnit')
+        except AttributeError:
+            return None
 
     @property
     def _refUnitDef(self):
@@ -341,7 +344,7 @@ class MetaQuantity(type):
 
 
 @withMetaCls(MetaQuantity)
-class AbstractQuantity:
+class QTermElem:
 
     """Abstract base class for Quantity and Unit."""
 
@@ -396,7 +399,7 @@ class AbstractQuantity:
 
     @property
     def definition(self):
-        """The quantity's definition."""
+        """The quantity's or units definition."""
         cls = self._QTerm
         if self.amount == 1:
             return cls([(self.unit, 1)])
@@ -404,10 +407,10 @@ class AbstractQuantity:
 
     @property
     def normalizedDefinition(self):
-        """The quantity's normalized definition.
+        """The quantity's or units normalized definition.
 
-        The normalized definition defines the quantity in terms of base units
-        only."""
+        The normalized definition defines the quantity or unit in terms of
+        base units only."""
         if self.unit.isBaseUnit():
             return self.definition
         else:
@@ -415,21 +418,26 @@ class AbstractQuantity:
 
     @property
     def amount(self):
-        """The quantity's amount."""
+        """The elements amount."""
         raise NotImplementedError
 
     @property
     def unit(self):
-        """The quantity's unit."""
+        """The elemets unit."""
         raise NotImplementedError
 
     @property
     def refUnit(self):
-        """Return reference unit of Quantity, if defined, otherwise None."""
-        return self.Unit.refUnit
+        """The reference unit of the :class:`Quantity` or :class:`Unit`
+        sub-class, if defined, otherwise None."""
+        try:
+            return self.Unit.refUnit
+        except AttributeError:
+            return None
 
     def __copy__(self):
-        """Return self (AbstractQuantity instances are immutable)."""
+        """Return self (:class:`Quantity` and :class:`Unit` instances are
+        immutable)."""
         return self
 
     def __deepcopy__(self, memo):
@@ -460,25 +468,57 @@ class AbstractQuantity:
         return self._compare(other, operator.ge)
 
 
-class Quantity(AbstractQuantity):
+class Quantity(QTermElem):
 
     """Base class used to define types of quantities.
 
-    Args:
+    Args (1. form):
         amount: the numerical part of the quantity
-        unit: the quantity's unit
+        unit: the quantity's unit (optional)
 
     `amount` must be of type `number.Real` or be convertable to a
     `decimalfp.Decimal`. `unit` must be an instance of the :class:`Unit`
-    sub-class corresponding to the :class:`Quantity` sub-class.
+    sub-class corresponding to the :class:`Quantity` sub-class. If no `unit`
+    is given, the reference unit of the :class:`Quantity` sub-class is used
+    (if defined, otherwise a ValueError is raised).
+
+    Returns:
+        instance of called :class:`Quantity` sub-class or instance of the
+        sub-class corresponding to given `unit` if :class:`Quantity` is called
 
     Raises:
-        ValueError: `amount` is not a Real or Decimal number and can not be
+        TypeError: `amount` is not a Real or Decimal number and can not be
             converted to a Decimal number
         ValueError: no unit given and the :class:`Quantity` sub-class doesn't
             define a reference unit
         TypeError: `unit` is not an instance of the :class:`Unit` sub-class
             corresponding to the :class:`Quantity` sub-class
+
+    Args (2. form):
+        qStr: unicode string representation of a quantity
+        unit: the quantity's unit (optional)
+
+    `qStr` must contain a numerical value and a unit symbol, separated atleast
+    by one blank. Any surrounding white space is ignored. If `unit` is given
+    in addition, the resulting quantity's unit is set to this unit and its
+    amount is converted accordingly.
+
+    Returns:
+        instance of :class:`Quantity` sub-class corresponding to symbol in
+        `qRepr`
+
+    Raises:
+        TypeError: `amount` is not a Real or Decimal number and can not be
+            converted to a Decimal number
+        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
+            define a reference unit
+        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
+            corresponding to the :class:`Quantity` sub-class
+        TypeError: a byte string is given that can not be decoded using the
+            standard encoding
+        ValueError: given string does not represent a Quantity
+        IncompatibleUnitsError: the unit derived from the symbol given in
+            `qStr` is not compatible to given `unit`
     """
 
     __slots__ = ['_amount', '_unit']
@@ -486,29 +526,57 @@ class Quantity(AbstractQuantity):
     # default format spec used in __format__
     dfltFormatSpec = '{a} {u}'
 
-    def __init__(self, amount, unit=None):
+    def __new__(cls, amount, unit=None):
+        """Create a `Quantity` instance."""
         if isinstance(amount, (Decimal, Fraction)):
-            self._amount = amount
+            pass
         elif isinstance(amount, (Integral, StdLibDecimal)):
-            self._amount = Decimal(amount)      # convert to decimalfp.Decimal
+            amount = Decimal(amount)      # convert to decimalfp.Decimal
         elif isinstance(amount, float):
             try:
-                self._amount = Decimal(amount)
+                amount = Decimal(amount)
             except ValueError:
-                self._amount = Fraction(amount)
+                amount = Fraction(amount)
         elif isinstance(amount, str_types):
-            num = _conv2number(amount)
-            if num is None:
-                raise TypeError("Can't convert '%s' to a number.")
-            self._amount = num
+            if isinstance(amount, bytes):
+                try:
+                    qRepr = amount.decode()
+                except UnicodeError:
+                    raise TypeError("Can't decode given bytes using default "
+                                    "encoding.")
+            else:
+                qRepr = amount
+            parts = qRepr.lstrip().split(' ', 1)
+            sAmount = parts[0]
+            amount = _conv2number(sAmount)
+            if amount is None:
+                raise TypeError("Can't convert '%s' to a number." % sAmount)
+            if len(parts) > 1:
+                sSym = parts[1].strip()
+                unitFromSym = _registry.getUnitBySymbol(sSym)
+                if unitFromSym:
+                    if unit is None:
+                        unit = unitFromSym
+                    else:
+                        amount *= unit(unitFromSym)
+                else:
+                    raise ValueError("Unknown symbol '%s'." % sSym)
         else:
             raise TypeError('Given amount must be a number or a string that '
                             'can be converted to a number.')
-        self._unit = unit = unit or self.refUnit
-        if not unit:
-            raise ValueError("A unit must be given.")
-        if not isinstance(unit, self.Unit):
-            raise TypeError("Given unit is not a %s." % self.Unit.__name__)
+        if unit is None:
+            unit = cls.refUnit
+            if unit is None:
+                raise ValueError("A unit must be given.")
+        if cls is Quantity:
+            cls = unit.Quantity
+        if not isinstance(unit, cls.Unit):
+            raise TypeError("Given unit '%s' is not a '%s'."
+                            % (unit, cls.Unit.__name__))
+        qty = super(QTermElem, cls).__new__(cls)
+        qty._amount = amount
+        qty._unit = unit
+        return qty
 
     @classmethod
     def _fromQTerm(cls, qTerm):
@@ -759,37 +827,7 @@ class Quantity(AbstractQuantity):
         return fmtSpec.format(a=self.amount, u=self.unit)
 
 
-# factory function that creates a Quantity sub-class instance from a string
-# XXX better: integrat in constructor?
-def QuantityFromString(qRepr):
-    """Parse `qRepr` and return instance of :class:`Quantity` sub-class.
-
-    Args:
-        qRepr (str): string representation of a quantity
-
-    Returns:
-        instance of :class:`Quantity` sub-class corresponding to symbol in
-        `qRepr`
-
-    Raises:
-        ValueError: given string does not represent a Quantity
-    """
-    # FIXME: restrict to unicode
-    parts = str(qRepr).lstrip().split(' ', 1)
-    if len(parts) > 1:
-        sVal = parts[0]
-        val = _conv2number(sVal)
-        if val is None:
-            raise ValueError("'%s' does not represent a Quantity." % qRepr)
-        sSym = parts[1].strip()
-        sym = _registry.getUnitBySymbol(sSym)
-        if sym:
-            return sym.Quantity(val, sym)
-        raise ValueError("Unknown symbol '%s'." % sSym)
-    raise ValueError("'%s' does not represent a Quantity." % qRepr)
-
-
-class Unit(AbstractQuantity):
+class Unit(QTermElem):
 
     """Base class used to define types of quantity units."""
 
@@ -1076,6 +1114,21 @@ def _conv2number(s):
     return None
 
 
+def _str2quantity(qRepr):
+    parts = str(qRepr).lstrip().split(' ', 1)
+    if len(parts) > 1:
+        sVal = parts[0]
+        val = _conv2number(sVal)
+        if val is None:
+            raise ValueError("'%s' does not represent a Quantity." % qRepr)
+        sSym = parts[1].strip()
+        sym = _registry.getUnitBySymbol(sSym)
+        if sym:
+            return sym.Quantity(val, sym)
+        raise ValueError("Unknown symbol '%s'." % sSym)
+    raise ValueError("'%s' does not represent a Quantity." % qRepr)
+
+
 class _Unitless(Quantity):
 
     """Fake quantity without unit.
@@ -1085,8 +1138,10 @@ class _Unitless(Quantity):
     defineAs = MetaQuantity._QClsDefinition()
     Unit = None
 
-    def __init__(self, amount):
-        self._amount = amount
+    def __new__(cls, amount):
+        qty = super(QTermElem, cls).__new__(cls)
+        qty._amount = amount
+        return qty
 
     @classmethod
     def getUnitBySymbol(cls, symbol):

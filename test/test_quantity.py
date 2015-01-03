@@ -19,7 +19,7 @@ from pickle import dumps, loads
 from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
-from quantity import (Quantity, QuantityFromString, Unit,
+from quantity import (Quantity, Unit,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
 from quantity.quantity import MetaQuantity, _registry
@@ -346,7 +346,7 @@ class Test3_Quantity(unittest.TestCase):
         qx = X(3)
         self.assertTrue(qx.unit is x)
         self.assertEqual(qx.amount, 3)
-        qx = X(Decimal('3.2'))
+        qx = X(StdLibDecimal('3.2'))
         self.assertTrue(qx.unit is x)
         self.assertEqual(qx.amount, Decimal('3.2'))
         qx = X('32')
@@ -355,12 +355,37 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(qx.amount, Decimal('32.89'))
         qx = X('1/7')
         self.assertEqual(qx.amount, Fraction(1, 7))
+        self.assertRaises(TypeError, X, 'x')
+        self.assertRaises(ValueError, Q, 5)
+        self.assertRaises(ValueError, Quantity, 5)
 
     def testAlternateConstructor(self):
         q3x = 3 ^ x
         self.assertTrue(q3x.unit is x)
         self.assertEqual(q3x.amount, 3)
         self.assertRaises(TypeError, operator.xor, x, 3)
+
+    def testQuantityFromString(self):
+        d = Decimal('3.94')
+        q = Quantity(' %s  %s   ' % (d, kx))
+        self.assertEqual(q.amount, d)
+        self.assertTrue(q.unit is kx)
+        d = Decimal('5.9')
+        q = Quantity(str(XpY(d)))
+        self.assertEqual(q.amount, d)
+        self.assertTrue(q.unit is xpy)
+        d = Decimal('57.99999999999999999999999999999999999')
+        q = Quantity(str(Z2(d)))
+        self.assertEqual(q.amount, d)
+        self.assertTrue(q.unit is Z2.refUnit)
+        f = Fraction(1, 4)
+        q = QpX('\t %s  %s' % (f, u2pkx))
+        self.assertEqual(q.amount, f)
+        self.assertTrue(q.unit is u2pkx)
+        self.assertRaises(IncompatibleUnitsError, Q, '3 u1', y)
+        self.assertRaises(TypeError, Q, '5 x')
+        self.assertRaises(ValueError, Quantity, '5')
+        self.assertRaises(ValueError, Quantity, '5 ax')
 
     def testHash(self):
         q3x = X(3)
@@ -503,16 +528,6 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(format(q), '3.943 z\xb2')
         self.assertEqual(format(q, '{a:*>7.2f} {u:>3}'), '***3.94  z\xb2')
         self.assertEqual(format(q, 'abc'), 'abc')
-
-    def testQuantityFromString(self):
-        q = X(Decimal('3.94'), kx)
-        self.assertEqual(q, QuantityFromString(str(q)))
-        q = XpY('5.9')
-        self.assertEqual(q, QuantityFromString(str(q)))
-        q = Z2('57.99999999999999999999999999999999999')
-        self.assertEqual(q, QuantityFromString(str(q)))
-        q = Z2('1/4')
-        self.assertEqual(q, QuantityFromString(str(q)))
 
 
 if __name__ == '__main__':

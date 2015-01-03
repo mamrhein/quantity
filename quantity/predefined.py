@@ -80,7 +80,8 @@ class Velocity(Quantity):
     refUnitName = 'Meter per Second'
 
 METER_PER_SECOND = Velocity.refUnit
-KILOMETER_PER_HOUR = Velocity.Unit('', 'Kilometer per hour', KILOMETER / HOUR)
+KILOMETER_PER_HOUR = Velocity.Unit(None, 'Kilometer per hour',
+                                   KILOMETER / HOUR)
 
 
 class Acceleration(Quantity):

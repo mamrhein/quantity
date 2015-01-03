@@ -169,6 +169,49 @@ in that definition have a reference unit.
     >>> print(Velocity.refUnit.symbol)
     m/s
 
+Instantiating quantities
+========================
+
+The simplest way to create an instance of a :class:`Quantity` subclass is to
+call the class giving an amount and a unit. If the unit is omitted the
+quantity's reference unit is used (if one is defined).
+
+    >>> Length(15, MILLIMETER)
+    Length(Decimal(15), Length.Unit(u'mm'))
+    >>> Length(15)
+    Length(Decimal(15))
+
+Alternatively, the two-args infix operator '^' can be used to combine an
+amount and a unit:
+
+    >>> 17.5 ^ KILOMETER
+    Length(Decimal('17.5'), Length.Unit(u'km'))
+
+Also, its possible to create a `Quantity` instance from a string
+representation:
+
+    >>> Length('17.5 km')
+    Length(Decimal('17.5'), Length.Unit(u'km'))
+
+If a unit is given in addition, the resulting quantity is converted
+accordingly:
+
+    >>> Length('17 m', KILOMETER)
+    Length(Decimal('0.017'), Length.Unit(u'km'))
+
+Instead of calling a subclass the class :class:`Quantity` can be used as a
+factory function ...
+
+    >>> Quantity(15, MILLIMETER)
+    Length(Decimal(15), Length.Unit(u'mm'))
+    >>> Quantity('17.5 km')
+    Length(Decimal('17.5'), Length.Unit(u'km'))
+
+... as long as a unit is given:
+
+    >>> Quantity(17.5)
+    ValueError: A unit must be given.
+
 Converting between units
 ========================
 
@@ -208,12 +251,12 @@ callables can be registered as converters.
 
     >>> def fahrenheit2celsius(qty, toUnit):
     ...     if qty.unit is FAHRENHEIT and toUnit is CELSIUS:
-    ...         return (Decimal(qty.amount) - Decimal(32)) / Decimal('1.8')
+    ...         return (qty.amount - 32) / Decimal('1.8')
     ...     return None
     ...
     >>> def celsius2fahrenheit(qty, toUnit):
     ...     if qty.unit is CELSIUS and toUnit is FAHRENHEIT:
-    ...         return Decimal(qty.amount) * Decimal('1.8') + Decimal(32)
+    ...         return qty.amount * Decimal('1.8') + 32
     ...     return None
     ...
     >>> Temperature.Unit.registerConverter(celsius2fahrenheit)
@@ -229,13 +272,6 @@ For the signature of the callables used as converters see :class:`Converter`.
     >>> t27c.convert(FAHRENHEIT).convert(CELSIUS)
     Temperature(Decimal('27'), Temperature.Unit('\xc2\xb0C'))
 
-.. note::
-    The numerical part of a quantity is not forced to a specific type of
-    number. All computations are done via the number types used when defining
-    units and instanciating quantities. Therefore the type of the numerical
-    part of the result depends on these computations. Mixing different types
-    of numbers may lead to unwanted results.
-
 TODO: document TableConverter
 
 Unit-safe computations
@@ -244,7 +280,41 @@ Unit-safe computations
 Comparison
 ----------
 
-TODO
+Quantities can be compared to other quantities using all comparison operators
+defined for numbers:
+
+    >>> Length(27) > Length(9)
+    True
+    >>> Length(27) >= Length(91)
+    False
+    >>> Length(27) < Length(9)
+    False
+    >>> Length(27) <= Length(91)
+    True
+    >>> Length(27) == Length(27)
+    True
+    >>> Length(27) != Length(91)
+    True
+
+Different units are taken in to account automatically, as long as they are
+compatible, i. e. a conversion is available:
+
+    >>> Length(27, METER) <= Length(91, CENTIMETER)
+    False
+    >>> Temperature(20, CELSIUS) > Temperature(20, FAHRENHEIT)
+    True
+    >>> Temperature(20, CELSIUS) > Temperature(20, KELVIN)
+    IncompatibleUnitsError: Can't convert 'Degree Kelvin' to 'Degree Celsius'
+
+Testing instances of different quantity types for equality always returns
+false:
+
+    >>> Length(20) == Mass(20)
+    False
+    >>> Length(20) != Mass(20)
+    True
+
+All other comparison operators raise an `IncompatibleUnitsError` in this case.
 
 Addition and subtraction
 ------------------------
@@ -326,12 +396,11 @@ When cascading operations, all intermediate results have to be defined:
 #TODO: more documentation
 
 from __future__ import absolute_import, unicode_literals
-from .quantity import Quantity, QuantityFromString, Unit
+from .quantity import Quantity, Unit
 from .quantity import IncompatibleUnitsError, UndefinedResultError
 from .quantity import Converter, TableConverter
 
 __all__ = ['Quantity',
-           'QuantityFromString',
            'Unit',
            'IncompatibleUnitsError',
            'UndefinedResultError',
