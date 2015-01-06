@@ -619,13 +619,9 @@ class Quantity(QTermElem):
         """
         return cls.Unit._symDict.get(symbol)
 
-    def __getstate__(self):
-        return self._amount, self._unit.symbol
-
-    def __setstate__(self, state):
-        amount, symbol = state
-        self._amount = amount
-        self._unit = self.Unit(symbol)
+    # pickle support
+    def __reduce__(self):
+        return (Quantity, (str(self),))
 
     @property
     def amount(self):

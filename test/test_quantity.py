@@ -509,6 +509,10 @@ class Test3_Quantity(unittest.TestCase):
         r = loads(dumps(q))
         self.assertEqual(r, q)
         self.assertTrue(r.unit is q.unit)
+        q = XtZ2pY(Fraction(1, 7))
+        r = loads(dumps(q))
+        self.assertEqual(r, q)
+        self.assertTrue(r.unit is q.unit)
 
     def testStr(self):
         self.assertEqual(str(x), x.symbol)
