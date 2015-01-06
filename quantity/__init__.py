@@ -33,7 +33,7 @@ Basic types of quantities are defined "by convention", they do not depend on
 other types of quantities, for example Length, Mass or Duration.
 
 Derived types of quantities, on the opposite, are defined as products of other
-types of quantities raised by some exponend.
+types of quantities raised by some exponent.
 
 Examples:
 
@@ -116,7 +116,7 @@ Now, this unit can be given to create a quantity:
 
 If no unit is given, the reference unit is used:
 
-    >>> print(Length(15)
+    >>> print(Length(15))
     15 m
 
 Other units can be derived from the reference unit (or another unit), giving
@@ -173,7 +173,7 @@ Instantiating quantities
 ========================
 
 The simplest way to create an instance of a :class:`Quantity` subclass is to
-call the class giving an amount and a unit. If the unit is omitted the
+call the class giving an amount and a unit. If the unit is omitted, the
 quantity's reference unit is used (if one is defined).
 
     >>> Length(15, MILLIMETER)
@@ -187,7 +187,7 @@ amount and a unit:
     >>> 17.5 ^ KILOMETER
     Length(Decimal('17.5'), Length.Unit(u'km'))
 
-Also, its possible to create a `Quantity` instance from a string
+Also, it's possible to create a :class:`Quantity` instance from a string
 representation:
 
     >>> Length('17.5 km')
@@ -199,7 +199,7 @@ accordingly:
     >>> Length('17 m', KILOMETER)
     Length(Decimal('0.017'), Length.Unit(u'km'))
 
-Instead of calling a subclass the class :class:`Quantity` can be used as a
+Instead of calling a subclass, the class :class:`Quantity` can be used as a
 factory function ...
 
     >>> Quantity(15, MILLIMETER)
@@ -268,11 +268,27 @@ callables can be registered as converters.
 For the signature of the callables used as converters see :class:`Converter`.
 
     >>> t27c.convert(FAHRENHEIT)
-    Temperature(Decimal('80.6'), Temperature.Unit('\xc2\xb0F'))
+    Temperature(Decimal('80.6'), Temperature.Unit('\xb0F'))
     >>> t27c.convert(FAHRENHEIT).convert(CELSIUS)
-    Temperature(Decimal('27'), Temperature.Unit('\xc2\xb0C'))
+    Temperature(Decimal('27'), Temperature.Unit('\xb0C'))
 
-TODO: document TableConverter
+Alternatively, an instance of :class:`TableConverter` can be created and
+registered as converter.
+
+The example given above can be implemented as follows:
+
+    >>> tempConv = TableConverter({(CELSIUS, FAHRENHEIT):
+                                   (Decimal('1.8'), 32)})
+    >>> Temperature.Unit.registerConverter(tempConv)
+    >>> t27c = Temperature(Decimal(27), CELSIUS)
+    >>> t27c.convert(FAHRENHEIT)
+    Temperature(Decimal('80.6'), Temperature.Unit(u'\xb0F'))
+
+It is suffient to define the conversion in one direction, because a
+reversed conversion is used automatically:
+
+>>> t27c.convert(FAHRENHEIT).convert(CELSIUS)
+Temperature(Decimal(27), Temperature.Unit(u'\xb0C'))
 
 Unit-safe computations
 ======================
@@ -322,9 +338,9 @@ Addition and subtraction
 Quantities can be added to or subtracted from other quantities ...
 
     >>> Length(27) + Length(9)
-    Length(36)
+    Length(Decimal(36))
     >>> Length(27) - Length(91)
-    Length(-64)
+    Length(Decimal(-64))
 
 ... as long as they are instances of the same quantity type:
 
@@ -353,14 +369,14 @@ Multiplication and division
 Quantities can be multiplied or divided by scalars, preserving the unit ...:
 
     >>> 7.5 * Length(3, CENTIMETER)
-    Length(22.5, Length.Unit(u'cm'))
+    Length(Decimal('22.5'), Length.Unit(u'cm'))
     >>> Duration(66, MINUTE) / 11
-    Duration(6.0, Duration.Unit(u'min'))
+    Duration(Decimal(6), Duration.Unit(u'min'))
 
 Quantities can be multiplied or divided by other quantities ...:
 
     >>> Length(15, METER) / Duration(3, SECOND)
-    Velocity(5.0)
+    Velocity(Decimal(5))
 
 ... as long as the resulting type of quantity is defined ...:
 
@@ -373,12 +389,12 @@ Quantities can be multiplied or divided by other quantities ...:
     ...     refUnitName = 'Meter per Second squared'
     ...
     >>> Length(12, KILOMETER) / Duration(2, MINUTE) / Duration(50, SECOND)
-    Acceleration(Decimal('2.0000000000000000000000000'))
+    Acceleration(Decimal(2))
 
 ... or the result is a scalar:
 
     >>> Duration(2, MINUTE) / Duration(50, SECOND)
-    Decimal('2.400000000000000000000000000')
+    Decimal('2.4')
 
 When cascading operations, all intermediate results have to be defined:
 
@@ -389,11 +405,61 @@ When cascading operations, all intermediate results have to be defined:
     ...         refUnitName = 'Square Meter'
     ...
     >>> Length(6, KILOMETER) * Length(13,  METER) * Length(250, METER)
-    Volume(Decimal('19500000.000'))
+    Volume(Decimal(19500000, 3))
 
+Exponentiation
+--------------
+
+Quantities can be raised by an exponent, as long as the exponent is an
+`Integral` number and the resulting quantity is defined:
+
+    >>> (5 ^ METER) ** 2
+    Area(Decimal(25))
+    >>> (5 ^ METER) ** 2.5
+    TypeError: unsupported operand type(s) for ** or pow(): 'Length' and 'float'
+    >>> (5 ^ METER) ** -2
+    UndefinedResultError: Undefined result: Length ** -2
+
+Rounding
+--------
+
+The amount of a quantity can be rounded by using the standard `round`
+function:
+
+    >>> round(Length(Decimal('17.375'), MILLIMETER), 1)
+    Length(Decimal('17.4'), Length.Unit('mm'))
+
+.. note::
+    This only applies to Python 3.x !!! In Python 2.x the standard `round`
+    function tries to convert its first operand to a `float` and thus raises
+    an exception when called with a quantity. But, as :class:`Quantity`
+    defines a :meth:`Quantity.__round__` method, this method can be called
+    directly.
+
+Formatting as string
+====================
+
+:class:`Quantity` supports the standard `str` and `unicode` (Python 2.x only)
+functions. Both return a string representation of the quantity's amount
+followed by a blank and the quantity's units symbol.
+
+.. note::
+    While the `str` function in Python 3.x and the `unicode` function in
+    Python 2.x return the result as a unicode string, the `str` function in
+    Python 2.x returns an utf8-encoded bytes string.
+
+In addition, :class:`Quantity` supports the standard `format` function. The
+format specifier should use two keys: 'a' for the amount and 'u' for the unit,
+where 'a' can be followed by a valid format spec for numbers and 'u' by a
+valid format spec for strings. If no format specifier is given, '{a} {u}' is
+used.
+
+    >>> v = Volume('19.36')
+    >>> format(v)
+    u'19.36 m\xb3'
+    >>> format(v, '{a:*>10.2f} {u:<3}')
+    u'*****19.36 m\xb3 '
 """
-
-#TODO: more documentation
 
 from __future__ import absolute_import, unicode_literals
 from .quantity import Quantity, Unit

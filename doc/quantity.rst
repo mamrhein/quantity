@@ -13,8 +13,8 @@ Classes
         __abs__, __neg__, __pos__,
         __add__, __radd__, __sub__, __rsub__,
         __mul__, __rmul__, __div__, __rdiv__,
-        __truediv__, __rtruediv__, __pow__,
-        __repr__, __str__, __lstr__, __format__
+        __truediv__, __rtruediv__, __pow__, __round__,
+        __repr__, __str__, __format__
 
 .. autoclass:: Unit
     :members: symbol, name, refUnit, definition, normalizedDefinition,

@@ -130,11 +130,11 @@ u1 = U('u1', 'Q unit 1')
 u2 = U('u2')
 u3 = U('u3')
 
-# u1 = 5 u2 = 25 u3
-uConvTable = [('u1', 'u2', Decimal(5)),
-              ('u2', 'u1', Decimal('0.2')),
-              ('u1', 'u3', Decimal(25)),
-              ('u2', 'u3', Decimal(5))]
+# u1 = 5 u2 - 3 = 25 u3 + 1.5
+uConvTable = [(u1, u2, Decimal(5), -3),
+              (u2, u1, Decimal('0.2'), Decimal('0.6')),
+              (u1, u3, Decimal(25), Decimal('1.5')),
+              (u3, u2, Decimal('0.2'), Decimal('-3.3'))]
 uConv = TableConverter(uConvTable)
 
 
@@ -409,18 +409,23 @@ class Test3_Quantity(unittest.TestCase):
         q7u2pkx = QpX(Decimal(7), u2pkx)
         self.assertRaises(IncompatibleUnitsError, q7u2pkx.convert, u1px)
         U.registerConverter(uConv)
-        q50 = Q(Decimal(50), u1)
-        self.assertEqual(u2(q50), Decimal(250))
-        self.assertEqual(u2(u1), Decimal(5))
-        self.assertEqual(u1(u2), Decimal('0.2'))
-        self.assertEqual(u3(q50), Decimal(1250))
-        self.assertEqual(u3(u1), Decimal(25))
-        self.assertEqual(u1(u3), Decimal('0.04'))
-        self.assertEqual(u3(u2), Decimal(5))
-        self.assertEqual(u2(u3), Decimal('0.2'))
-        self.assertEqual(u1px(q7u2pkx), Decimal('0.0014'))
+        # u1 = 5 u2 - 3 = 25 u3 + 1.5
+        qu1 = Q(Decimal('1.7'), u1)
+        qu2 = qu1.convert(u2)
+        qu3 = qu1.convert(u3)
+        self.assertTrue(qu1 == qu2 == qu3)
+        q50u1 = Q(Decimal(50), u1)
+        self.assertEqual(u2(q50u1), Decimal(247))
+        self.assertEqual(u2(u1), Decimal(2))
+        self.assertEqual(u1(u2), Decimal('0.8'))
+        self.assertEqual(u3(q50u1), Decimal(1251.5))
+        self.assertEqual(u3(u1), Decimal(26.5))
+        self.assertEqual(u1(u3), Decimal('-0.02'))
+        self.assertEqual(u3(u2), Decimal('21.5'))
+        self.assertEqual(u2(u3), Decimal('-3.1'))
+        self.assertEqual(u1px(q7u2pkx), Decimal('0.0035'))
         r = q7u2pkx.convert(u1px)
-        self.assertEqual((r.amount, r.unit), (Decimal('0.0014'), u1px))
+        self.assertEqual((r.amount, r.unit), (Decimal('0.0035'), u1px))
 
     def testComparision(self):
         x3 = X(3)
