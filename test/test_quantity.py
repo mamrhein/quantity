@@ -144,7 +144,7 @@ class QpX(Quantity):
 
 for qu in U.registeredUnits():
     for xu in X.Unit.registeredUnits():
-        upx = QpX.Unit("%s/%s" % (qu.symbol, xu.symbol), defineAs=qu/xu)
+        upx = QpX.Unit("%s/%s" % (qu.symbol, xu.symbol), defineAs=qu / xu)
 
 u1px = QpX.Unit('u1/x')
 u2pkx = QpX.Unit('u2/kx')
@@ -188,7 +188,7 @@ class Test1_MetaQuantity(unittest.TestCase):
         self.assertRaises(ValueError, X.Unit, 'xx')
         self.assertEqual(K._refUnitDef,
                          K._QTerm(((qtyCls.refUnit, exp)
-                         for qtyCls, exp in K.clsDefinition)))
+                                   for qtyCls, exp in K.clsDefinition)))
         self.assertTrue(K.Unit._symDict['k'] is K.refUnit)
         self.assertTrue(Q.Unit('u1') is u1)
         self.assertTrue(sorted([u.symbol for u in U.registeredUnits()])

@@ -918,7 +918,7 @@ class Unit(QTermElem):
         """Add converter conv to the list of converters registered in cls.
 
         Does nothing if converter is already registered."""
-        if not conv in cls._converters:
+        if conv not in cls._converters:
             cls._converters.append(conv)
 
     @classmethod

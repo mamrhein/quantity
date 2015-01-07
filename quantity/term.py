@@ -133,8 +133,7 @@ class Term:
             else:
                 return tuple(sorted(items, key=sortKey))
         itemDict = {}
-        sortMap = {'': 0, 0: 0}     # initialize for both, integer and
-                                    # string keys
+        sortMap = {'': 0, 0: 0}     # initialize for both, int and str keys
         n = 0
         for (elem, exp) in itemList:
             key = self._mapItem((elem, exp))

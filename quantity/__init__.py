@@ -416,7 +416,8 @@ Quantities can be raised by an exponent, as long as the exponent is an
     >>> (5 ^ METER) ** 2
     Area(Decimal(25))
     >>> (5 ^ METER) ** 2.5
-    TypeError: unsupported operand type(s) for ** or pow(): 'Length' and 'float'
+    TypeError: unsupported operand type(s) for ** or pow(): 'Length' and
+        'float'
     >>> (5 ^ METER) ** -2
     UndefinedResultError: Undefined result: Length ** -2
 
