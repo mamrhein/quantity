@@ -1,0 +1,4 @@
+include LICENCE.TXT
+include CHANGES.txt
+include test/*.py
+recursive-include doc/html [a-zA-Z0-9]*.*
