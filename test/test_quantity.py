@@ -456,9 +456,13 @@ class Test3_Quantity(unittest.TestCase):
         a = Decimal('2.1')
         self.assertEqual(round(X(a)), X(round(a)))
         self.assertEqual(round(X(a, kx)), X(round(a), kx))
-        a = Decimal('2.247')
+        a = Decimal('19.374')
         self.assertEqual(round(X(a), 2), X(round(a, 2)))
         self.assertEqual(round(X(a, kx), 2), X(round(a, 2), kx))
+        a = Fraction(1, 7)
+        r = round(X(a), 2)
+        self.assertEqual(r.amount, Decimal(a, 2))
+        self.assertTrue(isinstance(r.amount, Decimal))
 
     def testAddition(self):
         self.assertEqual(X(10, Mx), X(9500, kx) + X(500000))

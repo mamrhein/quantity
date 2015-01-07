@@ -92,7 +92,7 @@ class UndefinedResultError(QuantityError):
         if isinstance(operand2, QTermElem):
             operand2 = operand2.__class__.__name__
         QuantityError.__init__(self, "Undefined result: %s %s %s" %
-                              (operand1, self.opSym[op], operand2))
+                               (operand1, self.opSym[op], operand2))
 
 
 class QuantityRegistry():
@@ -219,7 +219,7 @@ class MetaQuantity(type):
         if 'Quantity' in baseNames:
             # add reference to self
             self.Quantity = self
-            #register self
+            # register self
             self._regIdx = _registry.registerQuantityCls(self)
             # unit class given?
             try:
@@ -789,7 +789,7 @@ class Quantity(QTermElem):
         Note: this method is called by the standard `round` function only in
         Python 3.x!
         """
-        return self.Quantity(round(self.amount, precision), self.unit)
+        return self.Quantity(Decimal(self.amount, precision), self.unit)
 
     def __repr__(self):
         """repr(self)"""
