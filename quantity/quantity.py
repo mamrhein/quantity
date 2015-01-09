@@ -1030,6 +1030,8 @@ class Unit(QTermElem):
             return self._QTerm(((other, 1), (self, 1)))
         elif isinstance(other, Unit):
             return self._QTerm(((self, 1), (other, 1)))
+        elif isinstance(other, self._QTerm):
+            return self._QTerm(((self, 1),)) * other
         return NotImplemented
 
     # other * self
@@ -1041,6 +1043,8 @@ class Unit(QTermElem):
             return self._QTerm(((1 / other, 1), (self, 1)))
         elif isinstance(other, Unit):
             return self._QTerm(((self, 1), (other, -1)))
+        elif isinstance(other, self._QTerm):
+            return self._QTerm(((self, 1),)) / other
         return NotImplemented
 
     __truediv__ = __div__
@@ -1049,6 +1053,8 @@ class Unit(QTermElem):
         """other / self"""
         if isinstance(other, NUM_TYPES):
             return self._QTerm(((other, 1), (self, -1)))
+        elif isinstance(other, self._QTerm):
+            return other / self._QTerm(((self, 1),))
         return NotImplemented
 
     __rtruediv__ = __rdiv__
