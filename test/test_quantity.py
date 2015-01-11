@@ -22,7 +22,7 @@ from decimalfp import Decimal
 from quantity import (Quantity, Unit,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
-from quantity.quantity import MetaQuantity, _registry
+from quantity.quantity import MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
 # Python 2 / Python 3:
@@ -150,7 +150,7 @@ u1px = QpX.Unit('u1/x')
 u2pkx = QpX.Unit('u2/kx')
 
 
-class Test1_MetaQuantity(unittest.TestCase):
+class Test1_MetaQTerm(unittest.TestCase):
 
     def testConstructor(self):
         self.assertTrue(X._clsDefinition is None)
@@ -179,7 +179,7 @@ class Test1_MetaQuantity(unittest.TestCase):
 
     def testQuantityReg(self):
         self.assertTrue(_registry.getQuantityCls(X.clsDefinition) is X)
-        self.assertRaises(ValueError, MetaQuantity, typearg('X_Y'),
+        self.assertRaises(ValueError, MetaQTerm, typearg('X_Y'),
                           (Quantity,), {typearg('defineAs'): defXpY})
 
     def testUnitReg(self):

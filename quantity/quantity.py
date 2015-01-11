@@ -110,8 +110,8 @@ class QuantityRegistry():
         definition.
 
         Args:
-            qtyCls (MetaQuantity): sub-class of :class:`Quantity` to be
-            registered
+            qtyCls (MetaQTerm): sub-class of :class:`Quantity` to be
+                registered
 
         Returns:
             int: index of registered class
@@ -140,11 +140,11 @@ class QuantityRegistry():
         """Get Quantity class by definition.
 
         Args:
-            qtyDef (MetaQuantity._QClsDefinition): definition of class to
+            qtyDef (MetaQTerm._QClsDefinition): definition of class to
                 be looked-up
 
         Returns:
-            MetaQuantity: sub-class of :class:`Quantity` registered with
+            MetaQTerm: sub-class of :class:`Quantity` registered with
                 definition `qtyDef`
 
         Raises:
@@ -184,7 +184,7 @@ class QuantityRegistry():
 _registry = QuantityRegistry()
 
 
-class MetaQuantity(type):
+class MetaQTerm(type):
 
     """Meta class that provides operators to construct derived quantities."""
 
@@ -236,10 +236,10 @@ class MetaQuantity(type):
                     unitClsDef = self._QClsDefinition(items)
                 else:
                     unitClsDef = None
-                unitCls = self.Unit = MetaQuantity(typearg(name + 'Unit'),
-                                                   (Unit,),
-                                                   {'Quantity': self,
-                                                   'defineAs': unitClsDef})
+                unitCls = self.Unit = MetaQTerm(typearg(name + 'Unit'),
+                                                (Unit,),
+                                                {'Quantity': self,
+                                                'defineAs': unitClsDef})
                 # create and register reference unit
                 symbol = clsdict.get('refUnitSymbol')
                 name = clsdict.get('refUnitName')
@@ -303,7 +303,7 @@ class MetaQuantity(type):
 
     def __mul__(self, other):
         """self * other"""
-        if isinstance(other, MetaQuantity):
+        if isinstance(other, MetaQTerm):
             return self._asClsDefinition() * other._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() * other
@@ -313,7 +313,7 @@ class MetaQuantity(type):
 
     def __div__(self, other):
         """self / other"""
-        if isinstance(other, MetaQuantity):
+        if isinstance(other, MetaQTerm):
             return self._asClsDefinition() / other._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return self._asClsDefinition() / other
@@ -323,7 +323,7 @@ class MetaQuantity(type):
 
     def __rdiv__(self, other):
         """other / self"""
-        if isinstance(other, MetaQuantity):
+        if isinstance(other, MetaQTerm):
             return other._asClsDefinition() / self._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return other / self._asClsDefinition()
@@ -341,7 +341,7 @@ class MetaQuantity(type):
         return self.__name__
 
 
-@withMetaCls(MetaQuantity)
+@withMetaCls(MetaQTerm)
 class QTermElem:
 
     """Abstract base class for Quantity and Unit."""
@@ -1142,7 +1142,7 @@ class _Unitless(Quantity):
 
     Used to implement reversed operator rdiv."""
 
-    defineAs = MetaQuantity._QClsDefinition()
+    defineAs = MetaQTerm._QClsDefinition()
     Unit = None
 
     def __new__(cls, amount):
