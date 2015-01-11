@@ -465,7 +465,7 @@ used.
 from __future__ import absolute_import, unicode_literals
 from .quantity import Quantity, Unit
 from .quantity import IncompatibleUnitsError, UndefinedResultError
-from .quantity import Converter, TableConverter
+from .converter import Converter, TableConverter
 
 __version__ = 0, 7, 0
 
