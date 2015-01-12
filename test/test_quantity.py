@@ -19,10 +19,10 @@ from pickle import dumps, loads
 from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
-from quantity import (Quantity, Unit,
+from quantity import (Quantity, Unit, getUnitBySymbol,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
-from quantity.quantity import MetaQTerm, _registry
+from quantity.qtybase import MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
 # Python 2 / Python 3:
@@ -214,9 +214,9 @@ class Test1_MetaQTerm(unittest.TestCase):
         self.assertRaises(TypeError, operator.pow, X(1), X)
 
     def testGetUnitBySymbol(self):
-        for qty in [X, Xinv, Y, XpY, YpX, Z, Z2, XtZ2pY, K, Q]:
+        for qty in [X, Xinv, Y, XpY, YpX, Z, Z2, XtZ2pY, K, Q, QpX]:
             for unit in qty.Unit.registeredUnits():
-                self.assertEqual(unit, _registry.getUnitBySymbol(unit.symbol))
+                self.assertTrue(getUnitBySymbol(unit.symbol) is unit)
 
 
 class Test2_Unit(unittest.TestCase):

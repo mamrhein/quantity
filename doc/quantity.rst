@@ -29,8 +29,15 @@ Classes
 .. autoclass:: TableConverter
     :members:
 
+Functions
+---------
+
+.. autofunction:: getUnitBySymbol
+
 Exceptions
 ----------
+
+.. autoclass:: QuantityError
 
 .. autoclass:: IncompatibleUnitsError
 
