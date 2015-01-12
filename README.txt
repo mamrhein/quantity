@@ -63,7 +63,6 @@ without giving a definition.
     ...     pass
     ...
     >>> CELSIUS = Temperature.Unit('°C', 'Degree Celsius')
-    >>> KELVIN = Temperature.Unit('°K', 'Degree Kelvin')
     >>> FAHRENHEIT = Temperature.Unit('°F', 'Degree Fahrenheit')
 
 **Derived** types of quantities are declared by giving a definition based on

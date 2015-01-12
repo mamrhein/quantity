@@ -141,8 +141,8 @@ without giving a definition.
     ...     pass
     ...
     >>> CELSIUS = Temperature.Unit('°C', 'Degree Celsius')
-    >>> KELVIN = Temperature.Unit('°K', 'Degree Kelvin')
     >>> FAHRENHEIT = Temperature.Unit('°F', 'Degree Fahrenheit')
+    >>> KELVIN = Temperature.Unit('K', 'Kelvin')
 
 **Derived** types of quantities are declared by giving a definition based on
 more basic types of quantities:
@@ -320,7 +320,7 @@ compatible, i. e. a conversion is available:
     >>> Temperature(20, CELSIUS) > Temperature(20, FAHRENHEIT)
     True
     >>> Temperature(20, CELSIUS) > Temperature(20, KELVIN)
-    IncompatibleUnitsError: Can't convert 'Degree Kelvin' to 'Degree Celsius'
+    IncompatibleUnitsError: Can't convert 'Kelvin' to 'Degree Celsius'
 
 Testing instances of different quantity types for equality always returns
 false:
@@ -360,7 +360,7 @@ converted to the unit of the first, if possible ...:
 ... but an exception is raised, if not:
 
     >>> Temperature(20, CELSIUS) - Temperature(281, KELVIN)
-    IncompatibleUnitsError: Can't convert 'Degree Kelvin' to 'Degree Celsius'
+    IncompatibleUnitsError: Can't convert 'Kelvin' to 'Degree Celsius'
 
 Multiplication and division
 ---------------------------
