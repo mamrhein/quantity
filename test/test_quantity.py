@@ -22,11 +22,10 @@ from decimalfp import Decimal
 from quantity import (Quantity, Unit, getUnitBySymbol,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
-from quantity.qtybase import MetaQTerm, _registry
+from quantity.qtybase import typearg, MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
 # Python 2 / Python 3:
-typearg = str           # first argument for type must be native str in both
 try:
     int.__round__
 except AttributeError:
