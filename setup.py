@@ -14,6 +14,7 @@ setup(
     long_description=long_description,
     packages=['quantity'],
     requires=["decimalfp(>=0.9.7)"],
+    install_requires=["decimalfp>=0.9.7"],
     license='BSD',
     keywords='quantity unit',
     platforms='all',

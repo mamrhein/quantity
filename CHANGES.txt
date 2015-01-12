@@ -1,3 +1,5 @@
 Version     Changes
 ------------------------------------------------------------------------------
+0.7.1       Added 'install_requires' to setup.py
+
 0.7.0       First public release
