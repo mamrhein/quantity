@@ -357,6 +357,8 @@ class QTermElem:
 
     """Abstract base class for Quantity and Unit."""
 
+    __slots__ = []
+
     class _QTerm(Term):
         """Definition of quantities."""
 
@@ -757,6 +759,8 @@ class QuantityBase(QTermElem):
 
     """Abstract case class for `Quantity` and `_Unitless`."""
 
+    __slots__ = []
+
     # default format spec used in __format__
     dfltFormatSpec = ''
 
@@ -951,6 +955,8 @@ class QuantityBase(QTermElem):
         resQTerm = self.amount ** exp * self.unit ** exp
         return resQtyCls._fromQTerm(resQTerm)
 
+    # TODO: round to unit:
+    # round(qty, unit) => qty.convert(unit).round().convert(qty.unit)
     def __round__(self, precision=0):
         """round(self)
 
