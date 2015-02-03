@@ -523,17 +523,17 @@ class Quantity(QuantityBase):
             `qRepr`
 
     Raises:
-        TypeError: `amount` is not a Real or Decimal number and can not be
-            converted to a Decimal number
+        TypeError: amount given in `qStr` is not a Real or Decimal number and
+            can not be converted to a Decimal number
         ValueError: no unit given and the :class:`Quantity` sub-class doesn't
             define a reference unit
         TypeError: `unit` is not an instance of the :class:`Unit` sub-class
             corresponding to the :class:`Quantity` sub-class
         TypeError: a byte string is given that can not be decoded using the
             standard encoding
-        ValueError: given string does not represent a Quantity
+        ValueError: given string does not represent a `Quantity`
         IncompatibleUnitsError: the unit derived from the symbol given in
-            `qStr` is not compatible to given `unit`
+            `qStr` is not compatible with given `unit`
     """
 
     __slots__ = ['_amount', '_unit']
@@ -624,7 +624,7 @@ class Quantity(QuantityBase):
 
     @property
     def unit(self):
-        """Return the unit of the quantity."""
+        """The quantity'a unit."""
         return self._unit
 
 
