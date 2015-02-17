@@ -548,3 +548,19 @@ _tempConv = [
     (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
 ]
 Temperature.Unit.registerConverter(TableConverter(_tempConv))
+
+# all pre-defined quantities
+__all__ = ['Length',
+           'Mass',
+           'Duration',
+           'Area',
+           'Volume',
+           'Velocity',
+           'Acceleration',
+           'Force',
+           'Energy',
+           'Power',
+           'DataVolume',
+           'DataThroughput',
+           'Temperature',
+           ]
