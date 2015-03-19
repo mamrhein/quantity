@@ -421,10 +421,13 @@ Quantities can be raised by an exponent, as long as the exponent is an
     UndefinedResultError: Undefined result: Length ** -2
 
 Rounding
---------
+========
 
 The amount of a quantity can be rounded by using the standard `round`
-function:
+function.
+
+If an Integral is given as precision, a copy of the quanitity is returned,
+with its amount rounded accordingly.
 
     >>> round(Length(Decimal('17.375'), MILLIMETER), 1)
     Length(Decimal('17.4'), Length.Unit('mm'))
@@ -432,9 +435,30 @@ function:
 .. note::
     This only applies to Python 3.x !!! In Python 2.x the standard `round`
     function tries to convert its first operand to a `float` and thus raises
-    an exception when called with a quantity. But, as :class:`Quantity`
-    defines a :meth:`Quantity.__round__` method, this method can be called
-    directly.
+    an exception when called with a quantity.
+
+    You may circumvent this by modifying the built-in `round` function:
+
+    try:
+        int.__round__
+    except AttributeError:
+        import __builtin__
+        py2_round = __builtin__.round
+
+        def round(number, ndigits=0):
+            try:
+                return number.__round__(ndigits)
+            except AttributeError:
+                return py2_round(number, ndigits)
+
+        __builtin__.round = round
+        del __builtin__
+
+    But be aware that this has side-effects if there are other classes
+    defining a method named `__round__` !!!
+
+    As a last resort, as :class:`Quantity` defines a
+    :meth:`Quantity.__round__` method, this method can be called directly.
 
 Formatting as string
 ====================
@@ -624,8 +648,12 @@ class Quantity(QuantityBase):
 
     @property
     def unit(self):
-        """The quantity'a unit."""
+        """The quantity's unit."""
         return self._unit
+
+    def equivAmount(self, unit):
+        """Return amount e so that e ^ `unit` == self."""
+        return unit(self)
 
 
 __all__ = ['Quantity',

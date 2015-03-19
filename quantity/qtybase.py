@@ -20,6 +20,7 @@
 from __future__ import absolute_import, division, unicode_literals
 import operator
 from numbers import Integral, Real
+from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
 from .term import Term
@@ -221,6 +222,7 @@ class MetaQTerm(type):
             return qCls.Quantity._regIdx
 
     def __init__(self, name, bases, clsdict):
+        #TODO: prevent __dict__ from being created for sub-classes
         type.__init__(self, name, bases, clsdict)
         try:
             self._clsDefinition = self.defineAs
@@ -376,7 +378,7 @@ class QTermElem:
         def normSortKey(qty):
             """Return sort key for qty."""
             try:
-                return qty.Quantity._regIdx
+                return qty.Quantity._regIdx + 1
             except AttributeError:
                 return 0
 
@@ -657,7 +659,7 @@ class Unit(QTermElem):
         if qty.unit is self:            # same unit
             return qty.amount
         if self.Unit != qty.Unit:       # different Unit classes
-            raise IncompatibleUnitsError("Can't convert '%s' to '%s'",
+            raise IncompatibleUnitsError("Can't convert '%s' to '%s'.",
                                          qty.Quantity, self.Quantity)
         # try registered converters:
         for conv in self.registeredConverters():
@@ -757,7 +759,7 @@ class Unit(QTermElem):
 
 class QuantityBase(QTermElem):
 
-    """Abstract case class for `Quantity` and `_Unitless`."""
+    """Abstract base class for `Quantity`."""
 
     __slots__ = []
 
@@ -808,6 +810,10 @@ class QuantityBase(QTermElem):
         """Return the unit of the quantity."""
         return NotImplementedError
 
+    def equivAmount(self, unit):
+        """Return amount e so that e ^ `unit` == self."""
+        return NotImplemented
+
     def convert(self, toUnit):
         """Return quantity q where q == self and q.unit is toUnit.
 
@@ -820,13 +826,13 @@ class QuantityBase(QTermElem):
         Raises:
             IncompatibleUnitsError: self can't be converted to unit *toUnit*.
         """
-        return self.Quantity(toUnit(self), toUnit)
+        return self.Quantity(self.equivAmount(toUnit), toUnit)
 
     def __eq__(self, other):
         """self == other"""
         if isinstance(other, self.Quantity):
             try:
-                return self.amount == self.unit(other)
+                return self.amount == other.equivAmount(self.unit)
             except IncompatibleUnitsError:
                 pass
         return False
@@ -834,7 +840,7 @@ class QuantityBase(QTermElem):
     def _compare(self, other, op):
         """Compare self and other using operator op."""
         if isinstance(other, self.Quantity):
-            return op(self.amount, self.unit(other))
+            return op(self.amount, other.equivAmount(self.unit))
         elif isinstance(other, QuantityBase):
             raise IncompatibleUnitsError("Can't compare a %s and a %s",
                                          self, other)
@@ -859,7 +865,8 @@ class QuantityBase(QTermElem):
     def __add__(self, other):
         """self + other"""
         if isinstance(other, self.Quantity):
-            return self.Quantity(self.amount + self.unit(other), self.unit)
+            return self.Quantity(self.amount + other.equivAmount(self.unit),
+                                 self.unit)
         elif isinstance(other, QuantityBase):
             raise IncompatibleUnitsError("Can't add a '%s' and a '%s'",
                                          self, other)
@@ -871,7 +878,8 @@ class QuantityBase(QTermElem):
     def __sub__(self, other):
         """self - other"""
         if isinstance(other, self.Quantity):
-            return self.Quantity(self.amount - self.unit(other), self.unit)
+            return self.Quantity(self.amount - other.equivAmount(self.unit),
+                                 self.unit)
         elif isinstance(other, QuantityBase):
             raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'",
                                          other, self)
@@ -880,7 +888,8 @@ class QuantityBase(QTermElem):
     def __rsub__(self, other):
         """other - self"""
         if isinstance(other, self.Quantity):
-            return self.Quantity(other.amount - other.unit(self), other.unit)
+            return self.Quantity(other.amount - self.equivAmount(other.unit),
+                                 other.unit)
         elif isinstance(other, QuantityBase):
             raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'",
                                          self, other)
@@ -923,7 +932,7 @@ class QuantityBase(QTermElem):
         if isinstance(other, NUM_TYPES):
             return self.Quantity(self.amount / other, self.unit)
         if isinstance(other, self.Quantity):
-            return self.amount / self.unit(other)
+            return self.amount / other.equivAmount(self.unit)
         elif isinstance(other, QuantityBase):
             resQtyCls = self._getResQtyCls(other, operator.truediv)
             resQTerm = (self.amount / other.amount) * (self.unit / other.unit)
@@ -958,9 +967,7 @@ class QuantityBase(QTermElem):
     # TODO: round to unit:
     # round(qty, unit) => qty.convert(unit).round().convert(qty.unit)
     def __round__(self, precision=0):
-        """round(self)
-
-        Returns a copy of `self` with its amount rounded to the given
+        """Returns a copy of `self` with its amount rounded to the given
         `precision`.
 
         Note: this method is called by the standard `round` function only in
@@ -1005,7 +1012,7 @@ class QuantityBase(QTermElem):
         return fmtSpec.format(a=self.amount, u=self.unit)
 
 
-class _Unitless(QuantityBase):
+class _Unitless:
 
     """Fake quantity without unit.
 
@@ -1013,30 +1020,26 @@ class _Unitless(QuantityBase):
 
     __slots__ = ['_amount']
 
-    # default format spec used in __format__
-    dfltFormatSpec = '{a}'
-
-    defineAs = MetaQTerm._QClsDefinition()
-
-    def __new__(cls, amount):
-        qty = super(QuantityBase, cls).__new__(cls)
-        qty._amount = amount
-        return qty
+    def __init__(self, amount):
+        self._amount = amount
 
     @property
     def amount(self):
         return self._amount
 
-    @property
-    def unit(self):
-        return None
-
     def __div__(self, other):
         """self / other"""
         if isinstance(other, QuantityBase):
-            resQtyCls = self._getResQtyCls(other, operator.truediv)
-            resQTerm = (self.amount / other.amount) / other.unit
-            return resQtyCls._fromQTerm(resQTerm)
+            op = operator.truediv
+            resQtyDef = op(other.Quantity._QClsDefinition(),
+                           other.Quantity.clsDefinition)
+            if resQtyDef:
+                try:
+                    resQtyCls = _registry.getQuantityCls(resQtyDef)
+                except ValueError:
+                    raise UndefinedResultError(op, self, other)
+                resQTerm = (self.amount / other.amount) / other.unit
+                return resQtyCls._fromQTerm(resQTerm)
         return NotImplemented
 
     __truediv__ = __div__
@@ -1048,10 +1051,3 @@ class _Unitless(QuantityBase):
         if not fmtSpec:
             fmtSpec = '{a}'
         return fmtSpec.format(a=self.amount, u='')
-
-# add references to the class itself
-_Unitless.Quantity = _Unitless.Unit = _Unitless
-# _Unitless must be registered before any quantity
-# because it must get index 0 in order to be sorted to the first element
-# in resulting terms and thus be handled like pure numerical elements !
-_Unitless._regIdx = _registry.registerQuantityCls(_Unitless)
