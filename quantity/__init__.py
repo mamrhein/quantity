@@ -486,174 +486,17 @@ used.
 """
 
 from __future__ import absolute_import, unicode_literals
-from numbers import Integral
-from fractions import Fraction
-from decimal import Decimal as StdLibDecimal
-from decimalfp import Decimal
-from .qtybase import (str, bytes, str_types, getUnitBySymbol,
-                      QuantityBase, Unit, QuantityError,
+from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
 
 __version__ = 0, 7, 0
 
 
-class Quantity(QuantityBase):
-
-    """Base class used to define types of quantities.
-
-    Instances of `Quantity` can be created in two ways, by providing a
-    numerical amount and - optionally - a unit or by providing a string
-    representation of a quantity.
-
-    **1. Form**
-
-    Args:
-        amount: the numerical part of the quantity
-        unit: the quantity's unit (optional)
-
-    `amount` must be of type `number.Real` or be convertable to a
-    `decimalfp.Decimal`. `unit` must be an instance of the :class:`Unit`
-    sub-class corresponding to the :class:`Quantity` sub-class. If no `unit`
-    is given, the reference unit of the :class:`Quantity` sub-class is used
-    (if defined, otherwise a ValueError is raised).
-
-    Returns:
-        instance of called :class:`Quantity` sub-class or instance of the
-            sub-class corresponding to given `unit` if :class:`Quantity` is
-            called
-
-    Raises:
-        TypeError: `amount` is not a Real or Decimal number and can not be
-            converted to a Decimal number
-        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
-            define a reference unit
-        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
-            corresponding to the :class:`Quantity` sub-class
-
-    **2. Form**
-
-    Args:
-        qStr: unicode string representation of a quantity
-        unit: the quantity's unit (optional)
-
-    `qStr` must contain a numerical value and a unit symbol, separated atleast
-    by one blank. Any surrounding white space is ignored. If `unit` is given
-    in addition, the resulting quantity's unit is set to this unit and its
-    amount is converted accordingly.
-
-    Returns:
-        instance of :class:`Quantity` sub-class corresponding to symbol in
-            `qRepr`
-
-    Raises:
-        TypeError: amount given in `qStr` is not a Real or Decimal number and
-            can not be converted to a Decimal number
-        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
-            define a reference unit
-        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
-            corresponding to the :class:`Quantity` sub-class
-        TypeError: a byte string is given that can not be decoded using the
-            standard encoding
-        ValueError: given string does not represent a `Quantity`
-        IncompatibleUnitsError: the unit derived from the symbol given in
-            `qStr` is not compatible with given `unit`
-    """
-
-    __slots__ = ['_amount', '_unit']
-
-    # default format spec used in __format__
-    dfltFormatSpec = '{a} {u}'
-
-    def __new__(cls, amount, unit=None):
-        """Create a `Quantity` instance."""
-        if isinstance(amount, (Decimal, Fraction)):
-            pass
-        elif isinstance(amount, (Integral, StdLibDecimal)):
-            amount = Decimal(amount)      # convert to decimalfp.Decimal
-        elif isinstance(amount, float):
-            try:
-                amount = Decimal(amount)
-            except ValueError:
-                amount = Fraction(amount)
-        elif isinstance(amount, str_types):
-            if isinstance(amount, bytes):
-                try:
-                    qRepr = amount.decode()
-                except UnicodeError:
-                    raise TypeError("Can't decode given bytes using default "
-                                    "encoding.")
-            else:
-                qRepr = amount
-            parts = qRepr.lstrip().split(' ', 1)
-            sAmount = parts[0]
-            try:
-                amount = Decimal(sAmount)
-            except:
-                try:
-                    amount = Fraction(sAmount)
-                except:
-                    raise TypeError("Can't convert '%s' to a number."
-                                    % sAmount)
-            if len(parts) > 1:
-                sSym = parts[1].strip()
-                unitFromSym = getUnitBySymbol(sSym)
-                if unitFromSym:
-                    if unit is None:
-                        unit = unitFromSym
-                    else:
-                        amount *= unit(unitFromSym)
-                else:
-                    raise ValueError("Unknown symbol '%s'." % sSym)
-        else:
-            raise TypeError('Given amount must be a number or a string that '
-                            'can be converted to a number.')
-        if unit is None:
-            unit = cls.refUnit
-            if unit is None:
-                raise ValueError("A unit must be given.")
-        if cls is Quantity:
-            cls = unit.Quantity
-        if not isinstance(unit, cls.Unit):
-            raise TypeError("Given unit '%s' is not a '%s'."
-                            % (unit, cls.Unit.__name__))
-        qty = super(QuantityBase, cls).__new__(cls)
-        qty._amount = amount
-        qty._unit = unit
-        return qty
-
-    @classmethod
-    def getUnitBySymbol(cls, symbol):
-        """Return the unit with symbol `symbol`.
-
-        Args:
-            symbol (str): symbol to look-up
-
-        Returns:
-            :class:`Unit` sub-class: if a unit with given `symbol` exists
-                within the :class:`Unit` sub-class associated with this
-                :class:`Quantity` sub-class
-            None: otherwise
-        """
-        return cls.Unit._symDict.get(symbol)
-
-    # pickle support
-    def __reduce__(self):
-        return (Quantity, (str(self),))
-
-    @property
-    def amount(self):
-        """The quantity's amount, i.e. the numerical part of the quantity."""
-        return self._amount
-
-    @property
-    def unit(self):
-        """The quantity's unit."""
-        return self._unit
-
-    def equivAmount(self, unit):
-        """Return amount e so that e ^ `unit` == self."""
-        return unit(self)
+# defined here in order to reduce pickle foot-print
+def r(qRepr):
+    """Reconstruct quantity from string representation."""
+    return Quantity(qRepr)
 
 
 __all__ = ['Quantity',

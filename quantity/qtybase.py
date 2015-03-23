@@ -23,6 +23,7 @@ from numbers import Integral, Real
 from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
+import quantity
 from .term import Term
 from .converter import RefUnitConverter
 
@@ -757,14 +758,129 @@ class Unit(QTermElem):
         return format(self.symbol, fmtSpec)
 
 
-class QuantityBase(QTermElem):
+class Quantity(QTermElem):
 
-    """Abstract base class for `Quantity`."""
+    """Base class used to define types of quantities.
 
-    __slots__ = []
+    Instances of `Quantity` can be created in two ways, by providing a
+    numerical amount and - optionally - a unit or by providing a string
+    representation of a quantity.
+
+    **1. Form**
+
+    Args:
+        amount: the numerical part of the quantity
+        unit: the quantity's unit (optional)
+
+    `amount` must be of type `number.Real` or be convertable to a
+    `decimalfp.Decimal`. `unit` must be an instance of the :class:`Unit`
+    sub-class corresponding to the :class:`Quantity` sub-class. If no `unit`
+    is given, the reference unit of the :class:`Quantity` sub-class is used
+    (if defined, otherwise a ValueError is raised).
+
+    Returns:
+        instance of called :class:`Quantity` sub-class or instance of the
+            sub-class corresponding to given `unit` if :class:`Quantity` is
+            called
+
+    Raises:
+        TypeError: `amount` is not a Real or Decimal number and can not be
+            converted to a Decimal number
+        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
+            define a reference unit
+        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
+            corresponding to the :class:`Quantity` sub-class
+
+    **2. Form**
+
+    Args:
+        qStr: unicode string representation of a quantity
+        unit: the quantity's unit (optional)
+
+    `qStr` must contain a numerical value and a unit symbol, separated atleast
+    by one blank. Any surrounding white space is ignored. If `unit` is given
+    in addition, the resulting quantity's unit is set to this unit and its
+    amount is converted accordingly.
+
+    Returns:
+        instance of :class:`Quantity` sub-class corresponding to symbol in
+            `qRepr`
+
+    Raises:
+        TypeError: amount given in `qStr` is not a Real or Decimal number and
+            can not be converted to a Decimal number
+        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
+            define a reference unit
+        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
+            corresponding to the :class:`Quantity` sub-class
+        TypeError: a byte string is given that can not be decoded using the
+            standard encoding
+        ValueError: given string does not represent a `Quantity`
+        IncompatibleUnitsError: the unit derived from the symbol given in
+            `qStr` is not compatible with given `unit`
+    """
+
+    __slots__ = ['_amount', '_unit']
 
     # default format spec used in __format__
-    dfltFormatSpec = ''
+    dfltFormatSpec = '{a} {u}'
+
+    def __new__(cls, amount, unit=None):
+        """Create a `Quantity` instance."""
+        if isinstance(amount, (Decimal, Fraction)):
+            pass
+        elif isinstance(amount, (Integral, StdLibDecimal)):
+            amount = Decimal(amount)      # convert to decimalfp.Decimal
+        elif isinstance(amount, float):
+            try:
+                amount = Decimal(amount)
+            except ValueError:
+                amount = Fraction(amount)
+        elif isinstance(amount, str_types):
+            if isinstance(amount, bytes):
+                try:
+                    qRepr = amount.decode()
+                except UnicodeError:
+                    raise TypeError("Can't decode given bytes using default "
+                                    "encoding.")
+            else:
+                qRepr = amount
+            parts = qRepr.lstrip().split(' ', 1)
+            sAmount = parts[0]
+            try:
+                amount = Decimal(sAmount)
+            except:
+                try:
+                    amount = Fraction(sAmount)
+                except:
+                    raise TypeError("Can't convert '%s' to a number."
+                                    % sAmount)
+            if len(parts) > 1:
+                sSym = parts[1].strip()
+                unitFromSym = getUnitBySymbol(sSym)
+                if unitFromSym:
+                    if unit is None:
+                        unit = unitFromSym
+                    else:
+                        amount *= unit(unitFromSym)
+                else:
+                    raise ValueError("Unknown symbol '%s'." % sSym)
+        else:
+            raise TypeError('Given amount must be a number or a string that '
+                            'can be converted to a number.')
+        if unit is None:
+            unit = cls.refUnit
+            if unit is None:
+                raise ValueError("A unit must be given.")
+        if cls is Quantity:
+            cls = unit.Quantity
+        if not isinstance(unit, cls.Unit):
+            raise TypeError("Given unit '%s' is not a '%s'."
+                            % (unit, cls.Unit.__name__))
+        qty = super(QTermElem, cls).__new__(cls)
+        qty._amount = amount
+        qty._unit = unit
+        return qty
 
     @classmethod
     def _fromQTerm(cls, qTerm):
@@ -798,21 +914,21 @@ class QuantityBase(QTermElem):
                 :class:`Quantity` sub-class
             None: otherwise
         """
-        return None
+        return cls.Unit._symDict.get(symbol)
 
     @property
     def amount(self):
         """The quantity's amount, i.e. the numerical part of the quantity."""
-        return NotImplementedError
+        return self._amount
 
     @property
     def unit(self):
-        """Return the unit of the quantity."""
-        return NotImplementedError
+        """The quantity's unit."""
+        return self._unit
 
     def equivAmount(self, unit):
         """Return amount e so that e ^ `unit` == self."""
-        return NotImplemented
+        return unit(self)
 
     def convert(self, toUnit):
         """Return quantity q where q == self and q.unit is toUnit.
@@ -841,7 +957,7 @@ class QuantityBase(QTermElem):
         """Compare self and other using operator op."""
         if isinstance(other, self.Quantity):
             return op(self.amount, other.equivAmount(self.unit))
-        elif isinstance(other, QuantityBase):
+        elif isinstance(other, Quantity):
             raise IncompatibleUnitsError("Can't compare a %s and a %s",
                                          self, other)
         return NotImplemented
@@ -867,7 +983,7 @@ class QuantityBase(QTermElem):
         if isinstance(other, self.Quantity):
             return self.Quantity(self.amount + other.equivAmount(self.unit),
                                  self.unit)
-        elif isinstance(other, QuantityBase):
+        elif isinstance(other, Quantity):
             raise IncompatibleUnitsError("Can't add a '%s' and a '%s'",
                                          self, other)
         return NotImplemented
@@ -880,7 +996,7 @@ class QuantityBase(QTermElem):
         if isinstance(other, self.Quantity):
             return self.Quantity(self.amount - other.equivAmount(self.unit),
                                  self.unit)
-        elif isinstance(other, QuantityBase):
+        elif isinstance(other, Quantity):
             raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'",
                                          other, self)
         return NotImplemented
@@ -890,7 +1006,7 @@ class QuantityBase(QTermElem):
         if isinstance(other, self.Quantity):
             return self.Quantity(other.amount - self.equivAmount(other.unit),
                                  other.unit)
-        elif isinstance(other, QuantityBase):
+        elif isinstance(other, Quantity):
             raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'",
                                          self, other)
         return NotImplemented
@@ -915,7 +1031,7 @@ class QuantityBase(QTermElem):
         """self * other"""
         if isinstance(other, NUM_TYPES):
             return self.Quantity(self.amount * other, self.unit)
-        elif isinstance(other, QuantityBase):
+        elif isinstance(other, Quantity):
             resQtyCls = self._getResQtyCls(other, operator.mul)
             resQTerm = (self.amount * other.amount) * (self.unit * other.unit)
             if resQtyCls is _Unitless:
@@ -933,7 +1049,7 @@ class QuantityBase(QTermElem):
             return self.Quantity(self.amount / other, self.unit)
         if isinstance(other, self.Quantity):
             return self.amount / other.equivAmount(self.unit)
-        elif isinstance(other, QuantityBase):
+        elif isinstance(other, Quantity):
             resQtyCls = self._getResQtyCls(other, operator.truediv)
             resQTerm = (self.amount / other.amount) * (self.unit / other.unit)
             if resQtyCls is _Unitless:
@@ -1011,6 +1127,10 @@ class QuantityBase(QTermElem):
             fmtSpec = self.dfltFormatSpec
         return fmtSpec.format(a=self.amount, u=self.unit)
 
+    # pickle support
+    def __reduce__(self):
+        return (quantity.r, (str(self),))
+
 
 class _Unitless:
 
@@ -1029,7 +1149,7 @@ class _Unitless:
 
     def __div__(self, other):
         """self / other"""
-        if isinstance(other, QuantityBase):
+        if isinstance(other, Quantity):
             op = operator.truediv
             resQtyDef = op(other.Quantity._QClsDefinition(),
                            other.Quantity.clsDefinition)
