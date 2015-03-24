@@ -180,6 +180,8 @@ class Test1_MetaQTerm(unittest.TestCase):
         self.assertRaises(TypeError, X, 'a')
         self.assertRaises(TypeError, X, 5, y)
         self.assertTrue(Q.refUnit is None)
+        self.assertFalse(hasattr(u1, '__dict__'))
+        self.assertFalse(hasattr(Q(2, u1), '__dict__'))
 
     def testQuantityReg(self):
         self.assertTrue(_registry.getQuantityCls(X.clsDefinition) is X)

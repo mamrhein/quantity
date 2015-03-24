@@ -222,8 +222,15 @@ class MetaQTerm(type):
             """Return sort key for qCls."""
             return qCls.Quantity._regIdx
 
+    def __new__(cls, name, bases, clsdict):
+        # prevent __dict__ from being built for subclasses of Quantity or Unit
+        try:
+            clsdict['__slots__']
+        except KeyError:
+            clsdict['__slots__'] = ()
+        return type.__new__(cls, name, bases, clsdict)
+
     def __init__(self, name, bases, clsdict):
-        #TODO: prevent __dict__ from being created for sub-classes
         type.__init__(self, name, bases, clsdict)
         try:
             self._clsDefinition = self.defineAs
