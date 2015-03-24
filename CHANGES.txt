@@ -1,5 +1,8 @@
 Version     Changes
 ------------------------------------------------------------------------------
-0.7.1       Added 'install_requires' to setup.py
+0.7.1       Added 'install_requires' to setup.py.
+            Corrected unit of 'Kelvin' in doc and README.
+            Added method 'Quantity.quantize'.
+            Enhanced method 'Quantity.__round__': round to quantity or unit.
 
-0.7.0       First public release
+0.7.0       First public release.
