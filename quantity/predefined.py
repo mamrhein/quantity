@@ -466,6 +466,7 @@ class DataVolume(Quantity):
     """According to IEEE 1541-2002"""
     refUnitName = 'Byte'
     refUnitSymbol = 'B'
+    quantum = 1
 
 BYTE = DataVolume.refUnit
 

@@ -28,7 +28,7 @@ from .term import Term
 from .converter import RefUnitConverter
 
 
-__version__ = 0, 7, 1
+__version__ = 0, 7, 2
 
 __metaclass__ = type
 
@@ -262,15 +262,20 @@ class MetaQTerm(type):
                                                 {'Quantity': self,
                                                 'defineAs': unitClsDef})
                 # create and register reference unit
-                symbol = clsdict.get('refUnitSymbol')
-                name = clsdict.get('refUnitName')
+                try:
+                    symbol = clsdict['refUnitSymbol']
+                    del clsdict['refUnitSymbol']
+                except KeyError:
+                    symbol = None
+                try:
+                    name = clsdict['refUnitName']
+                    del clsdict['refUnitName']
+                except KeyError:
+                    name = None
                 if symbol or self._refUnitDef:
                     unitCls._refUnit = unitCls(symbol, name)
                     # register reference unit converter
                     unitCls.registerConverter(RefUnitConverter())
-                    # set Quantity.refUnitSymbol if not given
-                    if not symbol:
-                        self.refUnitSymbol = unitCls._refUnit.symbol
         # new Unit class:
         elif 'Unit' in baseNames:
             # add reference to self
@@ -308,8 +313,24 @@ class MetaQTerm(type):
 
     @property
     def refUnit(self):
+        """The reference unit of the :class:`Quantity` or :class:`Unit`
+        sub-class, if defined, otherwise None."""
         try:
             return self.Unit.__dict__.get('_refUnit')
+        except AttributeError:
+            return None
+
+    @property
+    def refUnitSymbol(self):
+        try:
+            return self.refUnit.symbol
+        except AttributeError:
+            return None
+
+    @property
+    def refUnitName(self):
+        try:
+            return self.refUnit.name
         except AttributeError:
             return None
 
