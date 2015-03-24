@@ -28,7 +28,7 @@ from .term import Term
 from .converter import RefUnitConverter
 
 
-__version__ = 0, 7, 0
+__version__ = 0, 7, 1
 
 __metaclass__ = type
 
@@ -653,30 +653,46 @@ class Unit(QTermElem):
     def __hash__(self):
         return hash((self.Quantity.__name__, self.symbol))
 
-    def __call__(self, qty):
-        """Return number f so that type(qty)(f, self) == qty.
+    def __call__(self, equiv):
+        """Return scaling factor to make `self` equivalent to `equiv`.
 
-        Raises IncompatibleUnitsError if conversion not possible."""
-        if qty.unit is self:            # same unit
-            return qty.amount
-        if self.Unit != qty.Unit:       # different Unit classes
+        Args:
+            equiv (:class:`Quantity` or :class:`Unit`): equivalent looked for
+
+        Returns:
+            factor (number): scaling factor so that factor ^ self == equiv, if
+                equiv is a quantity, or factor ^ self == 1 ^ equiv, if equiv
+                is a unit
+
+        Raises:
+            IncompatibleUnitsError: conversion not possible
+            TypeError: no :class:`Quantity` or :class:`Unit` instance given
+        """
+        try:
+            oUnit = equiv.unit
+        except AttributeError:
+            raise TypeError("A '%s' or a '%s' must be given, not a '%s'."
+                            % (self.Quantity, self.Unit, type(equiv)))
+        if oUnit is self:                   # same unit
+            return equiv.amount
+        if self.Unit != equiv.Unit:         # different Unit classes
             raise IncompatibleUnitsError("Can't convert '%s' to '%s'.",
-                                         qty.Quantity, self.Quantity)
+                                         equiv.Quantity, self.Quantity)
         # try registered converters:
         for conv in self.registeredConverters():
-            amnt = conv(qty, self)
+            amnt = conv(equiv, self)
             if amnt is not None:
                 return amnt
         # if derived Unit class, try to convert base units:
         cls = self.Unit
         if cls.isDerivedQuantity():
-            resDef = (qty.unit.normalizedDefinition /
+            resDef = (equiv.unit.normalizedDefinition /
                       self.normalizedDefinition)
             if len(resDef) <= 1:
-                return qty.amount * resDef.amount
+                return equiv.amount * resDef.amount
         # no success, give up
         raise IncompatibleUnitsError("Can't convert '%s' to '%s'",
-                                     qty.unit.name, self.name)
+                                     equiv.unit.name, self.name)
 
     def __mul__(self, other):
         """self * other"""
@@ -944,6 +960,36 @@ class Quantity(QTermElem):
         """
         return self.Quantity(self.equivAmount(toUnit), toUnit)
 
+    def quantize(self, quant, rounding=None):
+        """Return integer multiple of `quant` closest to `self`.
+
+        Args:
+            quant (:class:`Quantity` or :class:`Unit`): quantum to get a
+                multiple from
+            rounding (str): rounding mode (default: None)
+
+        `quant` must either be of type self.Quantity or of type self.Unit.
+
+        If no `rounding` mode is given, the default mode from the current
+        context (from module `decimal`) is used.
+
+        Returns:
+            :class:`Quantity` sub-class instance that is the integer multiple
+                of `quant` closest to `self` (according to `rounding` mode)
+
+        Raises:
+            IncompatibleUnitsError: `quant` can not be converted to self.unit
+            TypeError: no :class:`Quantity` or :class:`Unit` instance given
+        """
+        numQuant = self.unit(quant)
+        try:
+            amount = self.amount.quantize(numQuant, rounding)
+        except AttributeError:
+            # turn Fraction into Decimal:
+            decAmount = Decimal(self.amount, max(1 - numQuant.magnitude, 0))
+            amount = decAmount.quantize(numQuant, rounding)
+        return self.Quantity(amount, self.unit)
+
     def __eq__(self, other):
         """self == other"""
         if isinstance(other, self.Quantity):
@@ -1080,16 +1126,48 @@ class Quantity(QTermElem):
         resQTerm = self.amount ** exp * self.unit ** exp
         return resQtyCls._fromQTerm(resQTerm)
 
-    # TODO: round to unit:
-    # round(qty, unit) => qty.convert(unit).round().convert(qty.unit)
     def __round__(self, precision=0):
         """Returns a copy of `self` with its amount rounded to the given
         `precision`.
 
+        **1. Form**
+
+        Args:
+            precision (`Integral`): number of fractional digits to be rounded
+                to
+
+        Returns:
+            copy of `self` with its amount rounded to an integer multiple of
+                10 ** `precision`
+
+        **2. Form**
+
+        Args:
+            precision (:class:`Quantity`): quantum of which the result has to
+                be an integer multiple
+
+        Returns:
+            copy of `self` rounded to an integer multiple of `precision`
+
+        **3. Form**
+
+        Args:
+            precision (:class:`Unit`): unit of which the result has to be an
+                integer multiple of
+
+        Returns:
+            copy of `self` rounded to integer multiple of 1 ^ `precision`
+
+        Raises:
+            IncompatibleUnitsError: `precision` is not an Integral and can not
+                be converted to self.unit
+
         Note: this method is called by the standard `round` function only in
         Python 3.x!
         """
-        return self.Quantity(Decimal(self.amount, precision), self.unit)
+        if isinstance(precision, Integral):
+            return self.Quantity(Decimal(self.amount, precision), self.unit)
+        return self.quantize(precision)
 
     def __repr__(self):
         """repr(self)"""

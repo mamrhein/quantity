@@ -19,11 +19,16 @@ from pickle import dumps, loads
 from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
+from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
+    ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
 from quantity import (Quantity, Unit, getUnitBySymbol,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
 from quantity.qtybase import typearg, MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
+
+rounding_modes = [ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP,
+                  ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP]
 
 # Python 2 / Python 3:
 try:
@@ -48,7 +53,7 @@ else:
     PY_VERSION = 3
 
 
-__version__ = 0, 7, 0
+__version__ = 0, 7, 1
 
 
 QTerm = Quantity._QTerm
@@ -454,7 +459,7 @@ class Test3_Quantity(unittest.TestCase):
         self.assertRaises(IncompatibleUnitsError, operator.gt, q3x, q3y)
         self.assertRaises(IncompatibleUnitsError, operator.ge, q3x, q3y)
 
-    def testRounding(self):
+    def testRounding1(self):
         a = Decimal('2.1')
         self.assertEqual(round(X(a)), X(round(a)))
         self.assertEqual(round(X(a, kx)), X(round(a), kx))
@@ -465,6 +470,36 @@ class Test3_Quantity(unittest.TestCase):
         r = round(X(a), 2)
         self.assertEqual(r.amount, Decimal(a, 2))
         self.assertTrue(isinstance(r.amount, Decimal))
+
+    def testQuantization(self):
+        qkx = X('17.8394 kx')
+        self.assertEqual(qkx.quantize(x), X('17.839 kx'))
+        self.assertEqual(qkx.quantize(0.5 ^ x), X('17.8395 kx'))
+        self.assertEqual(qkx.quantize(5 ^ x), X('17.84 kx'))
+        for i in range(-34, 39, 11):
+            d = Decimal(i / 7, 3)
+            for u in (x, kx):
+                q = X(d, u)
+                for rounding in rounding_modes:
+                    self.assertEqual(q.quantize(x, rounding),
+                                     d.quantize(u(x), rounding) ^ u)
+        for i in range(-34, 39, 11):
+            f = Fraction(i, 7)
+            d = Decimal(f, 15)
+            for u in (x, kx):
+                q = X(f, u)
+                for rounding in rounding_modes:
+                    self.assertEqual(q.quantize(x, rounding),
+                                     d.quantize(u(x), rounding) ^ u)
+
+    def testRounding2(self):
+        qkx = X('17.8394 kx')
+        self.assertEqual(round(qkx, x), X('17.839 kx'))
+        self.assertEqual(round(qkx, 0.5 ^ x), X('17.8395 kx'))
+        self.assertEqual(round(qkx, 5 ^ x), X('17.84 kx'))
+        a = Fraction(1, 7)
+        r = round(X(a, kx), X('0.01 x'))
+        self.assertEqual(r.amount, Decimal(a, 5))
 
     def testAddition(self):
         self.assertEqual(X(10, Mx), X(9500, kx) + X(500000))

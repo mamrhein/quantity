@@ -46,7 +46,7 @@ Examples:
 * Force = Mass ** 1 * Acceleration ** 1
 
 Each type of quantity may have one special unit which is used as a reference
-for the definition of all other units, for example Meter, Kilogram and
+for the definition of all other units, for example Metre, Kilogram and
 Second. The other units are then defined by their relation to the reference
 unit.
 
@@ -56,11 +56,11 @@ that follows the formula defining the type of quantity.
 
 Examples:
 
-* Velocity -> Meter per Second = Meter ** 1 * Second ** -1
+* Velocity -> Metre per Second = Metre ** 1 * Second ** -1
 
-* Acceleration -> Meter per Second squared = Meter ** 1 * Second ** -2
+* Acceleration -> Metre per Second squared = Metre ** 1 * Second ** -2
 
-* Force -> Newton = Kilogram ** 1 * Meter ** 1 * Second ** -2
+* Force -> Newton = Kilogram ** 1 * Metre ** 1 * Second ** -2
 
 
 "Systems of measure"
@@ -102,7 +102,7 @@ and a symbol for it as class variables. The meta-class of :class:`Quantity`
 will then create a unit automatically:
 
     >>> class Length(Quantity):
-    ...     refUnitName = 'Meter'
+    ...     refUnitName = 'Metre'
     ...     refUnitSymbol = 'm'
     ...
     >>> Length.refUnit
@@ -110,8 +110,8 @@ will then create a unit automatically:
 
 Now, this unit can be given to create a quantity:
 
-    >>> METER = Length.refUnit
-    >>> print(Length(15, METER))
+    >>> METRE = Length.refUnit
+    >>> print(Length(15, METRE))
     15 m
 
 If no unit is given, the reference unit is used:
@@ -122,14 +122,14 @@ If no unit is given, the reference unit is used:
 Other units can be derived from the reference unit (or another unit), giving
 a definition by multiplying a scaling factor with that unit:
 
-    >>> MILLIMETER = Length.Unit('mm', 'Millimeter', Decimal('0.001') * METER)
-    >>> MILLIMETER
+    >>> MILLIMETRE = Length.Unit('mm', 'Millimetre', Decimal('0.001') * METRE)
+    >>> MILLIMETRE
     Length.Unit('mm')
-    >>> KILOMETER = Length.Unit('km', 'Kilometer', 1000 * METER)
-    >>> KILOMETER
+    >>> KILOMETRE = Length.Unit('km', 'Kilometre', 1000 * METRE)
+    >>> KILOMETRE
     Length.Unit('km')
-    >>> CENTIMETER = Length.Unit('cm', 'Centimeter', 10 * MILLIMETER)
-    >>> CENTIMETER
+    >>> CENTIMETRE = Length.Unit('cm', 'Centimetre', 10 * MILLIMETRE)
+    >>> CENTIMETRE
     Length.Unit('cm')
 
 Using one unit as a reference and defining all other units by giving
@@ -149,7 +149,7 @@ more basic types of quantities:
 
     >>> class Volume(Quantity):
     ...     defineAs = Length ** 3
-    ...     refUnitName = 'Cubic Meter'
+    ...     refUnitName = 'Cubic Metre'
     ...
     >>> class Duration(Quantity):
     ...     refUnitName = 'Second'
@@ -157,7 +157,7 @@ more basic types of quantities:
     ...
     >>> class Velocity(Quantity):
     ...     defineAs = Length / Duration
-    ...     refUnitName = 'Meter per Second'
+    ...     refUnitName = 'Metre per Second'
     ...
 
 If no symbol for the reference unit is given with the class declaration, a
@@ -176,7 +176,7 @@ The simplest way to create an instance of a :class:`Quantity` subclass is to
 call the class giving an amount and a unit. If the unit is omitted, the
 quantity's reference unit is used (if one is defined).
 
-    >>> Length(15, MILLIMETER)
+    >>> Length(15, MILLIMETRE)
     Length(Decimal(15), Length.Unit(u'mm'))
     >>> Length(15)
     Length(Decimal(15))
@@ -184,7 +184,7 @@ quantity's reference unit is used (if one is defined).
 Alternatively, the two-args infix operator '^' can be used to combine an
 amount and a unit:
 
-    >>> 17.5 ^ KILOMETER
+    >>> 17.5 ^ KILOMETRE
     Length(Decimal('17.5'), Length.Unit(u'km'))
 
 Also, it's possible to create a :class:`Quantity` instance from a string
@@ -196,13 +196,13 @@ representation:
 If a unit is given in addition, the resulting quantity is converted
 accordingly:
 
-    >>> Length('17 m', KILOMETER)
+    >>> Length('17 m', KILOMETRE)
     Length(Decimal('0.017'), Length.Unit(u'km'))
 
 Instead of calling a subclass, the class :class:`Quantity` can be used as a
 factory function ...
 
-    >>> Quantity(15, MILLIMETER)
+    >>> Quantity(15, MILLIMETRE)
     Length(Decimal(15), Length.Unit(u'mm'))
     >>> Quantity('17.5 km')
     Length(Decimal('17.5'), Length.Unit(u'km'))
@@ -218,18 +218,18 @@ Converting between units
 A quantity can be converted to a quantity using a different unit by calling
 the method :meth:`Quantity.convert`:
 
-    >>> l5cm = Length(Decimal(5), CENTIMETER)
-    >>> l5cm.convert(MILLIMETER)
+    >>> l5cm = Length(Decimal(5), CENTIMETRE)
+    >>> l5cm.convert(MILLIMETRE)
     Length(Decimal('50'), Length.Unit('mm'))
-    >>> l5cm.convert(KILOMETER)
+    >>> l5cm.convert(KILOMETRE)
     Length(Decimal('0.00005'), Length.Unit('km'))
 
 To get just the amount of a quantity in another unit, that unit can be called
 with the quantity as parameter:
 
-    >>> MILLIMETER(l5cm)
+    >>> MILLIMETRE(l5cm)
     Decimal('50')
-    >>> KILOMETER(l5cm)
+    >>> KILOMETRE(l5cm)
     Decimal('0.00005')
 
 These kinds of conversion are automatically enabled for types of quantities
@@ -315,7 +315,7 @@ defined for numbers:
 Different units are taken in to account automatically, as long as they are
 compatible, i. e. a conversion is available:
 
-    >>> Length(27, METER) <= Length(91, CENTIMETER)
+    >>> Length(27, METRE) <= Length(91, CENTIMETRE)
     False
     >>> Temperature(20, CELSIUS) > Temperature(20, FAHRENHEIT)
     True
@@ -350,9 +350,9 @@ Quantities can be added to or subtracted from other quantities ...
 When quantities with different units are added or subtracted, the values are
 converted to the unit of the first, if possible ...:
 
-    >>> Length(27) + Length(12, CENTIMETER)
+    >>> Length(27) + Length(12, CENTIMETRE)
     Length(Decimal('27.12'))
-    >>> Length(12, CENTIMETER) + Length(17, METER)
+    >>> Length(12, CENTIMETRE) + Length(17, METRE)
     Length(Decimal('1712'), Length.Unit('cm'))
     >>> Temperature(20, CELSIUS) - Temperature(50, FAHRENHEIT)
     Temperature(Decimal('10'), Temperature.Unit(u'\xb0C'))
@@ -367,27 +367,27 @@ Multiplication and division
 
 Quantities can be multiplied or divided by scalars, preserving the unit ...:
 
-    >>> 7.5 * Length(3, CENTIMETER)
+    >>> 7.5 * Length(3, CENTIMETRE)
     Length(Decimal('22.5'), Length.Unit(u'cm'))
     >>> Duration(66, MINUTE) / 11
     Duration(Decimal(6), Duration.Unit(u'min'))
 
 Quantities can be multiplied or divided by other quantities ...:
 
-    >>> Length(15, METER) / Duration(3, SECOND)
+    >>> Length(15, METRE) / Duration(3, SECOND)
     Velocity(Decimal(5))
 
 ... as long as the resulting type of quantity is defined ...:
 
     >>> Duration(4, SECOND) * Length(7)
     UndefinedResultError: Undefined result: Duration * Length
-    >>> Length(12, KILOMETER) / Duration(2, MINUTE) / Duration(50, SECOND)
+    >>> Length(12, KILOMETRE) / Duration(2, MINUTE) / Duration(50, SECOND)
     UndefinedResultError: Undefined result: Velocity / Duration
     >>> class Acceleration(Quantity):
     ...     defineAs = Length / Duration ** 2
-    ...     refUnitName = 'Meter per Second squared'
+    ...     refUnitName = 'Metre per Second squared'
     ...
-    >>> Length(12, KILOMETER) / Duration(2, MINUTE) / Duration(50, SECOND)
+    >>> Length(12, KILOMETRE) / Duration(2, MINUTE) / Duration(50, SECOND)
     Acceleration(Decimal(2))
 
 ... or the result is a scalar:
@@ -397,13 +397,13 @@ Quantities can be multiplied or divided by other quantities ...:
 
 When cascading operations, all intermediate results have to be defined:
 
-    >>> Length(6, KILOMETER) * Length(13,  METER) * Length(250, METER)
+    >>> Length(6, KILOMETRE) * Length(13,  METRE) * Length(250, METRE)
     UndefinedResultError: Undefined result: Length * Length
     >>> class Area(Quantity):
     ...         defineAs = Length ** 2
-    ...         refUnitName = 'Square Meter'
+    ...         refUnitName = 'Square Metre'
     ...
-    >>> Length(6, KILOMETER) * Length(13,  METER) * Length(250, METER)
+    >>> Length(6, KILOMETRE) * Length(13,  METRE) * Length(250, METRE)
     Volume(Decimal(19500000, 3))
 
 Exponentiation
@@ -412,12 +412,12 @@ Exponentiation
 Quantities can be raised by an exponent, as long as the exponent is an
 `Integral` number and the resulting quantity is defined:
 
-    >>> (5 ^ METER) ** 2
+    >>> (5 ^ METRE) ** 2
     Area(Decimal(25))
-    >>> (5 ^ METER) ** 2.5
+    >>> (5 ^ METRE) ** 2.5
     TypeError: unsupported operand type(s) for ** or pow(): 'Length' and
         'float'
-    >>> (5 ^ METER) ** -2
+    >>> (5 ^ METRE) ** -2
     UndefinedResultError: Undefined result: Length ** -2
 
 Rounding
@@ -429,8 +429,22 @@ function.
 If an Integral is given as precision, a copy of the quanitity is returned,
 with its amount rounded accordingly.
 
-    >>> round(Length(Decimal('17.375'), MILLIMETER), 1)
+    >>> round(Length(Decimal('17.375'), MILLIMETRE), 1)
     Length(Decimal('17.4'), Length.Unit('mm'))
+
+In addition, a unit or a quantity (of the same type) can be given to specify
+the requested precision. The resulting quantity will then be the integer
+multiple of that precision closest to the called quantity.
+
+    >>> round(Length(Decimal('17.375'), METRE), CENTIMETRE)
+    Length(Decimal('17.38'))
+    >>> round(Length(Decimal('17.375'), METRE), Length(5, CENTIMETRE))
+    Length(Decimal('17.4', 2))
+    >>> round(Length(Decimal('17.372'), METRE), Length(5, CENTIMETRE))
+    Length(Decimal('17.35'))
+
+In any case the unit of the resulting quantity will be the same as the unit
+of the called quantity.
 
 .. note::
     This only applies to Python 3.x !!! In Python 2.x the standard `round`
@@ -457,8 +471,7 @@ with its amount rounded accordingly.
     But be aware that this has side-effects if there are other classes
     defining a method named `__round__` !!!
 
-    As a last resort, as :class:`Quantity` defines a
-    :meth:`Quantity.__round__` method, this method can be called directly.
+    As an alternative the method :meth:`Quantity.quantize` can be used.
 
 Formatting as string
 ====================
@@ -490,7 +503,7 @@ from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
 
-__version__ = 0, 7, 0
+__version__ = 0, 7, 1
 
 
 # defined here in order to reduce pickle foot-print
