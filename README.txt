@@ -9,7 +9,6 @@ A **basic** type of quantity is declared just by sub-classing the class
 
     >>> class Length(Quantity):
     ...     pass
-    ...
 
 In addition to the new quantity class the meta-class of class `Quantity`
 creates a corresponding class for the units automatically. It can be
@@ -26,7 +25,6 @@ automatically:
     >>> class Length(Quantity):
     ...     refUnitName = 'Meter'
     ...     refUnitSymbol = 'm'
-    ...
     >>> Length.refUnit
     Length.Unit('m')
 
@@ -61,7 +59,6 @@ without giving a definition.
 
     >>> class Temperature(Quantity):
     ...     pass
-    ...
     >>> CELSIUS = Temperature.Unit('°C', 'Degree Celsius')
     >>> FAHRENHEIT = Temperature.Unit('°F', 'Degree Fahrenheit')
 
@@ -71,15 +68,12 @@ more basic types of quantities:
     >>> class Volume(Quantity):
     ...     defineAs = Length ** 3
     ...     refUnitName = 'Cubic Meter'
-    ...
     >>> class Duration(Quantity):
     ...     refUnitName = 'Second'
     ...     refUnitSymbol = 's'
-    ...
     >>> class Velocity(Quantity):
     ...     defineAs = Length / Duration
     ...     refUnitName = 'Meter per Second'
-    ...
 
 If no symbol for the reference unit is given with the class declaration, a
 symbol is generated from the definition, as long as all types of quantities
@@ -99,8 +93,6 @@ quantity's reference unit is used (if one is defined).
 
     >>> Length(15, MILLIMETER)
     Length(Decimal(15), Length.Unit(u'mm'))
-    >>> Length(15)
-    Length(Decimal(15))
 
 Alternatively, the two-args infix operator '^' can be used to combine an
 amount and a unit:
@@ -112,14 +104,6 @@ Also, it's possible to create a `Quantity` sub-class instance from a string
 representation:
 
     >>> Length('17.5 km')
-    Length(Decimal('17.5'), Length.Unit(u'km'))
-
-Instead of calling a subclass, the class `Quantity` can be used as a
-factory function ...
-
-    >>> Quantity(15, MILLIMETER)
-    Length(Decimal(15), Length.Unit(u'mm'))
-    >>> Quantity('17.5 km')
     Length(Decimal('17.5'), Length.Unit(u'km'))
 
 Unit-safe computations
