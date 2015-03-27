@@ -1,20 +1,22 @@
-from distutils.core import setup, Extension
+from distutils.core import setup
 
 
 with open('README.txt') as file:
     long_description = file.read()
+with open('CHANGES.txt') as file:
+    long_description += file.read()
 
 setup(
     name="quantity",
-    version="0.7.1",
+    version="0.7.2",
     author="Michael Amrhein",
     author_email="michael@adrhinum.de",
     url="https://pypi.python.org/pypi/quantity",
     description="Unit-safe computations with quantities",
     long_description=long_description,
     packages=['quantity'],
-    requires=["decimalfp(>=0.9.10)"],
-    install_requires=["decimalfp>=0.9.10"],
+    requires=["decimalfp(>=0.9.11)"],
+    install_requires=["decimalfp>=0.9.11"],
     license='BSD',
     keywords='quantity unit',
     platforms='all',
