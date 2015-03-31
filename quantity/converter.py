@@ -19,8 +19,6 @@
 
 from __future__ import absolute_import, division, unicode_literals
 
-__version__ = 0, 7, 1
-
 __metaclass__ = type
 
 

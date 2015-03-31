@@ -29,9 +29,6 @@ del sys
 if PY_VERSION < 3:
     str = unicode
 
-
-__version__ = 0, 7, 1
-
 __metaclass__ = type
 
 

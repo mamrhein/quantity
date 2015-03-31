@@ -23,10 +23,6 @@ try:
 except NameError:
     pass
 
-
-__version__ = 0, 7, 1
-
-
 # parse string
 import re
 _pattern = r"""(?P<num>\d*)(?P<base>.*)"""

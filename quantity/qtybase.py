@@ -27,9 +27,6 @@ import quantity
 from .term import Term
 from .converter import RefUnitConverter
 
-
-__version__ = 0, 7, 2
-
 __metaclass__ = type
 
 
@@ -50,6 +47,9 @@ else:
 # because decimal.Decimal is not registered as number, we have to test it
 # explicitly
 NUM_TYPES = (Real, StdLibDecimal)
+
+# decimal 1 constant
+DECIMAL_1 = Decimal(1)
 
 
 # decorator defining meta class, portable between Python 2 / Python 3
@@ -223,6 +223,15 @@ class MetaQTerm(type):
             return qCls.Quantity._regIdx
 
     def __new__(cls, name, bases, clsdict):
+        # hide refUnitSymbol, refUnitName and quantum
+        for key in ['refUnitSymbol', 'refUnitName', 'quantum']:
+            try:
+                val = clsdict[key]
+            except KeyError:
+                pass
+            else:
+                del clsdict[key]
+                clsdict['_' + key] = val
         # prevent __dict__ from being built for subclasses of Quantity or Unit
         try:
             clsdict['__slots__']
@@ -232,11 +241,13 @@ class MetaQTerm(type):
 
     def __init__(self, name, bases, clsdict):
         type.__init__(self, name, bases, clsdict)
+        # hide defineAs
         try:
             self._clsDefinition = self.defineAs
             del self.defineAs
         except AttributeError:
             self._clsDefinition = None
+        # extract names of base classes
         baseNames = [base.__name__ for base in self.__mro__[1:]]
         # new Quantity class:
         if 'Quantity' in baseNames:
@@ -263,19 +274,32 @@ class MetaQTerm(type):
                                                 'defineAs': unitClsDef})
                 # create and register reference unit
                 try:
-                    symbol = clsdict['refUnitSymbol']
-                    del clsdict['refUnitSymbol']
-                except KeyError:
-                    symbol = None
+                    refUnitSymbol = self._refUnitSymbol
+                except AttributeError:
+                    refUnitSymbol = None
                 try:
-                    name = clsdict['refUnitName']
-                    del clsdict['refUnitName']
-                except KeyError:
-                    name = None
-                if symbol or self._refUnitDef:
-                    unitCls._refUnit = unitCls(symbol, name)
+                    refUnitName = self._refUnitName
+                except AttributeError:
+                    refUnitName = None
+                if refUnitSymbol or self._refUnitDef:
+                    unitCls._refUnit = unitCls(refUnitSymbol, refUnitName)
                     # register reference unit converter
                     unitCls.registerConverter(RefUnitConverter())
+            # check quantum
+            try:
+                quantum = self._quantum
+            except AttributeError:
+                pass
+            else:
+                if self.refUnit:
+                    try:
+                        self._quantum = Decimal(quantum)
+                    except (ValueError, TypeError):
+                        raise TypeError("'quantum' must be a Decimal or be "
+                                        "convertable to a Decimal.")
+                else:
+                    raise TypeError("A quantum can only be defined in "
+                                    "combination with a reference unit.")
         # new Unit class:
         elif 'Unit' in baseNames:
             # add reference to self
@@ -342,6 +366,15 @@ class MetaQTerm(type):
         if any((qtyCls.refUnit is None for qtyCls, exp in qtyDef)):
             return None
         return self._QTerm(((qtyCls.refUnit, exp) for qtyCls, exp in qtyDef))
+
+    @property
+    def quantum(self):
+        """The smallest amount (in terms of the reference unit) an instance of
+        this :class:`Quantity` can take (None if quantum not defined)."""
+        try:
+            return self._quantum
+        except AttributeError:
+            return None
 
     def __mul__(self, other):
         """self * other"""
@@ -431,7 +464,7 @@ class QTermElem:
 
         @property
         def amount(self):
-            return self._numElem or Decimal(1)
+            return self._numElem or DECIMAL_1
 
         @property
         def unitTerm(self):
@@ -641,7 +674,7 @@ class Unit(QTermElem):
 
     @property
     def amount(self):
-        return Decimal(1)
+        return DECIMAL_1
 
     @property
     def unit(self):
@@ -921,7 +954,13 @@ class Quantity(QTermElem):
         if not isinstance(unit, cls.Unit):
             raise TypeError("Given unit '%s' is not a '%s'."
                             % (unit, cls.Unit.__name__))
+        # make raw instance
         qty = super(QTermElem, cls).__new__(cls)
+        # check whether it should be quantized
+        quantum = cls.getQuantum(unit)
+        if quantum:
+            amount = cls._quantize(amount / quantum, unit) * quantum
+        # finally set amount and unit
         qty._amount = amount
         qty._unit = unit
         return qty
@@ -959,6 +998,28 @@ class Quantity(QTermElem):
             None: otherwise
         """
         return cls.Unit._symDict.get(symbol)
+
+    @staticmethod
+    def _quantize(amount, unit, quant=None, rounding=None):
+        if quant is None:
+            numQuant = DECIMAL_1
+        else:
+            numQuant = unit(quant)
+        try:
+            return amount.quantize(numQuant, rounding)
+        except AttributeError:
+            # turn Fraction into Decimal:
+            decAmount = Decimal(amount, max(1 - numQuant.magnitude, 0))
+            return decAmount.quantize(numQuant, rounding)
+
+    @classmethod
+    def getQuantum(cls, unit):
+        """Return the smallest amount an instance of this :class:`Quantity`
+        can take for `unit` (return None if no quantum defined)."""
+        quantum = cls.quantum
+        if quantum is None:
+            return None
+        return quantum * unit(cls.refUnit)
 
     @property
     def amount(self):
@@ -1009,14 +1070,9 @@ class Quantity(QTermElem):
             IncompatibleUnitsError: `quant` can not be converted to self.unit
             TypeError: no :class:`Quantity` or :class:`Unit` instance given
         """
-        numQuant = self.unit(quant)
-        try:
-            amount = self.amount.quantize(numQuant, rounding)
-        except AttributeError:
-            # turn Fraction into Decimal:
-            decAmount = Decimal(self.amount, max(1 - numQuant.magnitude, 0))
-            amount = decAmount.quantize(numQuant, rounding)
-        return self.Quantity(amount, self.unit)
+        unit = self.unit
+        amount = self._quantize(self.amount, unit, quant, rounding)
+        return self.Quantity(amount, unit)
 
     def __eq__(self, other):
         """self == other"""

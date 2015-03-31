@@ -10,6 +10,7 @@ Version     Changes
             Made 'refUnitSymbol' and 'refUnitName' read-only properties.
             Added class property 'quantum' as option to define quantized
             quantities.
+            Removed '__version__' from all sub-modules.
 
 0.7.1       Added 'install_requires' to setup.py.
             Corrected unit of 'Kelvin' in doc and README.

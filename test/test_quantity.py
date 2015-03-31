@@ -53,9 +53,6 @@ else:
     PY_VERSION = 3
 
 
-__version__ = 0, 7, 1
-
-
 QTerm = Quantity._QTerm
 
 
@@ -154,6 +151,16 @@ u1px = QpX.Unit('u1/x')
 u2pkx = QpX.Unit('u2/kx')
 
 
+# quantized quantity
+class T(Quantity):
+    refUnitSymbol = 't'
+    refUnitName = 't1'
+    quantum = '0.02'
+
+t = T.refUnit
+kt = T.Unit('kt', 't1k', Decimal(1000) * t)
+
+
 class Test1_MetaQTerm(unittest.TestCase):
 
     def testConstructor(self):
@@ -182,6 +189,11 @@ class Test1_MetaQTerm(unittest.TestCase):
         self.assertTrue(Q.refUnit is None)
         self.assertFalse(hasattr(u1, '__dict__'))
         self.assertFalse(hasattr(Q(2, u1), '__dict__'))
+        for attr in ['refUnitSymbol', 'refUnitName', 'quantum']:
+            self.assertTrue(hasattr(T, attr))
+            self.assertRaises(AttributeError, setattr, X, attr, 'a')
+        self.assertEqual(T.quantum, Decimal('0.02'))
+        self.assertEqual(X.quantum, None)
 
     def testQuantityReg(self):
         self.assertTrue(_registry.getQuantityCls(X.clsDefinition) is X)
@@ -367,6 +379,12 @@ class Test3_Quantity(unittest.TestCase):
         self.assertRaises(TypeError, X, 'x')
         self.assertRaises(ValueError, Q, 5)
         self.assertRaises(ValueError, Quantity, 5)
+        for i in range(-34, 39, 11):
+            f = Fraction(i, 7)
+            d = Decimal(f, 20)
+            for u in (t, kt):
+                q = T(f, u)
+                self.assertEqual(q.amount, d.quantize(T.quantum * u(t)))
 
     def testAlternateConstructor(self):
         q3x = 3 ^ x
@@ -493,6 +511,10 @@ class Test3_Quantity(unittest.TestCase):
                 for rounding in rounding_modes:
                     self.assertEqual(q.quantize(x, rounding),
                                      d.quantize(u(x), rounding) ^ u)
+        for u in [t, kt]:
+            q = T(10, u) / 3
+            d = Decimal(Fraction(10, 3), 20)
+            self.assertEqual(q.amount, d.quantize(T.quantum * u(t)))
 
     def testRounding2(self):
         qkx = X('17.8394 kx')

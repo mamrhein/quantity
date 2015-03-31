@@ -169,6 +169,21 @@ in that definition have a reference unit.
     >>> print(Velocity.refUnit.symbol)
     m/s
 
+In order to define a **quantized** quantity, the smallest possible fraction
+(in terms of the reference unit) can be given as class variable `quantum`. The
+class method :meth:`Quantity.getQuantum` can then be used to retrieve to
+smallest fraction for any unit.
+
+    >>> class DataVolume(Quantity):
+    ...     refUnitName = 'Byte'
+    ...     refUnitSymbol = 'B'
+    ...     quantum = Fraction(1, 8)
+    ...
+    >>> BYTE = DataVolume.refUnit
+    >>> KILOBYTE = DataVolume.Unit('kB', 'Kilobyte', Decimal(1000) * BYTE)
+    >>> DataVolume.getQuantum(KILOBYTE)
+    Decimal('0.000125')
+
 Instantiating quantities
 ========================
 
@@ -211,6 +226,12 @@ factory function ...
 
     >>> Quantity(17.5)
     ValueError: A unit must be given.
+
+If the :class:`Quantity` subclass defines a `quantum`, the amount of each
+instance is automatically rounded to this quantum.
+
+    >>> DataVolume('1/7', KILOBYTE)
+    DataVolume(Decimal('0.142875'), DataVolume.Unit('kB'))
 
 Converting between units
 ========================
@@ -503,7 +524,7 @@ from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
 
-__version__ = 0, 7, 1
+__version__ = 0, 7, 2
 
 
 # defined here in order to reduce pickle foot-print

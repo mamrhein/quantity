@@ -295,9 +295,6 @@ from fractions import Fraction
 from decimalfp import Decimal
 from . import Quantity, TableConverter
 
-
-__version__ = 0, 7, 1
-
 __metaclass__ = type
 
 
@@ -466,7 +463,7 @@ class DataVolume(Quantity):
     """According to IEEE 1541-2002"""
     refUnitName = 'Byte'
     refUnitSymbol = 'B'
-    quantum = 1
+    quantum = Fraction(1, 8)
 
 BYTE = DataVolume.refUnit
 
