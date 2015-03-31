@@ -166,16 +166,5 @@ Quantities can be multiplied or divided by other quantities ...:
     >>> Duration(2, MINUTE) / Duration(50, SECOND)
     Decimal('2.4')
 
-Quantities can be raised by an exponent, as long as the exponent is an
-`Integral` number and the resulting quantity is defined:
-
-    >>> (5 ^ METER) ** 2
-    Area(Decimal(25))
-    >>> (5 ^ METER) ** 2.5
-    TypeError: unsupported operand type(s) for ** or pow(): 'Length' and
-        'float'
-    >>> (5 ^ METER) ** -2
-    UndefinedResultError: Undefined result: Length ** -2
-
 For more details see the documentation provided with the source distribution
 or `here <http://pythonhosted.org/quantity>`_.
