@@ -721,9 +721,9 @@ class Unit(QTermElem):
             equiv (:class:`Quantity` or :class:`Unit`): equivalent looked for
 
         Returns:
-            factor (number): scaling factor so that factor ^ self == equiv, if
-                equiv is a quantity, or factor ^ self == 1 ^ equiv, if equiv
-                is a unit
+            number: scaling factor so that (depending on type of `equiv`)
+                factor ^ self == equiv or
+                factor ^ self == 1 ^ equiv
 
         Raises:
             IncompatibleUnitsError: conversion not possible
