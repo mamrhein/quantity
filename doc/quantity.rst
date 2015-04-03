@@ -33,6 +33,7 @@ Functions
 ---------
 
 .. autofunction:: getUnitBySymbol
+.. autofunction:: sum
 
 Exceptions
 ----------

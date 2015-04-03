@@ -520,6 +520,10 @@ used.
 """
 
 from __future__ import absolute_import, unicode_literals
+try:
+    from builtins import sum as builtin_sum
+except ImportError:
+    from __builtin__ import sum as builtin_sum
 from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
@@ -533,9 +537,36 @@ def r(qRepr):
     return Quantity(qRepr)
 
 
+def sum(sequence, start=None):
+    """sum(sequence[, start]) -> value
+
+    Args:
+        sequence: iterable of numbers or number-like objects (NOT strings)
+        start: starting value to be added (default: None)
+
+    Returns:
+        sum of all elements in `sequence` plus the value of `start` (if not
+        None). When `sequence` is empty, returns `start`, if not None,
+        otherwise 0.
+
+    In contrast to the built-in function 'sum' this allows to sum sequences of
+    number-like objects (like quantities) without having to provide a start
+    value.
+    """
+    it = iter(sequence)
+    if start is None:
+        try:
+            start = next(it)
+        except StopIteration:
+            # return 0 in order to be backwards compatible
+            return 0
+    return builtin_sum(it, start)
+
+
 __all__ = ['Quantity',
            'Unit',
            'getUnitBySymbol',
+           'sum',
            'QuantityError',
            'IncompatibleUnitsError',
            'UndefinedResultError',

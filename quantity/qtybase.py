@@ -186,7 +186,7 @@ _registry = QuantityRegistry()
 
 
 def getUnitBySymbol(symbol):
-    """Return the unit with symbol `symbol`.
+    """getUnitBySymbol(symbol) -> unit
 
     Args:
         symbol (str): symbol to look-up

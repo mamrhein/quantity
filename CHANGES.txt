@@ -5,6 +5,8 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
+0.7.3       Added function 'sum'.
+
 0.7.2       Prevent __dict__ from being built for subclasses of Quantity or
             Unit.
             Made 'refUnitSymbol' and 'refUnitName' read-only properties.

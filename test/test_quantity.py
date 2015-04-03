@@ -21,7 +21,7 @@ from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
 from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
     ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
-from quantity import (Quantity, Unit, getUnitBySymbol,
+from quantity import (Quantity, Unit, getUnitBySymbol, sum,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
 from quantity.qtybase import typearg, MetaQTerm, _registry
@@ -602,6 +602,14 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(format(q), '3.943 z\xb2')
         self.assertEqual(format(q, '{a:*>7.2f} {u:>3}'), '***3.94  z\xb2')
         self.assertEqual(format(q, 'abc'), 'abc')
+
+    def testSum(self):
+        ql = [X(27), X(100), X(2, kx), X(-7)]
+        self.assertEqual(sum(ql), X(2120))
+        self.assertEqual(sum(ql, X(0)), X(2120))
+        self.assertEqual(sum(ql, X(-20)), X(2100))
+        self.assertRaises(IncompatibleUnitsError, sum, ql, 5 ^ y)
+        self.assertRaises(TypeError, sum, ql, 5)
 
 
 if __name__ == '__main__':
