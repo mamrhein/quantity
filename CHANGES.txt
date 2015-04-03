@@ -6,6 +6,7 @@ History
 Version     Changes
 =========== ==================================================================
 0.7.3       Added function 'sum'.
+            Added method 'Quantity.allocate'.
 
 0.7.2       Prevent __dict__ from being built for subclasses of Quantity or
             Unit.

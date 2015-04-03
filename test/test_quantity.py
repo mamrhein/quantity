@@ -18,7 +18,7 @@ import operator
 from pickle import dumps, loads
 from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
-from decimalfp import Decimal
+from decimalfp import Decimal, set_rounding
 from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
     ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
 from quantity import (Quantity, Unit, getUnitBySymbol, sum,
@@ -610,6 +610,76 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(sum(ql, X(-20)), X(2100))
         self.assertRaises(IncompatibleUnitsError, sum, ql, 5 ^ y)
         self.assertRaises(TypeError, sum, ql, 5)
+
+    def testAllocate(self):
+        set_rounding(ROUND_HALF_UP)
+        T._quantum = Decimal('0.01')
+        qty = Decimal(10) ^ T.refUnit
+        # negative rounding error
+        ratios = [3, 7, 5, 6, 81, 3, 7]
+        self.assertEqual(qty.allocate(ratios, False),
+                         ([T(Decimal('0.27')),
+                           T(Decimal('0.63')),
+                           T(Decimal('0.45')),
+                           T(Decimal('0.54')),
+                           T(Decimal('7.23')),
+                           T(Decimal('0.27')),
+                           T(Decimal('0.63'))],
+                          T(Decimal('-0.02'))))
+        self.assertEqual(qty.allocate(ratios),
+                         ([T(Decimal('0.27')),
+                           T(Decimal('0.62')),
+                           T(Decimal('0.45')),
+                           T(Decimal('0.54')),
+                           T(Decimal('7.23')),
+                           T(Decimal('0.27')),
+                           T(Decimal('0.62'))],
+                          T(0)))
+        # positive rounding error
+        ratios = [3, 7, 5, 6, 87, 3, 7]
+        self.assertEqual(qty.allocate(ratios, False),
+                         ([T(Decimal('0.25')),
+                           T(Decimal('0.59')),
+                           T(Decimal('0.42')),
+                           T(Decimal('0.51')),
+                           T(Decimal('7.37')),
+                           T(Decimal('0.25')),
+                           T(Decimal('0.59'))],
+                          T(Decimal('0.02'))))
+        self.assertEqual(qty.allocate(ratios),
+                         ([T(Decimal('0.26')),
+                           T(Decimal('0.59')),
+                           T(Decimal('0.42')),
+                           T(Decimal('0.51')),
+                           T(Decimal('7.37')),
+                           T(Decimal('0.26')),
+                           T(Decimal('0.59'))],
+                          T(0)))
+        # quantities as ratios
+        ratios = [3 ^ x, 7 ^ x, 5 ^ x, 6 ^ x, Decimal('0.081') ^ kx, 3 ^ x,
+                  7 ^ x]
+        self.assertEqual(qty.allocate(ratios, False),
+                         ([T(Decimal('0.27')),
+                           T(Decimal('0.63')),
+                           T(Decimal('0.45')),
+                           T(Decimal('0.54')),
+                           T(Decimal('7.23')),
+                           T(Decimal('0.27')),
+                           T(Decimal('0.63'))],
+                          T(Decimal('-0.02'))))
+        self.assertEqual(qty.allocate(ratios),
+                         ([T(Decimal('0.27')),
+                           T(Decimal('0.62')),
+                           T(Decimal('0.45')),
+                           T(Decimal('0.54')),
+                           T(Decimal('7.23')),
+                           T(Decimal('0.27')),
+                           T(Decimal('0.62'))],
+                          T(0)))
+        # inconsistent ratios
+        self.assertRaises(TypeError, qty.allocate, [3 ^ x, 6 ^ x, 2, 1 ^ x])
+        self.assertRaises(IncompatibleUnitsError, qty.allocate, [3 ^ x, 6 ^ y,
+                                                                 2 ^ kx])
 
 
 if __name__ == '__main__':

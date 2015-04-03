@@ -1074,6 +1074,60 @@ class Quantity(QTermElem):
         amount = self._quantize(self.amount, unit, quant, rounding)
         return self.Quantity(amount, unit)
 
+    def allocate(self, ratios, disperseRoundingError=True):
+        """Apportion `self` according to `ratios`.
+
+        Args:
+            ratios (iterable): sequence of values defining the relative amount
+                of the requested portions
+            disperseRoundingError (bool): determines whether a rounding error
+                (if there is one due to quantization) shall be dispersed
+
+        Returns:
+            tuple: portions of `self` according to `ratios` (list),
+                remainder (:class:`Quantity`) = self - sum(portions)
+
+        Raises:
+            TypeError: `ratios` contains elements that can not be added
+            IncompatibleUnitsError: `ratios` contains quantities that can not
+                be added
+        """
+        nPortions = len(ratios)
+        total = quantity.sum(ratios)
+        # force 'total' to a Decimal, if possible
+        try:
+            total = Decimal(total)
+        except:
+            pass
+        # calculate fractions from ratios
+        fractions = [ratio / total for ratio in ratios]
+        # apportion self according to fractions
+        portions = [self * fraction for fraction in fractions]
+        # check whether there's a remainder
+        remainder = self - quantity.sum(portions)
+        remAmount = remainder.amount
+        if remAmount != 0:
+            # calculate quantum for the quantity's unit
+            quantum = self.getQuantum(self.unit)
+            assert quantum is not None, \
+                "Remainder != 0 for quantity w/o quantum."
+            if disperseRoundingError:
+                if remAmount < 0:
+                    quantum = -quantum
+                # calculate rounding errors
+                errors = sorted(map(lambda portion, fraction, idx:
+                                    (portion.amount - self.amount * fraction,
+                                     idx),
+                                    portions, fractions, range(nPortions)),
+                                reverse=(remAmount < 0))
+                for error, idx in errors:
+                    portions[idx]._amount += quantum
+                    remAmount -= quantum
+                    if remAmount == 0:
+                        break
+                remainder = self.Quantity(remAmount, self.unit)
+        return portions, remainder
+
     def __eq__(self, other):
         """self == other"""
         if isinstance(other, self.Quantity):

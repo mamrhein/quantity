@@ -494,6 +494,70 @@ of the called quantity.
 
     As an alternative the method :meth:`Quantity.quantize` can be used.
 
+For more advanced cases of rounding the method :meth:`Quantity.quantize` can
+round a quantity to any quantum according to any rounding mode:
+
+    >>> l = Length('1.7296 km')
+    >>> l.quantize(METRE)
+    Length(Decimal('1.73', 3), Length.Unit(u'km'))
+    >>> l.quantize(25 ^ METRE)
+    Length(Decimal('1.725'), Length.Unit(u'km'))
+    >>> l.quantize(25 ^ METRE, ROUND_UP)
+    Length(Decimal('1.75', 3), Length.Unit(u'km'))
+
+Apportioning
+============
+
+The method :meth:`Quantity.allocate` can be used to apportion a quantity
+according to a sequence of ratios.
+
+    >>> m = Mass('10 kg')
+    >>> ratios = [38, 5, 2, 15]
+    >>> portions, remainder = m.allocate(ratios)
+    >>> portions
+    [Mass(Fraction(19, 3)),
+     Mass(Fraction(5, 6)),
+     Mass(Fraction(1, 3)),
+     Mass(Decimal('2.5', 2))]
+    >>> remainder
+    Mass(Decimal(0, 2)))
+
+If the quantity is quantized, there can be rounding errors causing a remainder
+with an amount other than 0:
+
+    >>> b = 10 ^ KILOBYTE
+    >>> portions, remainder = b.allocate(ratios, disperseRoundingError=False)
+    >>> portions
+    [DataVolume(Decimal('6.333375'), DataVolume.Unit(u'kB')),
+     DataVolume(Decimal('0.833375'), DataVolume.Unit(u'kB')),
+     DataVolume(Decimal('0.333375'), DataVolume.Unit(u'kB')),
+     DataVolume(Decimal('2.5', 6), DataVolume.Unit(u'kB'))]
+    >>> remainder
+    DataVolume(Decimal('-0.000125'), DataVolume.Unit(u'kB')))
+
+By default the remainder will be dispersed:
+
+    >>> portions, remainder = b.allocate(ratios)
+    >>> portions
+    [DataVolume(Decimal('6.333375'), DataVolume.Unit(u'kB')),
+     DataVolume(Decimal('0.833375'), DataVolume.Unit(u'kB')),
+     DataVolume(Decimal('0.33325', 6), DataVolume.Unit(u'kB')),
+     DataVolume(Decimal('2.5', 6), DataVolume.Unit(u'kB'))],
+    >>> remainder
+    DataVolume(Decimal(0, 6), DataVolume.Unit(u'kB')))
+
+As well as of numbers, quantities can be used as ratios (as long as they have
+compatible units):
+
+    >>> l = 10 ^ LITRE
+    >>> ratios = [350 ^ GRAM, 500 ^ GRAM, 3 ^ KILOGRAM, 150 ^ GRAM]
+    >>> l.allocate(ratios)
+    ([Volume(Decimal('0.875', 4), Volume.Unit(u'l')),
+      Volume(Decimal('1.25', 3), Volume.Unit(u'l')),
+      Volume(Decimal('7.5', 2), Volume.Unit(u'l')),
+      Volume(Decimal('0.375', 4), Volume.Unit(u'l'))],
+     Volume(Decimal(0, 4), Volume.Unit(u'l')))
+
 Formatting as string
 ====================
 
