@@ -472,22 +472,22 @@ of the called quantity.
     function tries to convert its first operand to a `float` and thus raises
     an exception when called with a quantity.
 
-    You may circumvent this by modifying the built-in `round` function:
+    You may circumvent this by modifying the built-in `round` function::
 
-    | try:
-    |     int.__round__
-    | except AttributeError:
-    |     import __builtin__
-    |     py2_round = __builtin__.round
+        try:
+            int.__round__
+        except AttributeError:
+            import __builtin__
+            py2_round = __builtin__.round
 
-    |     def round(number, ndigits=0):
-    |         try:
-    |             return number.__round__(ndigits)
-    |         except AttributeError:
-    |             return py2_round(number, ndigits)
+            def round(number, ndigits=0):
+                try:
+                    return number.__round__(ndigits)
+                except AttributeError:
+                    return py2_round(number, ndigits)
 
-    |     __builtin__.round = round
-    |     del __builtin__
+            __builtin__.round = round
+            del __builtin__
 
     But be aware: this has side-effects if there are other classes defining a
     method named `__round__` !!!

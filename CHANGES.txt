@@ -21,3 +21,4 @@ Version     Changes
             Enhanced method 'Quantity.__round__': round to quantity or unit.
 
 0.7.0       First public release.
+=========== ==================================================================
