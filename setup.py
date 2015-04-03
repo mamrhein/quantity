@@ -8,7 +8,7 @@ with open('CHANGES.txt') as file:
 
 setup(
     name="quantity",
-    version="0.7.2",
+    version="0.7.3",
     author="Michael Amrhein",
     author_email="michael@adrhinum.de",
     url="https://pypi.python.org/pypi/quantity",

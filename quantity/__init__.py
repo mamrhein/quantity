@@ -592,7 +592,7 @@ from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
 
-__version__ = 0, 7, 2
+__version__ = 0, 7, 3
 
 
 # defined here in order to reduce pickle foot-print
