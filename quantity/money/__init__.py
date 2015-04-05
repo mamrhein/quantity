@@ -6,10 +6,9 @@
 ## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
 ##
 ## Copyright:   (c) 2013 ff. Michael Amrhein
-## License:     This program is free software. You can redistribute it, use it
-##              and/or modify it under the terms of the 2-clause BSD license.
-##              For license details please read the file LICENSE.TXT provided
-##              together with the source code.
+## License:     This program is part of a larger application. For license
+##              details please read the file LICENSE.TXT provided together
+##              with the application.
 ##----------------------------------------------------------------------------
 ## $Source$
 ## $Revision$
@@ -82,22 +81,19 @@ class Currency(Unit):
                 raise ValueError("minorUnit must be >= 0.")
         if smallestFraction is None:
             if minorUnit is None:
-                precision = 2
+                smallestFraction = Decimal('0.01')
             else:
-                precision = minorUnit
+                smallestFraction = Decimal(10) ** -minorUnit
         else:
             smallestFraction = Decimal(smallestFraction)
             if minorUnit is None:
                 if smallestFraction < 0 or smallestFraction > 1:
                     raise ValueError("smallestFraction must be > 0 and <= 1.")
-                precision = smallestFraction.precision
             else:
-                precision = minorUnit
-                if precision != smallestFraction.precision:
+                if minorUnit != smallestFraction.precision:
                     raise ValueError(
                         "smallestFraction does not fit minorUnit.")
         curr = Unit.__new__(cls, isoCode, name)
-        curr._precision = precision
         curr._smallestFraction = smallestFraction
         return curr
 
@@ -114,7 +110,7 @@ class Currency(Unit):
     @property
     def smallestFraction(self):
         """The smallest fraction available for this currency."""
-        return self._smallestFraction or Decimal(10) ** -self._precision
+        return self._smallestFraction
 
     def round(self, amount):
         """Round amount according to smallest fraction of self."""
