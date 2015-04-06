@@ -189,7 +189,7 @@ def getUnitBySymbol(symbol):
     """getUnitBySymbol(symbol) -> unit
 
     Args:
-        symbol (str): symbol to look-up
+        symbol (string): symbol to look-up
 
     Returns:
         :class:`Unit` sub-class if a unit with given `symbol` exists in
@@ -626,6 +626,10 @@ class Unit(QTermElem):
                 within this :class:`Unit` sub-class
             None: otherwise
         """
+        try:        # transform to unicode
+            symbol = symbol.decode()
+        except (AttributeError, UnicodeEncodeError):
+            pass
         return cls._symDict.get(symbol)
 
     @classmethod
@@ -997,7 +1001,7 @@ class Quantity(QTermElem):
                 :class:`Quantity` sub-class
             None: otherwise
         """
-        return cls.Unit._symDict.get(symbol)
+        return cls.Unit.getUnitBySymbol(symbol)
 
     @staticmethod
     def _quantize(amount, unit, quant=None, rounding=None):

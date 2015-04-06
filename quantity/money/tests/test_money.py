@@ -55,7 +55,7 @@ class Test1_Currency(unittest.TestCase):
 
     def testCurrencyDatabase(self):
         self.assertEqual(getCurrencyInfo('EUR')[0], 'EUR')
-        self.assertRaises(ValueError, getCurrencyInfo, 'XXX')
+        self.assertRaises(ValueError, getCurrencyInfo, 'abc')
         EUR = registerCurrency('EUR')
         self.assertTrue(EUR is Currency.getUnitBySymbol('EUR'))
 

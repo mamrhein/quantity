@@ -402,6 +402,10 @@ def getCurrencyInfo(isoCode):
         which are used as functional currency, not those used for bond
         markets, noble metals and testing purposes.
     """
+    try:        # transform to unicode
+        isoCode = isoCode.decode()
+    except (AttributeError, UnicodeEncodeError):
+        pass
     try:
         return _currencyDict[isoCode]
     except KeyError:
@@ -422,12 +426,7 @@ def registerCurrency(isoCode):
         ValueError: currency with code `isoCode` not in database
     """
     regCurrency = Currency.getUnitBySymbol(isoCode)
-    if regCurrency is not None:
-        return regCurrency       # currency already registered
-    try:
-        isoCode, isoNumCode, name, minorUnit, countries = \
-            _currencyDict[isoCode]
-    except KeyError:
-        raise ValueError("Unknown ISO 4217 code: '%s'." % isoCode)
-    else:
-        return Currency(isoCode, name, minorUnit)
+    if regCurrency is not None:         # currency already registered
+        return regCurrency
+    isoCode, isoNumCode, name, minorUnit, countries = getCurrencyInfo(isoCode)
+    return Currency(isoCode, name, minorUnit)
