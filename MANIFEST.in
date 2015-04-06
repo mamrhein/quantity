@@ -1,4 +1,5 @@
 include LICENCE.TXT
 include CHANGES.txt
-include test/*.py
+include quantity/tests/*.py
+include quantity/money/tests/*.py
 recursive-include doc/html [a-zA-Z0-9]*.*
