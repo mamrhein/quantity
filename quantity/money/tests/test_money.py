@@ -108,6 +108,13 @@ class Test3_ExchangeRate(unittest.TestCase):
     def testConstructor(self):
         EUR = registerCurrency('EUR')
         HKD = registerCurrency('HKD')
+        self.assertRaises(ValueError, ExchangeRate, 'abc', 1, EUR, 1)
+        self.assertRaises(ValueError, ExchangeRate, EUR, 1, 'abc', 1)
+        self.assertRaises(TypeError, ExchangeRate, 3, 1, EUR, 1)
+        self.assertRaises(TypeError, ExchangeRate, EUR, 1, 3, 1)
+        self.assertRaises(ValueError, ExchangeRate, EUR, 1, EUR, 1)
+        self.assertRaises(ValueError, ExchangeRate, EUR, 1, 'EUR', 1)
+        self.assertRaises(ValueError, ExchangeRate, 'EUR', 1, EUR, 1)
         rate = Decimal('8.395804')
         exch = ExchangeRate(EUR, 1, HKD, rate)
         self.assertTrue(exch.unitCurrency is EUR)
@@ -116,7 +123,7 @@ class Test3_ExchangeRate(unittest.TestCase):
         self.assertEqual(exch.inverseRate, 1 / rate)
         self.assertEqual(exch.quotation, (EUR, HKD, rate))
         self.assertEqual(exch.inverseQuotation, (HKD, EUR, 1 / rate))
-        exch2 = ExchangeRate(EUR, 50, HKD, 50 * rate)
+        exch2 = ExchangeRate('EUR', 50, 'HKD', 50 * rate)
         self.assertEqual(exch.rate, exch2.rate)
 
     def testComputations(self):

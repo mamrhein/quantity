@@ -204,6 +204,9 @@ class ExchangeRate:
             currency
         termAmount (number): equivalent amount of price currency
 
+    `unitCurrency` and `termCurrency` can also be given as 3-character ISO
+    4217 codes of already registered currencies.
+
     `termAmount` can also be given as a string, as long as it is convertable
     to a Decimal.
 
@@ -216,13 +219,38 @@ class ExchangeRate:
 
     If the given `unitMultiple` is not a power of 10, it will be adjusted to
     the next power of 10 and the `termAmount` will be adjusted accordingly.
+
+    Raises:
+        ValueError: unknown ISO 4217 code given for a currency
+        ValueError: currencies given are identical
+        ValueError: unitMultiple or termAmount can not be converted to a
+            Decimal
     """
 
     def __init__(self, unitCurrency, unitMultiple, termCurrency, termAmount):
         """Initialize new instance of ExchangeRate."""
-        assert isinstance(unitCurrency, Currency)
-        assert isinstance(termCurrency, Currency)
-        assert unitCurrency != termCurrency
+        if not isinstance(unitCurrency, Currency):
+            if isinstance(unitCurrency, str_types):
+                unitCurrSym = unitCurrency
+                unitCurrency = Currency.getUnitBySymbol(unitCurrSym)
+                if unitCurrency is None:
+                    raise ValueError("Unknown ISO 4217 code: '%s'."
+                                     % unitCurrSym)
+            else:
+                raise TypeError("No Currency given, but a '%s'."
+                                % type(unitCurrency))
+        if not isinstance(termCurrency, Currency):
+            if isinstance(termCurrency, str_types):
+                termCurrSym = termCurrency
+                termCurrency = Currency.getUnitBySymbol(termCurrSym)
+                if termCurrency is None:
+                    raise ValueError("Unknown ISO 4217 code: '%s'."
+                                     % termCurrSym)
+            else:
+                raise TypeError("No Currency given, but a '%s'."
+                                % type(termCurrency))
+        if unitCurrency is termCurrency:
+            raise ValueError("The currencies given must not be identical.")
         self._unitCurrency = unitCurrency
         self._termCurrency = termCurrency
         if unitMultiple == 1 or unitMultiple % 10 == 0:
