@@ -41,31 +41,36 @@ class Currency(Unit):
 
     """Represents a currency, i.e. a money unit.
 
-        Args:
-            isoCode (string): ISO 4217 3-character code
-            name (string): name of the currency
-            minorUnit (Integral): amount of minor unit (as exponent to 10),
-                optional, defaults to precision of smallest fraction, if that
-                is given, otherwise to 2
-            smallestFraction (number): smallest fraction available for the
-                currency, optional, defaults to Decimal(10) ** -minorUnit
+    Args:
+        isoCode (string): ISO 4217 3-character code
+        name (string): name of the currency
+        minorUnit (Integral): amount of minor unit (as exponent to 10),
+            optional, defaults to precision of smallest fraction, if that
+            is given, otherwise to 2
+        smallestFraction (number): smallest fraction available for the
+            currency, optional, defaults to Decimal(10) ** -minorUnit
 
-        Returns:
-            :class:`Currency` instance
+    `smallestFraction` can also be given as a string, as long as it is
+    convertable to a Decimal.
 
-        Raises:
-            TypeError: given `isoCode` is not a string
-            ValueError: no `isoCode` was given
-            TypeError: given `minorUnit` is not an Integral number
-            ValueError: given `minorUnit` < 0
-            TypeError: given `smallestFraction` can not be converted to a
-                Decimal
-            ValueError: given `smallestFraction` not > 0 or not <= 1
-            ValueError: given `smallestFraction` does not fit given
-                `minorUnit`
+    Returns:
+        :class:`Currency` instance
+
+    Raises:
+        TypeError: given `isoCode` is not a string
+        ValueError: no `isoCode` was given
+        TypeError: given `minorUnit` is not an Integral number
+        ValueError: given `minorUnit` < 0
+        ValueError: given `smallestFraction` can not be converted to a
+            Decimal
+        ValueError: given `smallestFraction` not > 0
+        ValueError: 1 is not an integer multiple of given
+            `smallestFraction`
+        ValueError: given `smallestFraction` does not fit given
+            `minorUnit`
     """
 
-    __slots__ = ['_precision', '_smallestFraction']
+    __slots__ = ['_smallestFraction']
 
     def __new__(cls, isoCode, name=None, minorUnit=None,
                 smallestFraction=None):
@@ -87,8 +92,12 @@ class Currency(Unit):
         else:
             smallestFraction = Decimal(smallestFraction)
             if minorUnit is None:
-                if smallestFraction < 0 or smallestFraction > 1:
-                    raise ValueError("smallestFraction must be > 0 and <= 1.")
+                if smallestFraction < 0:
+                    raise ValueError("smallestFraction must be > 0.")
+                multiple = 1 / smallestFraction
+                if not (multiple.denominator == 1 and multiple.numerator > 1):
+                    raise ValueError("1 must be an integer multiple of given "
+                                     "smallestFraction.")
             else:
                 if minorUnit != smallestFraction.precision:
                     raise ValueError(
@@ -112,14 +121,6 @@ class Currency(Unit):
         """The smallest fraction available for this currency."""
         return self._smallestFraction
 
-    def round(self, amount):
-        """Round amount according to smallest fraction of self."""
-        smf = self._smallestFraction
-        if smf:
-            return Decimal(amount / smf, 0) * smf
-        else:
-            return Decimal(amount, self._precision)
-
     def __repr__(self):
         """repr(self)"""
         return "%s(%s)" % (self.__class__.__name__, repr(self.symbol))
@@ -141,7 +142,11 @@ class Money(Quantity):
             to smallest fraction of currency)
         currency(Currency): money unit
 
-    `amount` must convertable to a `decimalfp.Decimal`.
+    `amount` must convertable to a `decimalfp.Decimal`, it can also be given
+    as a string.
+
+    Returns:
+        :class:`Money` instance
 
     Raises:
         TypeError: `amount` can not be converted to a Decimal number
@@ -158,6 +163,9 @@ class Money(Quantity):
     atleast by one blank. Any surrounding white space is ignored. If
     `currency` is given in addition, the resulting money's currency is set to
     this currency and its amount is converted accordingly, if possible.
+
+    Returns:
+        :class:`Money` instance
 
     Raises:
         TypeError: amount given in `mStr` can not be converted to a Decimal
@@ -196,7 +204,13 @@ class ExchangeRate:
             currency
         termAmount (number): equivalent amount of price currency
 
-    1 USD = 0.7683 EUR   =>   ExchangeRate('USD', 1, 'EUR', 0.7683)
+    `termAmount` can also be given as a string, as long as it is convertable
+    to a Decimal.
+
+    1 USD = 0.9683 EUR   =>   ExchangeRate('USD', 1, 'EUR', '0.9683')
+
+    Returns:
+        :class:`ExchangeRate` instance
 
     The given `termAmount` will always be rounded to 6 decimal digits.
 
@@ -248,8 +262,8 @@ class ExchangeRate:
 
     @property
     def inverseQuotation(self):
-        """Tuple of termCurrency, unitCurrency and reverseRate."""
-        return (self._termCurrency, self._unitCurrency, self.reverseRate)
+        """Tuple of termCurrency, unitCurrency and inverseRate."""
+        return (self._termCurrency, self._unitCurrency, self.inverseRate)
 
     def inverted(self):
         """Return inverted exchange rate."""
@@ -289,7 +303,7 @@ class ExchangeRate:
         """other / self"""
         if isinstance(other, Money):
             if other.unit is self.termCurrency:
-                return other.__class__(other.amount * self.reverseRate,
+                return other.__class__(other.amount * self.inverseRate,
                                        self.unitCurrency)
             raise ValueError("Can't divide '%s' by '%s/%s'"
                              % (other.unit, self.termCurrency,
