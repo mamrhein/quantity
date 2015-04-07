@@ -9,8 +9,9 @@ Welcome to quantity's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 5
 
    quantity
+   money
 
 :ref:`genindex`

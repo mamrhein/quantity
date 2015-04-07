@@ -74,8 +74,11 @@ can be only no or exactly one reference unit. But, if you have units from
 different systems for the same type of quantity, you can define these units
 and provide mechanisms to convert between them (see :ref:`converters_label`).
 
+Usage
+=====
+
 Defining a quantity class
-=========================
+-------------------------
 
 A **basic** type of quantity is declared just by sub-classing
 :class:`Quantity`:
@@ -185,7 +188,7 @@ smallest fraction for any unit.
     Decimal('0.000125')
 
 Instantiating quantities
-========================
+------------------------
 
 The simplest way to create an instance of a :class:`Quantity` subclass is to
 call the class giving an amount and a unit. If the unit is omitted, the
@@ -234,7 +237,7 @@ instance is automatically rounded to this quantum.
     DataVolume(Decimal('0.142875'), DataVolume.Unit('kB'))
 
 Converting between units
-========================
+------------------------
 
 A quantity can be converted to a quantity using a different unit by calling
 the method :meth:`Quantity.convert`:
@@ -265,7 +268,7 @@ of converting between units.
 .. _converters_label:
 
 Converters
-----------
+^^^^^^^^^^
 
 For types of quantities that do not have a reference unit, one or more
 callables can be registered as converters.
@@ -312,10 +315,10 @@ reversed conversion is used automatically:
 Temperature(Decimal(27), Temperature.Unit(u'\xb0C'))
 
 Unit-safe computations
-======================
+----------------------
 
 Comparison
-----------
+^^^^^^^^^^
 
 Quantities can be compared to other quantities using all comparison operators
 defined for numbers:
@@ -354,7 +357,7 @@ false:
 All other comparison operators raise an `IncompatibleUnitsError` in this case.
 
 Addition and subtraction
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Quantities can be added to or subtracted from other quantities ...
 
@@ -384,7 +387,7 @@ converted to the unit of the first, if possible ...:
     IncompatibleUnitsError: Can't convert 'Kelvin' to 'Degree Celsius'
 
 Multiplication and division
----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Quantities can be multiplied or divided by scalars, preserving the unit ...:
 
@@ -428,7 +431,7 @@ When cascading operations, all intermediate results have to be defined:
     Volume(Decimal(19500000, 3))
 
 Exponentiation
---------------
+^^^^^^^^^^^^^^
 
 Quantities can be raised by an exponent, as long as the exponent is an
 `Integral` number and the resulting quantity is defined:
@@ -442,7 +445,7 @@ Quantities can be raised by an exponent, as long as the exponent is an
     UndefinedResultError: Undefined result: Length ** -2
 
 Rounding
-========
+--------
 
 The amount of a quantity can be rounded by using the standard `round`
 function.
@@ -506,7 +509,7 @@ round a quantity to any quantum according to any rounding mode:
     Length(Decimal('1.75', 3), Length.Unit(u'km'))
 
 Apportioning
-============
+------------
 
 The method :meth:`Quantity.allocate` can be used to apportion a quantity
 according to a sequence of ratios.
@@ -559,7 +562,7 @@ compatible units):
      Volume(Decimal(0, 4), Volume.Unit(u'l')))
 
 Formatting as string
-====================
+--------------------
 
 :class:`Quantity` supports the standard `str` and `unicode` (Python 2.x only)
 functions. Both return a string representation of the quantity's amount
@@ -591,8 +594,9 @@ except ImportError:
 from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
+from .money import Currency, Money, ExchangeRate
 
-__version__ = 0, 7, 3
+__version__ = 0, 8, 0
 
 
 # defined here in order to reduce pickle foot-print
@@ -635,4 +639,8 @@ __all__ = ['Quantity',
            'IncompatibleUnitsError',
            'UndefinedResultError',
            'Converter',
-           'TableConverter']
+           'TableConverter',
+           'Currency',
+           'Money',
+           'ExchangeRate',
+           ]

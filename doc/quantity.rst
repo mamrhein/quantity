@@ -1,10 +1,11 @@
+********
 Quantity
-========
+********
 
 .. automodule:: quantity
 
 Classes
--------
+=======
 
 .. autoclass:: Quantity
     :members: amount, unit, refUnit, definition, normalizedDefinition,
@@ -30,13 +31,13 @@ Classes
     :members:
 
 Functions
----------
+=========
 
 .. autofunction:: getUnitBySymbol
 .. autofunction:: sum
 
 Exceptions
-----------
+==========
 
 .. autoclass:: QuantityError
 
