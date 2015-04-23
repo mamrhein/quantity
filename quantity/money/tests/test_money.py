@@ -151,39 +151,39 @@ class Test3_ExchangeRate(unittest.TestCase):
         EUR = registerCurrency('EUR')
         HKD = registerCurrency('HKD')
         USD = registerCurrency('USD')
-        rateHKD2EUR = Decimal('8.395804')
-        fxHKD2EUR = ExchangeRate(EUR, 1, HKD, rateHKD2EUR)
-        rateUSD2EUR = Decimal('1.0457')
-        fxUSD2EUR = ExchangeRate(EUR, 1, USD, rateUSD2EUR)
+        rateEUR2HKD = Decimal('8.395804')
+        fxEUR2HKD = ExchangeRate(EUR, 1, HKD, rateEUR2HKD)
+        rateEUR2USD = Decimal('1.0457')
+        fxEUR2USD = ExchangeRate(EUR, 1, USD, rateEUR2USD)
         # inversion
-        fxEUR2HKD = fxHKD2EUR.inverted()
-        self.assertEqual(fxEUR2HKD.rate, Decimal(1 / rateHKD2EUR, 6))
+        fxHKD2EUR = fxEUR2HKD.inverted()
+        self.assertEqual(fxHKD2EUR.rate, Decimal(1 / rateEUR2HKD, 6))
         # ExchangeRate * Money
-        self.assertEqual(fxHKD2EUR * (1 ^ EUR),
-                         Money(rateHKD2EUR, HKD))
-        self.assertEqual(fxHKD2EUR * (1000 ^ EUR),
-                         Money(1000 * rateHKD2EUR, HKD))
-        self.assertRaises(ValueError, operator.mul, fxHKD2EUR, 1 ^ HKD)
+        self.assertEqual(fxEUR2HKD * (1 ^ EUR),
+                         Money(rateEUR2HKD, HKD))
+        self.assertEqual(fxEUR2HKD * (1000 ^ EUR),
+                         Money(1000 * rateEUR2HKD, HKD))
+        self.assertRaises(ValueError, operator.mul, fxEUR2HKD, 1 ^ HKD)
         # ExchangeRate * ExchangeRate
-        fxHKD2USD = fxEUR2HKD * fxUSD2EUR
-        self.assertEqual(fxHKD2USD.rate,
-                         Decimal(fxEUR2HKD.rate * fxUSD2EUR.rate, 6))
-        self.assertRaises(ValueError, operator.mul, fxHKD2EUR, fxUSD2EUR)
-        # unsupported multiplications
-        self.assertRaises(TypeError, operator.mul, fxHKD2EUR, EUR)
-        self.assertRaises(TypeError, operator.mul, fxHKD2EUR, 5)
-        # Money / ExchangeRate
-        self.assertEqual((100 ^ HKD) / fxHKD2EUR,
-                         Money(Decimal(100 / rateHKD2EUR, 6), EUR))
-        self.assertRaises(ValueError, operator.truediv, 1 ^ EUR, fxHKD2EUR)
-        # ExchangeRate / ExchangeRate
-        fxUSD2HKD = fxHKD2EUR / fxUSD2EUR
+        fxUSD2HKD = fxHKD2EUR * fxEUR2USD
         self.assertEqual(fxUSD2HKD.rate,
-                         Decimal(fxHKD2EUR.rate / fxUSD2EUR.rate, 6))
-        self.assertRaises(ValueError, operator.truediv, fxEUR2HKD, fxUSD2EUR)
+                         Decimal(fxHKD2EUR.rate * fxEUR2USD.rate, 6))
+        self.assertRaises(ValueError, operator.mul, fxEUR2HKD, fxEUR2USD)
+        # unsupported multiplications
+        self.assertRaises(TypeError, operator.mul, fxEUR2HKD, EUR)
+        self.assertRaises(TypeError, operator.mul, fxEUR2HKD, 5)
+        # Money / ExchangeRate
+        self.assertEqual((100 ^ HKD) / fxEUR2HKD,
+                         Money(Decimal(100 / rateEUR2HKD, 6), EUR))
+        self.assertRaises(ValueError, operator.truediv, 1 ^ EUR, fxEUR2HKD)
+        # ExchangeRate / ExchangeRate
+        fxHKD2USD = fxEUR2HKD / fxEUR2USD
+        self.assertEqual(fxHKD2USD.rate,
+                         Decimal(fxEUR2HKD.rate / fxEUR2USD.rate, 6))
+        self.assertRaises(ValueError, operator.truediv, fxHKD2EUR, fxEUR2USD)
         # unsupported divisions
-        self.assertRaises(TypeError, operator.truediv, fxHKD2EUR, 1 ^ HKD)
-        self.assertRaises(TypeError, operator.truediv, EUR, fxHKD2EUR)
-        self.assertRaises(TypeError, operator.truediv, 5, fxHKD2EUR)
-        self.assertRaises(TypeError, operator.truediv, fxHKD2EUR, EUR)
-        self.assertRaises(TypeError, operator.truediv, fxHKD2EUR, 5)
+        self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, 1 ^ HKD)
+        self.assertRaises(TypeError, operator.truediv, EUR, fxEUR2HKD)
+        self.assertRaises(TypeError, operator.truediv, 5, fxEUR2HKD)
+        self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, EUR)
+        self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, 5)
