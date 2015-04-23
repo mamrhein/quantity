@@ -23,8 +23,10 @@ the smallest fraction defined for the currency.
 
 
 from __future__ import absolute_import, division, unicode_literals
+import math
 from numbers import Integral
 from decimalfp import Decimal
+from fractions import Fraction
 from .. import Quantity, Unit
 
 
@@ -199,7 +201,7 @@ class ExchangeRate:
     Args:
         unitCurrency (Currency): currency to be converted from, aka base
             currency
-        unitMultiple (number): amount of base currency
+        unitMultiple (Integral): amount of base currency
         termCurrency (Currency): currency to be converted to, aka price
             currency
         termAmount (number): equivalent amount of price currency
@@ -207,23 +209,32 @@ class ExchangeRate:
     `unitCurrency` and `termCurrency` can also be given as 3-character ISO
     4217 codes of already registered currencies.
 
+    `unitMultiple` must be > 1. It can also be given as a string, as long as
+    it is convertable to an Integral.
+
     `termAmount` can also be given as a string, as long as it is convertable
-    to a Decimal.
+    to a number.
+
+    Example:
 
     1 USD = 0.9683 EUR   =>   ExchangeRate('USD', 1, 'EUR', '0.9683')
 
     Returns:
         :class:`ExchangeRate` instance
 
-    The given `termAmount` will always be rounded to 6 decimal digits.
-
-    If the given `unitMultiple` is not a power of 10, it will be adjusted to
-    the next power of 10 and the `termAmount` will be adjusted accordingly.
+    `unitMultiple` and `termAmount` will always be adjusted so that
+     the resulting unit multiple is a power to 10 and the resulting term
+     amounts magnitude is >= -1. The latter will always be rounded to 6
+     decimal digits.
 
     Raises:
         ValueError: unknown ISO 4217 code given for a currency
+        TypeError: value of type other than `Currency` or string given for a
+            currency
         ValueError: currencies given are identical
-        ValueError: unitMultiple or termAmount can not be converted to a
+        ValueError: unit multiple is not an Integral or is not >= 1
+        ValueError: term amount is not >= 0.000001
+        ValueError: unit multiple or term amount can not be converted to a
             Decimal
     """
 
@@ -237,7 +248,7 @@ class ExchangeRate:
                     raise ValueError("Unknown ISO 4217 code: '%s'."
                                      % unitCurrSym)
             else:
-                raise TypeError("No Currency given, but a '%s'."
+                raise TypeError("Can't use a '%s' as unit currency."
                                 % type(unitCurrency))
         if not isinstance(termCurrency, Currency):
             if isinstance(termCurrency, str_types):
@@ -247,20 +258,30 @@ class ExchangeRate:
                     raise ValueError("Unknown ISO 4217 code: '%s'."
                                      % termCurrSym)
             else:
-                raise TypeError("No Currency given, but a '%s'."
+                raise TypeError("Can't use a '%s' as term currency."
                                 % type(termCurrency))
         if unitCurrency is termCurrency:
             raise ValueError("The currencies given must not be identical.")
         self._unitCurrency = unitCurrency
         self._termCurrency = termCurrency
-        if unitMultiple == 1 or unitMultiple % 10 == 0:
-            self._unitMultiple = Decimal(unitMultiple)
-            self._termAmount = Decimal(termAmount, 6)
+        unitMultiple = Decimal(unitMultiple).adjusted()
+        if unitMultiple.precision > 0:
+            raise ValueError("Unit multiple must be an Integral.")
+        if unitMultiple < 1:
+            raise ValueError("Unit multiple must be >= 1.")
+        if isinstance(termAmount, Decimal):
+            mgntTermAmount = termAmount.magnitude
         else:
-            factor = Decimal(unitMultiple)
-            self._unitMultiple = unitMultiple = (Decimal(10)
-                                                 ** factor.magnitude)
-            self._termAmount = Decimal(termAmount) * unitMultiple / factor
+            termAmount = Fraction(termAmount)
+            mgntTermAmount = int(math.floor(math.log10(abs(termAmount))))
+        if mgntTermAmount < -6:
+            raise ValueError("Term amount must be >= 0.000001.")
+        # adjust unitMultiple and termAmount so that
+        # unitMultiple is a power to 10 and termAmount.magnitude >= -1
+        mult = Decimal(10) ** (unitMultiple.magnitude
+                               - min(0, mgntTermAmount + 1))
+        self._unitMultiple = mult
+        self._termAmount = Decimal(termAmount * mult / unitMultiple, 6)
 
     @property
     def unitCurrency(self):
@@ -314,15 +335,37 @@ class ExchangeRate:
             if other.unit is self.unitCurrency:
                 return other.__class__(other.amount * self.rate,
                                        self.termCurrency)
-            raise ValueError("Can't multiply '%s' and '%s/%s'"
+            raise ValueError("Can't multiply '%s' and '%s/%s'."
                              % (other.unit, self.termCurrency,
                                 self.unitCurrency))
+        if isinstance(other, ExchangeRate):
+            if self.unitCurrency is other.termCurrency:
+                return ExchangeRate(other.unitCurrency, 1, self.termCurrency,
+                                    self.rate * other.rate)
+            elif self.termCurrency is other.unitCurrency:
+                return ExchangeRate(self.unitCurrency, 1, other.termCurrency,
+                                    self.rate * other.rate)
+            else:
+                raise ValueError("Can't multiply '%s/%s' and '%s/%s'."
+                                 % (self.termCurrency, self.unitCurrency,
+                                    other.termCurrency, other.unitCurrency))
         return NotImplemented
 
     __rmul__ = __mul__
 
     def __div__(self, other):
         """self / other"""
+        if isinstance(other, ExchangeRate):
+            if self.unitCurrency is other.unitCurrency:
+                return ExchangeRate(other.termCurrency, 1, self.termCurrency,
+                                    self.rate / other.rate)
+            elif self.termCurrency is other.termCurrency:
+                return ExchangeRate(self.termCurrency, 1, other.termCurrency,
+                                    other.rate / self.rate)
+            else:
+                raise ValueError("Can't divide '%s/%s' by '%s/%s'."
+                                 % (self.termCurrency, self.unitCurrency,
+                                    other.termCurrency, other.unitCurrency))
         return NotImplemented
 
     __truediv__ = __div__
