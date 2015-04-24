@@ -24,8 +24,8 @@ import operator
 from fractions import Fraction
 from decimalfp import Decimal
 from quantity import IncompatibleUnitsError, UndefinedResultError
-from quantity.money import Currency, Money, ExchangeRate
-from quantity.money.currencies import getCurrencyInfo, registerCurrency
+from quantity.money import (Currency, Money, ExchangeRate,
+                            getCurrencyInfo, registerCurrency)
 
 
 __metaclass__ = type
