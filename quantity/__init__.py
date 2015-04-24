@@ -594,7 +594,7 @@ except ImportError:
 from .qtybase import (Quantity, Unit, getUnitBySymbol, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError)
 from .converter import Converter, TableConverter
-from .money import Currency, Money, ExchangeRate
+from .money import Currency, Money, ExchangeRate, registerCurrency
 
 __version__ = 0, 8, 0
 
@@ -631,16 +631,18 @@ def sum(sequence, start=None):
     return builtin_sum(it, start)
 
 
-__all__ = ['Quantity',
-           'Unit',
-           'getUnitBySymbol',
-           'sum',
-           'QuantityError',
-           'IncompatibleUnitsError',
-           'UndefinedResultError',
-           'Converter',
-           'TableConverter',
-           'Currency',
-           'Money',
-           'ExchangeRate',
-           ]
+__all__ = [
+    'Quantity',
+    'Unit',
+    'getUnitBySymbol',
+    'sum',
+    'QuantityError',
+    'IncompatibleUnitsError',
+    'UndefinedResultError',
+    'Converter',
+    'TableConverter',
+    'Currency',
+    'Money',
+    'ExchangeRate',
+    'registerCurrency',
+]
