@@ -218,9 +218,9 @@ class ExchangeRate:
         :class:`ExchangeRate` instance
 
     `unitMultiple` and `termAmount` will always be adjusted so that
-     the resulting unit multiple is a power to 10 and the resulting term
-     amounts magnitude is >= -1. The latter will always be rounded to 6
-     decimal digits.
+    the resulting unit multiple is a power to 10 and the resulting term
+    amounts magnitude is >= -1. The latter will always be rounded to 6
+    decimal digits.
 
     Raises:
         ValueError: unknown ISO 4217 code given for a currency
@@ -234,7 +234,6 @@ class ExchangeRate:
     """
 
     def __init__(self, unitCurrency, unitMultiple, termCurrency, termAmount):
-        """Initialize new instance of ExchangeRate."""
         if not isinstance(unitCurrency, Currency):
             if isinstance(unitCurrency, str_types):
                 unitCurrSym = unitCurrency
