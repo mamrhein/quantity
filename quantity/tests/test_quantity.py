@@ -21,7 +21,7 @@ from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal, set_rounding
 from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
     ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
-from quantity import (Quantity, Unit, getUnitBySymbol, sum,
+from quantity import (Quantity, Unit, getUnitBySymbol, sum, QuantityError,
                       IncompatibleUnitsError, UndefinedResultError,
                       TableConverter)
 from quantity.qtybase import typearg, MetaQTerm, _registry
@@ -376,9 +376,9 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(qx.amount, Decimal('32.89'))
         qx = X('1/7')
         self.assertEqual(qx.amount, Fraction(1, 7))
-        self.assertRaises(TypeError, X, 'x')
-        self.assertRaises(ValueError, Q, 5)
-        self.assertRaises(ValueError, Quantity, 5)
+        self.assertRaises(QuantityError, X, 'x')
+        self.assertRaises(QuantityError, Q, 5)
+        self.assertRaises(QuantityError, Quantity, 5)
         for i in range(-34, 39, 11):
             f = Fraction(i, 7)
             d = Decimal(f, 20)
@@ -410,9 +410,9 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(q.amount, f)
         self.assertTrue(q.unit is u2pkx)
         self.assertRaises(IncompatibleUnitsError, Q, '3 u1', y)
-        self.assertRaises(TypeError, Q, '5 x')
-        self.assertRaises(ValueError, Quantity, '5')
-        self.assertRaises(ValueError, Quantity, '5 ax')
+        self.assertRaises(QuantityError, Q, '5 x')
+        self.assertRaises(QuantityError, Quantity, '5')
+        self.assertRaises(QuantityError, Quantity, '5 ax')
 
     def testHash(self):
         q3x = X(3)

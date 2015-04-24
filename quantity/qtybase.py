@@ -61,7 +61,8 @@ def withMetaCls(metaCls):
 
 class QuantityError(TypeError):
 
-    """Base class for quantity exceptions."""
+    """Exception raised when a quantity can not not be instanciated with the
+    given parameters."""
 
 
 class IncompatibleUnitsError(QuantityError):
@@ -888,15 +889,15 @@ class Quantity(QTermElem):
             `qRepr`
 
     Raises:
-        TypeError: amount given in `qStr` is not a Real or Decimal number and
-            can not be converted to a Decimal number
-        ValueError: no unit given and the :class:`Quantity` sub-class doesn't
-            define a reference unit
-        TypeError: `unit` is not an instance of the :class:`Unit` sub-class
-            corresponding to the :class:`Quantity` sub-class
-        TypeError: a byte string is given that can not be decoded using the
-            standard encoding
-        ValueError: given string does not represent a `Quantity`
+        QuantityError: amount given in `qStr` is not a Real or Decimal number
+            and can not be converted to a Decimal number
+        QuantityError: no unit given and the :class:`Quantity` sub-class
+            doesn't define a reference unit
+        QuantityError: `unit` is not an instance of the :class:`Unit`
+            sub-class corresponding to the :class:`Quantity` sub-class
+        QuantityError: a byte string is given that can not be decoded using
+            the standard encoding
+        QuantityError: given string does not represent a `Quantity`
         IncompatibleUnitsError: the unit derived from the symbol given in
             `qStr` is not compatible with given `unit`
     """
@@ -922,8 +923,8 @@ class Quantity(QTermElem):
                 try:
                     qRepr = amount.decode()
                 except UnicodeError:
-                    raise TypeError("Can't decode given bytes using default "
-                                    "encoding.")
+                    raise QuantityError("Can't decode given bytes using "
+                                        "default encoding.")
             else:
                 qRepr = amount
             parts = qRepr.lstrip().split(' ', 1)
@@ -934,8 +935,8 @@ class Quantity(QTermElem):
                 try:
                     amount = Fraction(sAmount)
                 except:
-                    raise TypeError("Can't convert '%s' to a number."
-                                    % sAmount)
+                    raise QuantityError("Can't convert '%s' to a number."
+                                        % sAmount)
             if len(parts) > 1:
                 sSym = parts[1].strip()
                 unitFromSym = getUnitBySymbol(sSym)
@@ -945,19 +946,19 @@ class Quantity(QTermElem):
                     else:
                         amount *= unit(unitFromSym)
                 else:
-                    raise ValueError("Unknown symbol '%s'." % sSym)
+                    raise QuantityError("Unknown symbol '%s'." % sSym)
         else:
-            raise TypeError('Given amount must be a number or a string that '
-                            'can be converted to a number.')
+            raise QuantityError("Given amount must be a number or a string "
+                                "that can be converted to a number.")
         if unit is None:
             unit = cls.refUnit
             if unit is None:
-                raise ValueError("A unit must be given.")
+                raise QuantityError("A unit must be given.")
         if cls is Quantity:
             cls = unit.Quantity
         if not isinstance(unit, cls.Unit):
-            raise TypeError("Given unit '%s' is not a '%s'."
-                            % (unit, cls.Unit.__name__))
+            raise QuantityError("Given unit '%s' is not a '%s'."
+                                % (unit, cls.Unit.__name__))
         # make raw instance
         qty = super(QTermElem, cls).__new__(cls)
         # check whether it should be quantized
