@@ -23,12 +23,24 @@ import unittest
 import operator
 from fractions import Fraction
 from decimalfp import Decimal
-from quantity import IncompatibleUnitsError, UndefinedResultError
+from quantity import Quantity, IncompatibleUnitsError, UndefinedResultError
 from quantity.money import (Currency, Money, ExchangeRate,
                             getCurrencyInfo, registerCurrency)
+from quantity.predefined import Mass, GRAM, KILOGRAM, OUNCE
 
 
 __metaclass__ = type
+
+
+EUR = registerCurrency('EUR')
+HKD = registerCurrency('HKD')
+USD = registerCurrency('USD')
+
+
+class PricePerMass(Quantity):
+    defineAs = Money / Mass
+
+EURpKG = PricePerMass.Unit(defineAs=EUR / KILOGRAM)
 
 
 class Test1_Currency(unittest.TestCase):
@@ -68,7 +80,8 @@ class Test2_Money(unittest.TestCase):
         self.assertRaises(TypeError, Money, 'x', EUR)
         self.assertRaises(ValueError, Money, 5)
         self.assertRaises(TypeError, Money, 'x EUR')
-        self.assertRaises(ValueError, Money, '3 kg')
+        self.assertRaises(ValueError, Money, '3 fgh')
+        self.assertRaises(TypeError, Money, '3 kg')
         self.assertRaises(IncompatibleUnitsError, Money, '3 EUR', HKD)
         self.assertEqual(Money.getQuantum(HKD), HKD.smallestFraction)
         m3eur = Money('3 EUR')
@@ -77,9 +90,11 @@ class Test2_Money(unittest.TestCase):
         self.assertEqual(m3eur.amount, Decimal(3))
         m333c = Money(Fraction(10, 3), EUR)
         self.assertEqual(m333c.amount, Decimal('3.33'))
+        p = Quantity('3.17 EUR/kg')
+        self.assertEqual(p.amount, Decimal('3.17'))
+        self.assertTrue(p.unit is EURpKG)
 
     def testAlternateConstructor(self):
-        EUR = registerCurrency('EUR')
         m30c = 0.30 ^ EUR
         self.assertTrue(m30c.unit is EUR)
         self.assertTrue(m30c.currency is EUR)
@@ -87,8 +102,6 @@ class Test2_Money(unittest.TestCase):
         self.assertRaises(TypeError, operator.xor, EUR, 3)
 
     def testComputations(self):
-        EUR = registerCurrency('EUR')
-        HKD = registerCurrency('HKD')
         d = Decimal('0.3')
         m30c = d ^ EUR
         self.assertEqual(m30c + m30c, (d + d) ^ EUR)
@@ -101,6 +114,23 @@ class Test2_Money(unittest.TestCase):
         self.assertRaises(IncompatibleUnitsError, operator.truediv, m30c,
                           2 ^ HKD)
         self.assertRaises(UndefinedResultError, operator.pow, m30c, 2)
+
+    def testMixedComputations(self):
+        d = Decimal('12.647')
+        p = d ^ EURpKG
+        self.assertEqual(2 * p, (2 * d) ^ EURpKG)
+        self.assertEqual(p * 5, (5 * d) ^ EURpKG)
+        self.assertEqual(p / 5, (d / 5) ^ EURpKG)
+        self.assertRaises(UndefinedResultError, operator.truediv, 5, p)
+        m = 1.5 ^ KILOGRAM
+        self.assertEqual(m * p, (1.5 * d) ^ EUR)
+        self.assertEqual(m * p, p * m)
+        m = 500 ^ GRAM
+        self.assertEqual(m * p, (d / 2) ^ EUR)
+        m = 24 ^ OUNCE
+        self.assertEqual(m * p, Decimal(24 * KILOGRAM(OUNCE) * d, 2) ^ EUR)
+        self.assertRaises(UndefinedResultError, operator.truediv, m, p)
+        self.assertRaises(UndefinedResultError, operator.truediv, p, m)
 
 
 class Test3_ExchangeRate(unittest.TestCase):
@@ -148,9 +178,6 @@ class Test3_ExchangeRate(unittest.TestCase):
         self.assertEqual(exch.rate, exch2.rate)
 
     def testComputations(self):
-        EUR = registerCurrency('EUR')
-        HKD = registerCurrency('HKD')
-        USD = registerCurrency('USD')
         rateEUR2HKD = Decimal('8.395804')
         fxEUR2HKD = ExchangeRate(EUR, 1, HKD, rateEUR2HKD)
         rateEUR2USD = Decimal('1.0457')
