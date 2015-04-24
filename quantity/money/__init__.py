@@ -22,7 +22,7 @@ the smallest fraction defined for the currency.
 """
 
 
-from __future__ import absolute_import, division, unicode_literals
+from __future__ import absolute_import
 from .moneybase import Currency, Money, ExchangeRate
 from .currencies import getCurrencyInfo, registerCurrency
 

@@ -586,7 +586,7 @@ used.
     u'*****19.36 m\xb3 '
 """
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import
 try:
     from builtins import sum as builtin_sum
 except ImportError:
