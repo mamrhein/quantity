@@ -42,6 +42,7 @@ class PricePerMass(Quantity):
     defineAs = Money / Mass
 
 EURpKG = PricePerMass.Unit(defineAs=EUR / KILOGRAM)
+HKDpKG = PricePerMass.Unit(defineAs=HKD / KILOGRAM)
 
 
 class Test1_Currency(unittest.TestCase):
@@ -137,8 +138,6 @@ class Test2_Money(unittest.TestCase):
 class Test3_ExchangeRate(unittest.TestCase):
 
     def testConstructor(self):
-        EUR = registerCurrency('EUR')
-        HKD = registerCurrency('HKD')
         # unknown ISO 4217 code given for a currency:
         self.assertRaises(ValueError, ExchangeRate, 'abc', 1, EUR, 1)
         self.assertRaises(ValueError, ExchangeRate, EUR, 1, 'abc', 1)
@@ -192,6 +191,15 @@ class Test3_ExchangeRate(unittest.TestCase):
         self.assertEqual(fxEUR2HKD * (1000 ^ EUR),
                          Money(1000 * rateEUR2HKD, HKD))
         self.assertRaises(ValueError, operator.mul, fxEUR2HKD, 1 ^ HKD)
+        # ExchangeRate * Money/Quantity
+        d = Decimal('12.647')
+        p = d ^ EURpKG
+        self.assertEqual(fxEUR2HKD * p, PricePerMass(d * rateEUR2HKD, HKDpKG))
+        self.assertEqual(p * fxEUR2HKD, PricePerMass(d * rateEUR2HKD, HKDpKG))
+        self.assertRaises(QuantityError, operator.mul, fxHKD2EUR, p)
+        self.assertRaises(QuantityError, operator.mul, p, fxHKD2EUR)
+        self.assertRaises(QuantityError, operator.mul, fxEUR2USD, p)
+        self.assertRaises(QuantityError, operator.mul, p, fxEUR2USD)
         # ExchangeRate * ExchangeRate
         fxUSD2HKD = fxHKD2EUR * fxEUR2USD
         self.assertEqual(fxUSD2HKD.rate,
@@ -200,10 +208,15 @@ class Test3_ExchangeRate(unittest.TestCase):
         # unsupported multiplications
         self.assertRaises(TypeError, operator.mul, fxEUR2HKD, EUR)
         self.assertRaises(TypeError, operator.mul, fxEUR2HKD, 5)
+        self.assertRaises(TypeError, operator.mul, fxEUR2HKD, Mass(7))
         # Money / ExchangeRate
         self.assertEqual((100 ^ HKD) / fxEUR2HKD,
                          Money(Decimal(100 / rateEUR2HKD, 6), EUR))
         self.assertRaises(ValueError, operator.truediv, 1 ^ EUR, fxEUR2HKD)
+        # Money/Quantity / ExchangeRate
+        self.assertEqual(p / fxHKD2EUR,
+                         PricePerMass(d / fxHKD2EUR.rate, HKDpKG))
+        self.assertRaises(QuantityError, operator.truediv, p, fxEUR2HKD)
         # ExchangeRate / ExchangeRate
         fxHKD2USD = fxEUR2HKD / fxEUR2USD
         self.assertEqual(fxHKD2USD.rate,
@@ -215,3 +228,5 @@ class Test3_ExchangeRate(unittest.TestCase):
         self.assertRaises(TypeError, operator.truediv, 5, fxEUR2HKD)
         self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, EUR)
         self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, 5)
+        self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, Mass(7))
+        self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, p)

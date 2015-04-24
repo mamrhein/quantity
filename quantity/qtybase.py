@@ -981,7 +981,7 @@ class Quantity(QTermElem):
             normTerm = qTerm.normalized()
             try:
                 unit = unitCls._termDict[normTerm.unitTerm][0]
-            except IndexError:
+            except (KeyError, IndexError):
                 raise QuantityError("Unit not registered in %s." % unitCls)
             else:
                 amount = normTerm.amount

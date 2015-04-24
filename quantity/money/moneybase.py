@@ -22,7 +22,7 @@ import math
 from numbers import Integral
 from decimalfp import Decimal
 from fractions import Fraction
-from .. import Quantity, Unit
+from .. import Quantity, Unit, QuantityError
 
 
 # unicode handling Python 2 / Python 3
@@ -313,6 +313,12 @@ class ExchangeRate:
         return ExchangeRate(self._termCurrency, 1, self._unitCurrency,
                             self.inverseRate)
 
+    @property
+    def _definition(self):
+        """Return self as QTerm."""
+        return Quantity._QTerm(((self.rate, 1), (self.termCurrency, 1),
+                                (self.unitCurrency, -1)))
+
     def __hash__(self):
         """hash(self)"""
         return hash(self.quotation)
@@ -343,6 +349,13 @@ class ExchangeRate:
                 raise ValueError("Can't multiply '%s/%s' and '%s/%s'."
                                  % (self.termCurrency, self.unitCurrency,
                                     other.termCurrency, other.unitCurrency))
+        if isinstance(other, Quantity):
+            resTerm = other.normalizedDefinition * self._definition
+            try:
+                return other.Quantity._fromQTerm(resTerm)
+            except TypeError:
+                raise QuantityError("Resulting unit not defined: %s."
+                                    % resTerm.unitTerm)
         return NotImplemented
 
     __rmul__ = __mul__
@@ -373,6 +386,13 @@ class ExchangeRate:
             raise ValueError("Can't divide '%s' by '%s/%s'"
                              % (other.unit, self.termCurrency,
                                 self.unitCurrency))
+        if isinstance(other, Quantity):
+            resTerm = other.normalizedDefinition / self._definition
+            try:
+                return other.Quantity._fromQTerm(resTerm)
+            except TypeError:
+                raise QuantityError("Resulting unit not defined: %s."
+                                    % resTerm.unitTerm)
         return NotImplemented
 
     __rtruediv__ = __rdiv__
