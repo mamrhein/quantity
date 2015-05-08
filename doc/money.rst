@@ -15,19 +15,11 @@ Classes
 
 .. autoclass:: ExchangeRate
     :members: unitCurrency, termCurrency, rate, inverseRate, quotation,
-        inverseQuotation, inverted
-
-
-Submodules
-==========
-
-quantity.money.currencies
--------------------------
-
-.. automodule:: quantity.money.currencies
+        inverseQuotation, inverted, __hash__, __eq__, __mul__, __div__,
+        __rdiv__
 
 Functions
-^^^^^^^^^
+=========
 
 .. autofunction:: getCurrencyInfo
 .. autofunction:: registerCurrency

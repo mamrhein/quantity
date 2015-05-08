@@ -200,7 +200,7 @@ class ExchangeRate:
         unitMultiple (Integral): amount of base currency
         termCurrency (Currency): currency to be converted to, aka price
             currency
-        termAmount (number): equivalent amount of price currency
+        termAmount (number): equivalent amount of term currency
 
     `unitCurrency` and `termCurrency` can also be given as 3-character ISO
     4217 codes of already registered currencies.
@@ -325,13 +325,61 @@ class ExchangeRate:
         return hash(self.quotation)
 
     def __eq__(self, other):
-        """self == other"""
+        """self == other
+
+        Args:
+            other (object): object to compare with
+
+        Returns:
+            True if other is an instance of ExchangeRate and
+            self.quotation == other.quotation, False otherwise
+        """
         if isinstance(other, ExchangeRate):
             return self.quotation == other.quotation
         return False
 
     def __mul__(self, other):
-        """self * other"""
+        """self * other
+
+        **1. Form**
+
+        Args:
+            other (:class:`Money`): money amount to multiply with
+
+        Returns:
+            :class:`Money` instance: equivalent of `other` in term currency
+
+        Raises:
+            ValueError: currency of `other` is not equal to unit currency
+
+        **2. Form**
+
+        Args:
+            other (:class:`ExchangeRate`): exchange rate to multiply with
+
+        Returns:
+            :class:`ExchangeRate` instance: "triangulated" exchange rate
+
+        Raises:
+            ValueError: unit currency of one multiplicant does not equal the
+                term currency of the other multiplicant
+
+        **3. Form**
+
+        Args:
+            other (:class:`Quantity` sub-class): quantity to multiply with
+
+        The type of `other` must be a sub-class of :class:`Quantity` derived
+        from :class:`Money` divided by some other sub-class of
+        :class:`Quantity`.
+
+        Returns:
+            :class:`Quantity` sub-class instance: equivalent of `other` in
+                term currency
+
+        Raises:
+            ValueError: resulting unit is not defined
+        """
         if isinstance(other, Money):
             if other.unit is self.unitCurrency:
                 return other.__class__(other.amount * self.rate,
@@ -362,7 +410,18 @@ class ExchangeRate:
     __rmul__ = __mul__
 
     def __div__(self, other):
-        """self / other"""
+        """self / other
+
+        Args:
+            other (:class:`ExchangeRate`): exchange rate to divide with
+
+        Returns:
+            :class:`ExchangeRate` instance: "triangulated" exchange rate
+
+        Raises:
+            ValueError: unit currencies of operands not equal and term
+                currencies of operands not equal
+        """
         if isinstance(other, ExchangeRate):
             if self.unitCurrency is other.unitCurrency:
                 return ExchangeRate(other.termCurrency, 1, self.termCurrency,
@@ -379,7 +438,35 @@ class ExchangeRate:
     __truediv__ = __div__
 
     def __rdiv__(self, other):
-        """other / self"""
+        """other / self
+
+        **1. Form**
+
+        Args:
+            other (:class:`Money`): money amount to divide
+
+        Returns:
+            :class:`Money` instance: equivalent of `other` in unit currency
+
+        Raises:
+            ValueError: currency of `other` is not equal to term currency
+
+        **2. Form**
+
+        Args:
+            other (:class:`Quantity` sub-class): quantity to divide
+
+        The type of `other` must be a sub-class of :class:`Quantity` derived
+        from :class:`Money` divided by some other sub-class of
+        :class:`Quantity`.
+
+        Returns:
+            :class:`Quantity` sub-class instance: equivalent of `other` in
+                unit currency
+
+        Raises:
+            ValueError: resulting unit is not defined
+        """
         if isinstance(other, Money):
             if other.unit is self.termCurrency:
                 return other.__class__(other.amount * self.inverseRate,
