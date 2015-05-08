@@ -884,8 +884,8 @@ class Quantity(QTermElem):
     **1. Form**
 
     Args:
-        amount: the numerical part of the quantity
-        unit: the quantity's unit (optional)
+        amount (number): the numerical part of the quantity
+        unit (:class:`Unit` sub-class): the quantity's unit (optional)
 
     `amount` must be of type `number.Real` or be convertable to a
     `decimalfp.Decimal`. `unit` must be an instance of the :class:`Unit`
@@ -909,8 +909,8 @@ class Quantity(QTermElem):
     **2. Form**
 
     Args:
-        qStr: unicode string representation of a quantity
-        unit: the quantity's unit (optional)
+        qStr (unicode string): string representation of a quantity
+        unit (:class:`Unit` sub-class): the quantity's unit (optional)
 
     `qStr` must contain a numerical value and a unit symbol, separated atleast
     by one blank. Any surrounding white space is ignored. If `unit` is given
