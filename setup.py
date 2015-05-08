@@ -8,17 +8,17 @@ with open('CHANGES.txt') as file:
 
 setup(
     name="quantity",
-    version="0.7.3",
+    version="0.8.0",
     author="Michael Amrhein",
     author_email="michael@adrhinum.de",
     url="https://pypi.python.org/pypi/quantity",
     description="Unit-safe computations with quantities",
     long_description=long_description,
-    packages=['quantity'],
+    packages=['quantity', 'quantity.money'],
     requires=["decimalfp(>=0.9.11)"],
     install_requires=["decimalfp>=0.9.11"],
     license='BSD',
-    keywords='quantity unit',
+    keywords='quantity quantities unit units money currency exchange',
     platforms='all',
     classifiers=[
         "Development Status :: 4 - Beta",
