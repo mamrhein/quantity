@@ -546,7 +546,37 @@ class QTermElem:
 
 class Unit(QTermElem):
 
-    """Base class used to define types of quantity units."""
+    """Base class used to define types of quantity units.
+
+    Args:
+        symbol (unicode string): unique string representation of the unit
+            (default: None)
+        name (string): name of the unit (default: None)
+        defineAs (:class:`Quantity` sub-class or _QTerm): definition of the
+            unit (default: None)
+
+    If no symbol is given, but a definition, and the numerical part of that
+    definition is None or 1, the symbol is derived from the definition.
+
+    If no symbol and no definition is given, but the corresponding
+    :class:`Quantity` sub-class is a derived quantity class and all its base
+    classes have a reference unit, the symbol and the definition are derived
+    from the class definition.
+
+    If only a `symbol` is given and a unit with that symbol is already
+    registered, that unit is returned.
+
+    Returns:
+        :class:`Unit` instance
+
+    Raises:
+        TypeError: given `symbol` is not a unicode string
+        ValueError: no `symbol` was given and it could not be generated
+        ValueError: a unit with the given or generated `symbol` is already
+            registered
+        ValueError: no `defineAs` given, but reference unit already registered
+        TypeError: given `defineAs` does not fit the :class:`Unit` sub-class
+    """
 
     __slots__ = ['_symbol', '_name', '_definition']
 
@@ -575,7 +605,8 @@ class Unit(QTermElem):
             pass
         else:
             if name is not None or defineAs is not None:
-                raise ValueError("Symbol '%s' already registered." % symbol)
+                raise ValueError("Unit with symbol '%s' already registered."
+                                 % symbol)
             return unit
         # create new unit
         unit = super(Unit, cls).__new__(cls)
@@ -594,9 +625,11 @@ class Unit(QTermElem):
         elif isinstance(defineAs, cls.Quantity):
             unit._definition = defineAs.definition
         elif isinstance(defineAs, cls._QTerm):
+            # TODO: check whether the correct term for the unit class is given
             unit._definition = defineAs
         else:
-            raise TypeError("'defineAs' must be of type %s or %s; %s given"
+            raise TypeError("'defineAs' must be of type '%s' or a "
+                            "corresponding term; a '%s' given instead."
                             % (cls.Quantity, cls._QTerm, type(defineAs)))
         # register new unit
         cls._symDict[symbol] = unit
@@ -620,7 +653,7 @@ class Unit(QTermElem):
         """Return the unit with symbol `symbol`.
 
         Args:
-            symbol (str): symbol to look-up
+            symbol (string): symbol to look-up
 
         Returns:
             :class:`Unit` sub-class: if a unit with given `symbol` exists
