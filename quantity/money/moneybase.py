@@ -427,8 +427,8 @@ class ExchangeRate:
                 return ExchangeRate(other.termCurrency, 1, self.termCurrency,
                                     self.rate / other.rate)
             elif self.termCurrency is other.termCurrency:
-                return ExchangeRate(self.termCurrency, 1, other.termCurrency,
-                                    other.rate / self.rate)
+                return ExchangeRate(self.unitCurrency, 1, other.unitCurrency,
+                                    self.rate / other.rate)
             else:
                 raise ValueError("Can't divide '%s/%s' by '%s/%s'."
                                  % (self.termCurrency, self.unitCurrency,

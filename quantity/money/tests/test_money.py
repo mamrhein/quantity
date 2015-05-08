@@ -182,6 +182,9 @@ class Test3_ExchangeRate(unittest.TestCase):
         # inversion
         fxHKD2EUR = fxEUR2HKD.inverted()
         self.assertEqual(fxHKD2EUR.rate, Decimal(1 / rateEUR2HKD, 6))
+        fxUSD2EUR = fxEUR2USD.inverted()
+        self.assertTrue(fxUSD2EUR.unitCurrency is USD)
+        self.assertTrue(fxUSD2EUR.termCurrency is EUR)
         # ExchangeRate * Money
         self.assertEqual(fxEUR2HKD * (1 ^ EUR),
                          Money(rateEUR2HKD, HKD))
@@ -198,9 +201,16 @@ class Test3_ExchangeRate(unittest.TestCase):
         self.assertRaises(QuantityError, operator.mul, fxEUR2USD, p)
         self.assertRaises(QuantityError, operator.mul, p, fxEUR2USD)
         # ExchangeRate * ExchangeRate
-        fxUSD2HKD = fxHKD2EUR * fxEUR2USD
-        self.assertEqual(fxUSD2HKD.rate,
+        fxHKD2USD = fxHKD2EUR * fxEUR2USD
+        self.assertEqual(fxHKD2USD.rate,
                          Decimal(fxHKD2EUR.rate * fxEUR2USD.rate, 6))
+        self.assertTrue(fxHKD2USD.unitCurrency is HKD)
+        self.assertTrue(fxHKD2USD.termCurrency is USD)
+        fxUSD2HKD = fxEUR2HKD * fxUSD2EUR
+        self.assertEqual(fxUSD2HKD.rate,
+                         Decimal(fxEUR2HKD.rate * fxUSD2EUR.rate, 6))
+        self.assertTrue(fxUSD2HKD.unitCurrency is USD)
+        self.assertTrue(fxUSD2HKD.termCurrency is HKD)
         self.assertRaises(ValueError, operator.mul, fxEUR2HKD, fxEUR2USD)
         # unsupported multiplications
         self.assertRaises(TypeError, operator.mul, fxEUR2HKD, EUR)
@@ -215,9 +225,17 @@ class Test3_ExchangeRate(unittest.TestCase):
                          PricePerMass(d / fxHKD2EUR.rate, HKDpKG))
         self.assertRaises(QuantityError, operator.truediv, p, fxEUR2HKD)
         # ExchangeRate / ExchangeRate
-        fxHKD2USD = fxEUR2HKD / fxEUR2USD
-        self.assertEqual(fxHKD2USD.rate,
+        fxUSD2HKD = fxEUR2HKD / fxEUR2USD
+        self.assertEqual(fxUSD2HKD.rate,
                          Decimal(fxEUR2HKD.rate / fxEUR2USD.rate, 6))
+        self.assertTrue(fxUSD2HKD.unitCurrency is USD)
+        self.assertTrue(fxUSD2HKD.termCurrency is HKD)
+        fxHKD2USD = fxHKD2EUR / fxUSD2EUR
+        self.assertEqual(fxHKD2USD.rate,
+                         Decimal(fxHKD2EUR.rate / fxUSD2EUR.rate, 6))
+        self.assertTrue(fxHKD2USD.unitCurrency is HKD)
+        self.assertTrue(fxHKD2USD.termCurrency is USD)
+        self.assertEqual(fxHKD2EUR / fxUSD2EUR, fxEUR2USD / fxEUR2HKD)
         self.assertRaises(ValueError, operator.truediv, fxHKD2EUR, fxEUR2USD)
         # unsupported divisions
         self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, 1 ^ HKD)
