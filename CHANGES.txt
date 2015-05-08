@@ -5,6 +5,9 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
+0.8.0       Exceptions raised by Quantity.__new__ changed to QuantityError.
+            Added sub-package 'money'.
+
 0.7.3       Added function 'sum'.
             Added method 'Quantity.allocate'.
 
