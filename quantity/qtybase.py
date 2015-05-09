@@ -1425,3 +1425,23 @@ class _Unitless:
         if not fmtSpec:
             fmtSpec = '{a}'
         return fmtSpec.format(a=self.amount, u='')
+
+
+def generateUnits(qCls):
+    """Create and register units by combining the units of the base classes.
+    """
+    unitCls = qCls.Unit
+    QTerm = qCls._QTerm
+    clsDefinition = qCls.clsDefinition
+    iterUnitClss = ((cls.Unit, exp) for cls, exp in clsDefinition)
+    iterUnits = (itertools.izip(unitCls.registeredUnits(),
+                                itertools.repeat(exp))
+                 for unitCls, exp in iterUnitClss)
+    comb = itertools.product(*iterUnits)
+    for term in comb:
+        unitDef = QTerm(term)
+        symbol = str(unitDef)
+        if unitCls.getUnitBySymbol(symbol):
+            # unit already registered
+            continue
+        unit = unitCls(symbol, defineAs=unitDef)
