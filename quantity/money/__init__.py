@@ -202,7 +202,49 @@ currency:
 >>> mEUR / fxHKD2EUR
 Money(Decimal('44.25'), Currency(u'HKD'))
 
+Combining Money with other quantities
+-------------------------------------
 
+As :class:`Money` derives from :class:`Quantity`, it can be combined with
+other quantities in order to define a new quantity. This is useful for
+defining prices per quantum.
+
+    >>> class PricePerMass(Quantity):
+    ...     defineAs = Money / Mass
+
+Because :class:`Money` has no reference unit, there is no reference unit
+created for the derived quantity.
+
+    >>> list(PricePerMass.Unit.registeredUnits())
+    []
+    >>> EURpKG = PricePerMass.Unit(defineAs=EUR/KILOGRAM)
+    >>> list(PricePerMass.Unit.registeredUnits())
+    [PricePerMass.Unit(u'EUR/kg')]
+
+Instances of the derived quantity can be created and used just like those of
+other quantities.
+
+    >>> p = 17.45 ^ EURpKG
+    >>> p * Decimal('1.05')
+    PricePerMass(Decimal('18.354', 4), PricePerMass.Unit(u'EUR/kg'))
+    >>> m = 530 ^ GRAM
+    >>> m * p
+    Money(Decimal('9.26'), Currency(u'EUR'))
+
+Note that instances of the derived class are not automatically quantized to
+the quantum defined for the currency.
+
+    >>> PricePerMass.getQuantum(EURpKG) is None
+    True
+
+Instances of such a "money per quantum" class can also be converted using
+exchange rates, as long as the resulting unit is defined.
+
+    >>> p * fxEUR2HKD
+    QuantityError: Resulting unit not defined: HKD/kg.
+    >>> HKDpKG = PricePerMass.Unit(defineAs=HKD/KILOGRAM)
+    >>> p * fxEUR2HKD
+    PricePerMass(Decimal('146.75865392'), PricePerMass.Unit(u'HKD/kg'))
 """
 
 
