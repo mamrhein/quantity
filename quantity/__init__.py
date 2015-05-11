@@ -172,6 +172,10 @@ in that definition have a reference unit.
     >>> print(Velocity.refUnit.symbol)
     m/s
 
+Other units have to be defined explicitly. For derived quantities, the
+function :func:`generateUnits` can be used to create all units from the
+cross-product of all units of the quantity classes the class is derived from.
+
 In order to define a **quantized** quantity, the smallest possible fraction
 (in terms of the reference unit) can be given as class variable `quantum`. The
 class method :meth:`Quantity.getQuantum` can then be used to retrieve to
@@ -586,7 +590,7 @@ used.
     u'*****19.36 m\xb3 '
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 try:
     from builtins import sum as builtin_sum
 except ImportError:

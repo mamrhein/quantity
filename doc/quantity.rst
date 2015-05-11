@@ -34,6 +34,7 @@ Functions
 =========
 
 .. autofunction:: getUnitBySymbol
+.. autofunction:: generateUnits
 .. autofunction:: sum
 
 Exceptions

@@ -224,8 +224,8 @@ Units must be explicitly defined.
     >>> list(PricePerMass.Unit.registeredUnits())
     [PricePerMass.Unit(u'EUR/kg')]
 
-As with other derived quantities, the function :func:`generateUnits` can be
-used to created all units from the cross-product of units of the base
+As with other derived quantities, the function :func:`quantity.generateUnits`
+can be used to create all units from the cross-product of units of the base
 quantities.
 
 Instances of the derived quantity can be created and used just like those of
@@ -255,7 +255,7 @@ exchange rates, as long as the resulting unit is defined.
 """
 
 
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 from .moneybase import Currency, Money, ExchangeRate
 from .currencies import getCurrencyInfo, registerCurrency
 
