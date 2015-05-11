@@ -21,9 +21,9 @@ from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal, set_rounding
 from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
     ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
-from quantity import (Quantity, Unit, getUnitBySymbol, sum, QuantityError,
-                      IncompatibleUnitsError, UndefinedResultError,
-                      TableConverter)
+from quantity import (Quantity, Unit, getUnitBySymbol, generateUnits, sum,
+                      QuantityError, IncompatibleUnitsError,
+                      UndefinedResultError, TableConverter)
 from quantity.qtybase import typearg, MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
@@ -235,6 +235,18 @@ class Test1_MetaQTerm(unittest.TestCase):
         for qty in [X, Xinv, Y, XpY, YpX, Z, Z2, XtZ2pY, K, Q, QpX]:
             for unit in qty.Unit.registeredUnits():
                 self.assertTrue(getUnitBySymbol(unit.symbol) is unit)
+
+    def testGenerateUnits(self):
+        # 'K' has only a reference unit so far
+        self.assertEqual(len(list(K.Unit.registeredUnits())), 1)
+        # create units from cross-product A * Y * Z (has 3 elements)
+        generateUnits(K)
+        # 3 new symbols created
+        self.assertEqual(len(list(K.Unit.registeredUnits())), 4)
+        # but only 2 new units
+        self.assertEqual(len(K.Unit._termDict), 3)
+        # test exception
+        self.assertRaises(ValueError, generateUnits, X)
 
 
 class Test2_Unit(unittest.TestCase):

@@ -206,8 +206,8 @@ Combining Money with other quantities
 -------------------------------------
 
 As :class:`Money` derives from :class:`Quantity`, it can be combined with
-other quantities in order to define a new quantity. This is useful for
-defining prices per quantum.
+other quantities in order to define a new quantity. This is, for example,
+useful for defining prices per quantum.
 
     >>> class PricePerMass(Quantity):
     ...     defineAs = Money / Mass
@@ -217,9 +217,16 @@ created for the derived quantity.
 
     >>> list(PricePerMass.Unit.registeredUnits())
     []
+
+Units must be explicitly defined.
+
     >>> EURpKG = PricePerMass.Unit(defineAs=EUR/KILOGRAM)
     >>> list(PricePerMass.Unit.registeredUnits())
     [PricePerMass.Unit(u'EUR/kg')]
+
+As with other derived quantities, the function :func:`generateUnits` can be
+used to created all units from the cross-product of units of the base
+quantities.
 
 Instances of the derived quantity can be created and used just like those of
 other quantities.

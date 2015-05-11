@@ -18,6 +18,7 @@
 """Provide base classes for defining quantities."""
 
 from __future__ import absolute_import, division, unicode_literals
+import itertools
 import operator
 from numbers import Integral, Real
 from fractions import Fraction
@@ -30,7 +31,7 @@ from .converter import RefUnitConverter
 __metaclass__ = type
 
 
-# unicode handling and dict iterator Python 2 / Python 3
+# unicode handling, dict iterator and izip Python 2 / Python 3
 import sys
 PY_VERSION = sys.version_info[0]
 del sys
@@ -40,6 +41,7 @@ bytes = type(b'')
 str_types = (bytes, str)
 if PY_VERSION < 3:
     itervalues = lambda d: d.itervalues()
+    zip = itertools.izip
 else:
     itervalues = lambda d: d.values()
 
@@ -1429,13 +1431,28 @@ class _Unitless:
 
 def generateUnits(qCls):
     """Create and register units by combining the units of the base classes.
+
+    Args:
+        qCls (:class:`Quantity` sub-class): derived quantity class to create
+            units for
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: given quantity class is not a derived quantity
+
+    The function creates and registers all units from the cross-product of all
+    units of the quantity classes the class `qCls` is derived from, provided
+    that the corresponding symbol is not already registered.
     """
+    if qCls.isBaseQuantity():
+        raise ValueError('Given quantity class must be a derived quantity.')
     unitCls = qCls.Unit
     QTerm = qCls._QTerm
     clsDefinition = qCls.clsDefinition
     iterUnitClss = ((cls.Unit, exp) for cls, exp in clsDefinition)
-    iterUnits = (itertools.izip(unitCls.registeredUnits(),
-                                itertools.repeat(exp))
+    iterUnits = (zip(unitCls.registeredUnits(), itertools.repeat(exp))
                  for unitCls, exp in iterUnitClss)
     comb = itertools.product(*iterUnits)
     for term in comb:
