@@ -8,15 +8,15 @@ with open('CHANGES.txt') as file:
 
 setup(
     name="quantity",
-    version="0.8.0",
+    use_vcs_version=True,
+    setup_requires=["hgtools"],
+    install_requires=["decimalfp>=0.9.11"],
     author="Michael Amrhein",
     author_email="michael@adrhinum.de",
     url="https://pypi.python.org/pypi/quantity",
     description="Unit-safe computations with quantities (including money)",
     long_description=long_description,
     packages=['quantity', 'quantity.money'],
-    #requires=["decimalfp(>=0.9.11)"],
-    install_requires=["decimalfp>=0.9.11"],
     license='BSD',
     keywords='quantity quantities unit units money currency exchange',
     platforms='all',
