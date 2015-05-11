@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 
 
 with open('README.txt') as file:
@@ -12,10 +12,10 @@ setup(
     author="Michael Amrhein",
     author_email="michael@adrhinum.de",
     url="https://pypi.python.org/pypi/quantity",
-    description="Unit-safe computations with quantities",
+    description="Unit-safe computations with quantities (including money)",
     long_description=long_description,
     packages=['quantity', 'quantity.money'],
-    requires=["decimalfp(>=0.9.11)"],
+    #requires=["decimalfp(>=0.9.11)"],
     install_requires=["decimalfp>=0.9.11"],
     license='BSD',
     keywords='quantity quantities unit units money currency exchange',
