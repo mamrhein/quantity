@@ -118,6 +118,7 @@ class Term:
                     yield (elem, exp)
 
     def _reduceItems(self, items, sortKey=None):
+        # TODO: tune it !?!
         itemList = [(elem, exp) for (elem, exp) in self._filterItems(items)]
         nItems = len(itemList)
         if nItems <= 1:             # already reduced
@@ -126,7 +127,7 @@ class Term:
             item1, item2 = itemList
             items = self._filterItems(self._mulItems(item1, item2))
             if sortKey is None:
-                return tuple(sorted(items, key=self._mapItem))
+                return tuple(items)
             else:
                 return tuple(sorted(items, key=sortKey))
         itemDict = {}
@@ -173,6 +174,7 @@ class Term:
                      if exp != 0 and elem != 1), key=sortKey))
 
     def normalized(self):
+        # TODO: tune it !?!
         try:
             term = self._normalized
         except AttributeError:

@@ -15,7 +15,7 @@
 from __future__ import absolute_import, division, unicode_literals
 import unittest
 import operator
-from quantity.term import _mulSign, _powerChars, Term
+from quantity.term import _mulSign, _divSign, _powerChars, Term
 
 # unicode handling Python 2 / Python 3
 try:
@@ -84,7 +84,7 @@ class TermTest(unittest.TestCase):
         t = Term([(x, 1)])
         self.assertEqual(t._items, ((x, 1),))
         t = Term([(y, 2), (x, 1)])
-        self.assertEqual(t._items, ((x, 1), (y, 2)))
+        self.assertEqual(t._items, ((y, 2), (x, 1)))
         t = Term([(x, 2), (x, 1)])
         self.assertEqual(t._items, ((x, 3),))
         t = Term([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1),
@@ -109,7 +109,7 @@ class TermTest(unittest.TestCase):
 
     def testNormalization(self):
         x, y, z = 'x', 'y', 'z'
-        t = Term([(y, 2), (x, 1)])
+        t = Term([(x, 1), (y, 2)])
         self.assertTrue(t.isNormalized)
         xt = XTerm([(x, 1)])
         self.assertTrue(xt.isNormalized)
@@ -122,8 +122,8 @@ class TermTest(unittest.TestCase):
                          XTerm(((10000, 1), (x, 1), (y, -1), (z, 1))))
 
     def testHash(self):
-        t = Term([('y', 2), ('x', 1)])
-        self.assertEqual(hash(t), hash(t._items))
+        t = Term([('y', 2), ('x', 1), ('z', 0), ('y', -1)])
+        self.assertEqual(hash(t), hash(t.normalized()))
 
     def testComparision(self):
         x, y = 'x', 'y'
@@ -172,8 +172,11 @@ class TermTest(unittest.TestCase):
         self.assertEqual(t ** 5, Term(((x, 5), (y, 10), (z, -15))))
 
     def testStr(self):
-        t1 = Term([('y', 2), ('x', 1)])
-        self.assertEqual(str(t1), 'x%sy%s' % (_mulSign, _powerChars[2]))
+        t1 = Term([('y', 1), ('x', 2)])
+        self.assertEqual(str(t1), 'y%sx%s' % (_mulSign, _powerChars[2]))
+        t2 = Term([('y', 2), ('x', -1), ('z', 3)])
+        self.assertEqual(str(t2), 'y%s%sz%s%sx' %
+                         (_powerChars[2], _mulSign, _powerChars[3], _divSign))
 
     def testRepr(self):
         t1 = Term([('y', 2), ('x', 1)])
