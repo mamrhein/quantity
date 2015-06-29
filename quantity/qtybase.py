@@ -455,23 +455,12 @@ class QTermElem:
             return into(qty)
 
         @property
-        def _numElem(self):
-            try:
-                firstElem = self[0][0]
-            except IndexError:
-                pass
-            else:
-                if self.isNumerical(firstElem):
-                    return firstElem
-            return None
-
-        @property
         def amount(self):
-            return self._numElem or DECIMAL_1
+            return self.numElem or DECIMAL_1
 
         @property
         def unitTerm(self):
-            if self._numElem is None:
+            if self.numElem is None:
                 return self
             return self.__class__(self[1:])
 

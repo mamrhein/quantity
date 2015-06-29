@@ -206,6 +206,17 @@ class Term:
     def isNormalized(self):
         return self.normalized() is self
 
+    @property
+    def numElem(self):
+        try:
+            firstElem = self[0][0]
+        except IndexError:
+            pass
+        else:
+            if self.isNumerical(firstElem):
+                return firstElem
+        return None
+
     def reciprocal(self):
         return self.__class__(((elem, -exp) for (elem, exp) in self))
 
