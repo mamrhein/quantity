@@ -15,7 +15,7 @@
 from __future__ import absolute_import, division, unicode_literals
 import unittest
 import operator
-from quantity.term import _mulSign, _divSign, _powerChars, Term
+from quantity.term import _mulSign, _divSign, _powerChars, Term, isNumerical
 
 # unicode handling Python 2 / Python 3
 try:
@@ -60,7 +60,7 @@ class XTerm(Term):
         """Return sort key for elem; used for normalized form of term.
 
         The value returned should be either an int > 0 or a string."""
-        if Term.isNumerical(elem):
+        if isNumerical(elem):
             return ''
         num, base = XTerm._splitElem(elem)
         return str(base)

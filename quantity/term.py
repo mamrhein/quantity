@@ -68,7 +68,7 @@ class Term:
         The type of the returned must be the same for all elements, either
         int (>= 0) or str. Numerical elements must get the lowest sort key:
         0 if int, '' if str."""
-        if Term.isNumerical(elem):
+        if isNumerical(elem):
             return ''
         return str(elem)
 
@@ -78,11 +78,6 @@ class Term:
 
         Raises TypeError if conversion is not possible."""
         raise NotImplementedError
-
-    @staticmethod
-    def isNumerical(elem):
-        """Return True if elem is a Real number"""
-        return isinstance(elem, Real)
 
     def __init__(self, items=[]):
         self._items = self._reduceItems(items)
@@ -94,7 +89,7 @@ class Term:
     def _mulItems(self, item1, item2):
         """(elem1, exp1) * (elem2, exp2)"""
         (elem1, exp1), (elem2, exp2) = item1, item2
-        if self.isNumerical(elem1) and self.isNumerical(elem2):
+        if isNumerical(elem1) and isNumerical(elem2):
             return [(elem1 ** exp1 * elem2 ** exp2, 1)]
         if elem1 is elem2:
             return [(elem1, exp1 + exp2)]
@@ -112,7 +107,7 @@ class Term:
             # eliminate items equivalent to 1:
             if exp != 0 and elem != 1:
                 # adjust numerical elements to exp = 1:
-                if self.isNumerical(elem):
+                if isNumerical(elem):
                     yield (elem ** exp, 1)
                 else:
                     yield (elem, exp)
@@ -153,7 +148,7 @@ class Term:
                     else:
                         # resItems[0] is numeric -> put into itemDict[0]
                         resElem1, resExp1 = resItems[0]
-                        if self.isNumerical(resElem1):
+                        if isNumerical(resElem1):
                             items[idx] = resItems[1]
                             try:
                                 numElem, numExp = itemDict[0][0]
@@ -183,7 +178,7 @@ class Term:
             items = [(elem, exp) for (elem, exp) in self]
             while items:
                 (elem, exp) = items.pop()
-                if cls.isNumerical(elem) or cls.isBaseElem(elem):
+                if isNumerical(elem) or cls.isBaseElem(elem):
                     baseItems.append((elem, exp))
                 else:
                     items += [(nElem, nExp * exp)
@@ -213,7 +208,7 @@ class Term:
         except IndexError:
             pass
         else:
-            if self.isNumerical(firstElem):
+            if isNumerical(firstElem):
                 return firstElem
         return None
 
@@ -248,7 +243,7 @@ class Term:
         cls = self.__class__
         if isinstance(other, cls):
             return cls(chain(self, other))
-        if self.isNumerical(other):
+        if isNumerical(other):
             return cls(chain(self, [(other, 1)]))
         return NotImplemented
 
@@ -259,7 +254,7 @@ class Term:
         cls = self.__class__
         if isinstance(other, cls):
             return cls(chain(self, other.reciprocal()))
-        if self.isNumerical(other):
+        if isNumerical(other):
             return cls(chain(self, [(other, -1)]))
         return NotImplemented
 
@@ -267,7 +262,7 @@ class Term:
 
     def __rdiv__(self, other):
         """other / self"""
-        if self.isNumerical(other):
+        if isNumerical(other):
             return self.__class__(chain(self.reciprocal(), [(other, 1)]))
         return NotImplemented
 
@@ -310,3 +305,11 @@ class Term:
             return self.__unicode__().encode('utf8')
     else:
         __str__ = __unicode__
+
+
+# helper functions
+
+
+def isNumerical(elem):
+    """Return True if elem is a Real number"""
+    return isinstance(elem, Real)
