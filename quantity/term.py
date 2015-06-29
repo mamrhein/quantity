@@ -82,10 +82,6 @@ class Term:
     def __init__(self, items=[]):
         self._items = self._reduceItems(items)
 
-    def _mapItem(self, item):
-        (elem, exp) = item
-        return self.normSortKey(elem)
-
     def _mulItems(self, item1, item2):
         """(elem1, exp1) * (elem2, exp2)"""
         (elem1, exp1), (elem2, exp2) = item1, item2
@@ -127,9 +123,10 @@ class Term:
                 return tuple(sorted(items, key=sortKey))
         itemDict = {}
         sortMap = {'': 0, 0: 0}     # initialize for both, int and str keys
+        keyFunc = self.normSortKey
         n = 0
         for (elem, exp) in itemList:
-            key = self._mapItem((elem, exp))
+            key = keyFunc(elem)
             try:
                 items = itemDict[key]
             except KeyError:
@@ -163,7 +160,7 @@ class Term:
                     items.append((elem, exp))
                 itemDict[key] = items
         if sortKey is None:
-            sortKey = lambda item: sortMap[self._mapItem(item)]
+            sortKey = lambda item: sortMap[keyFunc(item[0])]
         return tuple(sorted(((elem, exp)
                      for (elem, exp) in chain(*itemDict.values())
                      if exp != 0 and elem != 1), key=sortKey))
@@ -183,7 +180,8 @@ class Term:
                 else:
                     items += [(nElem, nExp * exp)
                               for (nElem, nExp) in cls.normalizeElem(elem)]
-            items = self._reduceItems(baseItems, sortKey=self._mapItem)
+            sortKey = lambda item: self.normSortKey(item[0])
+            items = self._reduceItems(baseItems, sortKey=sortKey)
             if items == self._items:        # self is already normalized
                 self._normalized = None
                 return self
