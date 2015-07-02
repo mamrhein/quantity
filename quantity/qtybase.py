@@ -223,7 +223,7 @@ class MetaQTerm(type):
         @staticmethod
         def normSortKey(qCls):
             """Return sort key for qCls."""
-            return qCls.Quantity._regIdx
+            return qCls.Quantity._regIdx + 1
 
     def __new__(cls, name, bases, clsdict):
         # hide refUnitSymbol, refUnitName and quantum
