@@ -20,7 +20,9 @@
 
 from __future__ import absolute_import, unicode_literals
 from numbers import Real
-from itertools import chain
+from itertools import chain, groupby
+from functools import reduce
+from operator import mul
 
 # unicode handling Python 2 / Python 3
 import sys
@@ -51,6 +53,8 @@ class Term:
 
     ((x, 1), (y, 3), (z, -2)) means x * y ** 3 / z ** 2"""
 
+    __slots__ = ['_items', '_normalized', '_hash']
+
     @staticmethod
     def isBaseElem(elem):
         """True if elem is a base element; i.e. can not be decomposed."""
@@ -68,7 +72,7 @@ class Term:
         The type of the returned must be the same for all elements, either
         int (>= 0) or str. Numerical elements must get the lowest sort key:
         0 if int, '' if str."""
-        if isNumerical(elem):
+        if isinstance(elem, Real):
             return ''
         return str(elem)
 
@@ -79,125 +83,129 @@ class Term:
         Raises TypeError if conversion is not possible."""
         raise NotImplementedError
 
-    def __init__(self, items=[]):
-        self._items = self._reduceItems(items)
+    def __init__(self, items=(), reduceItems=True):
+        if items and reduceItems:
+            self._items = items = self._reduceItems(items)
+        else:
+            self._items = items = tuple(items)
+        # optimize a common case:
+        if len(items) == 1:
+            (elem, exp) = items[0]
+            if isinstance(elem, Real) or self.isBaseElem(elem):
+                self._normalized = self
 
-    def _mulItems(self, item1, item2):
-        """(elem1, exp1) * (elem2, exp2)"""
-        (elem1, exp1), (elem2, exp2) = item1, item2
-        if isNumerical(elem1) and isNumerical(elem2):
-            return [(elem1 ** exp1 * elem2 ** exp2, 1)]
-        if elem1 is elem2:
-            return [(elem1, exp1 + exp2)]
-        if type(elem1) == type(elem2):
-            try:
-                conv = self.convert(elem2, elem1)
-            except (NotImplementedError, TypeError):
-                pass
-            else:
-                return [(conv ** exp2, 1), (elem1, exp1 + exp2)]
-        return [(elem1, exp1), (elem2, exp2)]
-
-    def _filterItems(self, items):
-        for (elem, exp) in items:
-            # eliminate items equivalent to 1:
-            if exp != 0 and elem != 1:
-                # adjust numerical elements to exp = 1:
-                if isNumerical(elem):
-                    yield (elem ** exp, 1)
-                else:
-                    yield (elem, exp)
-
-    def _reduceItems(self, items, sortKey=None):
-        # TODO: tune it !?!
-        itemList = [(elem, exp) for (elem, exp) in self._filterItems(items)]
-        nItems = len(itemList)
-        if nItems <= 1:             # already reduced
-            return tuple(itemList)
+    def _reduceItems(self, itemList, nItems=None, keepItemOrder=True):
+        # if iter(itemList) is iter(itemList):    # do we have an iterator?
+        #     itemList = tuple(itemList)
+        # nItems = len(itemList)
+        if nItems == 1:             # already reduced
+            return tuple(_filterItems(itemList))
         if nItems == 2:
-            item1, item2 = itemList
-            items = self._filterItems(self._mulItems(item1, item2))
-            if sortKey is None:
-                return tuple(items)
-            else:
-                return tuple(sorted(items, key=sortKey))
-        itemDict = {}
-        sortMap = {'': 0, 0: 0}     # initialize for both, int and str keys
-        keyFunc = self.normSortKey
-        n = 0
-        for (elem, exp) in itemList:
-            key = keyFunc(elem)
-            try:
-                items = itemDict[key]
-            except KeyError:
-                itemDict[key] = [(elem, exp)]
-                if key:
-                    n += 1
-                    sortMap[key] = n
-            else:
-                done = False
-                for idx, item in enumerate(items):
-                    resItems = self._mulItems(item, (elem, exp))
-                    if len(resItems) == 1:
-                        items[idx] = resItems[0]
-                        done = True
-                        break
+            (elem1, exp1), (elem2, exp2) = itemList
+            elem1IsNum = isinstance(elem1, Real)
+            elem2IsNum = isinstance(elem2, Real)
+            # most relevant case: numeric + non-numeric element
+            if elem1IsNum and not elem2IsNum:
+                return tuple(_filterItems(((elem1, exp1), (elem2, exp2))))
+            # second most relevant case: 2 non-numeric elements
+            if not elem1IsNum and not elem2IsNum:
+                if elem1 is elem2:
+                    exp = exp1 + exp2
+                    if exp == 0:
+                        return ()
                     else:
-                        # resItems[0] is numeric -> put into itemDict[0]
-                        resElem1, resExp1 = resItems[0]
-                        if isNumerical(resElem1):
-                            items[idx] = resItems[1]
-                            try:
-                                numElem, numExp = itemDict[0][0]
-                            except KeyError:
-                                itemDict[0] = [resItems[0]]
-                            else:
-                                itemDict[0] = self._mulItems(
-                                    (numElem, numExp), (resElem1, resExp1))
+                        return ((elem1, exp),)
+                elif type(elem1) == type(elem2):
+                    try:
+                        conv = self.convert(elem2, elem1)
+                    except (NotImplementedError, TypeError):
+                        pass
+                    else:
+                        return tuple(_filterItems(((conv ** exp2, 1),
+                                                   (elem1, exp1 + exp2))))
+                if keepItemOrder:
+                    return tuple(_filterItems(((elem1, exp1), (elem2, exp2))))
+                else:
+                    key = lambda item: self.normSortKey(item[0])
+                    items = sorted(((elem1, exp1), (elem2, exp2)), key=key)
+                    return tuple(_filterItems(items))
+            # third most relevant case: non-numeric + numeric element
+            if elem2IsNum and not elem1IsNum:
+                return tuple(_filterItems(((elem2, exp2), (elem1, exp1))))
+            # least relevant case: 2 numeric elements
+            if elem1IsNum and elem2IsNum:
+                num = elem1 ** exp1 * elem2 ** exp
+                if num != 1:
+                    return ((num, 1),)
+        # more than 2 items or number of items unknown:
+        normSortKey = self.normSortKey
+        sortKey = lambda x: x[0]
+        if keepItemOrder:
+            key2FirstIdxMap = {'': 0, 0: 0}
+            mapIter = ((key2FirstIdxMap.setdefault(normSortKey(item[0]),
+                                                   idx + 1),
+                        item)
+                       for idx, item in enumerate(itemList))
+        else:
+            mapIter = ((normSortKey(item[0]), item) for item in itemList)
+        itemsSorted = sorted(mapIter, key=sortKey)
+        resItems = []
+        numElem = 1
+        for key, groupIt in groupby(itemsSorted, key=sortKey):
+            if key:     # non-numerical elements
+                _, item = next(groupIt)
+                accumItems = [item]
+                for _, item in groupIt:
+                    done = False
+                    for idx, otherItem in enumerate(accumItems):
+                        (elem1, exp1), (elem2, exp2) = otherItem, item
+                        if elem1 is elem2:
+                            accumItems[idx] = (elem1, exp1 + exp2)
                             done = True
                             break
-                if not done:
-                    items.append((elem, exp))
-                itemDict[key] = items
-        if sortKey is None:
-            sortKey = lambda item: sortMap[keyFunc(item[0])]
-        return tuple(sorted(((elem, exp)
-                     for (elem, exp) in chain(*itemDict.values())
-                     if exp != 0 and elem != 1), key=sortKey))
+                        elif type(elem1) == type(elem2):
+                            try:
+                                conv = self.convert(elem2, elem1)
+                            except (NotImplementedError, TypeError):
+                                pass
+                            else:
+                                numElem *= conv ** exp2
+                                accumItems[idx] = (elem1, exp1 + exp2)
+                                done = True
+                                break
+                    if not done:
+                        accumItems.append(item)
+                resItems += (item for item in accumItems if item[1] != 0)
+            else:       # numerical elements
+                numElem = reduce(mul,
+                                 (elem ** exp for _, (elem, exp) in groupIt),
+                                 numElem)
+        if numElem == 1:
+            return tuple(resItems)
+        else:
+            return tuple([(numElem, 1)] + resItems)
 
     def normalized(self):
-        # TODO: tune it !?!
         try:
-            term = self._normalized
+            return self._normalized
         except AttributeError:
-            cls = self.__class__
-            baseItems = []
-            items = [(elem, exp) for (elem, exp) in self]
-            while items:
-                (elem, exp) = items.pop()
-                if isNumerical(elem) or cls.isBaseElem(elem):
-                    baseItems.append((elem, exp))
-                else:
-                    items += [(nElem, nExp * exp)
-                              for (nElem, nExp) in cls.normalizeElem(elem)]
-            sortKey = lambda item: self.normSortKey(item[0])
-            items = self._reduceItems(baseItems, sortKey=sortKey)
+            it = _iterNormalized(self, self.isBaseElem, self.normalizeElem)
+            items = self._reduceItems(it, keepItemOrder=False)
             if items == self._items:        # self is already normalized
-                self._normalized = None
+                self._normalized = self
                 return self
-            term = cls()
-            term._items = items
-            term._normalized = None
+            term = self.__class__(items, reduceItems=False)
+            term._normalized = term
             self._normalized = term
-            return term
-        else:
-            if term is None:
-                return self
             return term
 
     @property
     def isNormalized(self):
         return self.normalized() is self
+
+    @property
+    def items(self):
+        return self._items
 
     @property
     def numElem(self):
@@ -206,7 +214,7 @@ class Term:
         except IndexError:
             pass
         else:
-            if isNumerical(firstElem):
+            if isinstance(firstElem, Real):
                 return firstElem
         return None
 
@@ -227,23 +235,30 @@ class Term:
             hashVal = self._hash
         except AttributeError:
             if self.isNormalized:
-                hashVal = self._hash = hash(self._items)
+                self._hash = hashVal = hash(self._items)
             else:
-                hashVal = self._hash = hash(self.normalized())
+                self._hash = hashVal = hash(self.normalized())
         return hashVal
 
     def __eq__(self, other):
         """self == other"""
-        return list(self.normalized()) == list(other.normalized())
+        return (self is other.normalized()
+                or self.normalized() is other
+                or self.normalized().items == other.normalized().items)
 
     def __mul__(self, other):
         """self * other"""
         cls = self.__class__
         if isinstance(other, cls):
-            return cls(chain(self, other))
-        if isNumerical(other):
-            return cls(chain(self, [(other, 1)]))
-        return NotImplemented
+            nItems = len(self) + len(other)
+            items = self._reduceItems(chain(self, other), nItems=nItems)
+        elif isinstance(other, Real):
+            nItems = len(self) + 1
+            items = self._reduceItems(chain(((other, 1),), self),
+                                      nItems=nItems)
+        else:
+            return NotImplemented
+        return cls(items, reduceItems=False)
 
     __rmul__ = __mul__
 
@@ -251,24 +266,34 @@ class Term:
         """self / other"""
         cls = self.__class__
         if isinstance(other, cls):
-            return cls(chain(self, other.reciprocal()))
-        if isNumerical(other):
-            return cls(chain(self, [(other, -1)]))
-        return NotImplemented
+            nItems = len(self) + len(other)
+            items = self._reduceItems(chain(self, other.reciprocal()),
+                                      nItems=nItems)
+        elif isinstance(other, Real):
+            nItems = len(self) + 1
+            items = self._reduceItems(chain(((other, -1),), self),
+                                      nItems=nItems)
+        else:
+            return NotImplemented
+        return cls(items, reduceItems=False)
 
     __truediv__ = __div__
 
     def __rdiv__(self, other):
         """other / self"""
-        if isNumerical(other):
-            return self.__class__(chain(self.reciprocal(), [(other, 1)]))
+        if isinstance(other, Real):
+            nItems = len(self) + 1
+            items = self._reduceItems(chain(((other, 1),), self.reciprocal()),
+                                      nItems=nItems)
+            return self.__class__(items, reduceItems=False)
         return NotImplemented
 
     __rtruediv__ = __rdiv__
 
     def __pow__(self, pExp):
         """self ** pExp"""
-        return self.__class__(((elem, exp * pExp) for (elem, exp) in self))
+        return self.__class__(((elem, exp * pExp) for (elem, exp) in self),
+                              reduceItems=False)
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self._items))
@@ -308,6 +333,19 @@ class Term:
 # helper functions
 
 
-def isNumerical(elem):
-    """Return True if elem is a Real number"""
-    return isinstance(elem, Real)
+def _filterItems(items):
+    return ((elem, exp) for (elem, exp) in items
+            # eliminate items equivalent to 1:
+            if exp != 0 and elem != 1)
+
+
+def _iterNormalized(term, isBaseElem, normalizeElem):
+    for (elem, exp) in term:
+        if isinstance(elem, Real) or isBaseElem(elem):
+            yield (elem, exp)
+        else:
+            for item in _iterNormalized(((nElem, nExp * exp)
+                                        for (nElem, nExp)
+                                        in normalizeElem(elem)),
+                                        isBaseElem, normalizeElem):
+                yield item

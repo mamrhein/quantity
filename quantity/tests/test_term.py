@@ -15,7 +15,9 @@
 from __future__ import absolute_import, division, unicode_literals
 import unittest
 import operator
-from quantity.term import _mulSign, _divSign, _powerChars, Term, isNumerical
+from numbers import Real
+from decimalfp import Decimal
+from quantity.term import _mulSign, _divSign, _powerChars, Term
 
 # unicode handling Python 2 / Python 3
 try:
@@ -36,7 +38,7 @@ class XTerm(Term):
     def _splitElem(elem):
         num, base = _parseString(elem).groups()
         if num:
-            return int(num), base
+            return Decimal(num), base
         else:
             return None, base
 
@@ -60,7 +62,7 @@ class XTerm(Term):
         """Return sort key for elem; used for normalized form of term.
 
         The value returned should be either an int > 0 or a string."""
-        if isNumerical(elem):
+        if isinstance(elem, Real):
             return ''
         num, base = XTerm._splitElem(elem)
         return str(base)
@@ -85,6 +87,8 @@ class TermTest(unittest.TestCase):
         self.assertEqual(t._items, ((x, 1),))
         t = Term([(y, 2), (x, 1)])
         self.assertEqual(t._items, ((y, 2), (x, 1)))
+        # t = Term([(y, 2), (x, 1)], keepItemOrder=False)
+        # self.assertEqual(t._items, ((x, 1), (y, 2)))
         t = Term([(x, 2), (x, 1)])
         self.assertEqual(t._items, ((x, 3),))
         t = Term([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1),
@@ -97,15 +101,15 @@ class TermTest(unittest.TestCase):
         xt = XTerm([(x, 1)])
         self.assertEqual(xt._items, ((x, 1),))
         xt = XTerm((('100' + x, 1), ('10' + x, -1)))
-        self.assertEqual(xt._items, ((10.0, 1),))
+        self.assertEqual(xt._items, ((10, 1),))
         xt = XTerm((('10' + x, 1), (x, 1)))
-        self.assertEqual(xt._items, ((0.1, 1), ('10x', 2)))
+        self.assertEqual(xt._items, ((Decimal('0.1'), 1), ('10x', 2)))
         xt = XTerm((('10' + x, 1), ('10' + x, 1)))
         self.assertEqual(xt._items, (('10x', 2),))
         xt = XTerm(((x, 1), ('10' + x, 1)))
         self.assertEqual(xt._items, ((10.0, 1), (x, 2)))
         xt = XTerm(((x, 1), ('10' + x, 1), ('10' + x, 1)))
-        self.assertEqual(xt._items, ((100.0, 1), (x, 3)))
+        self.assertEqual(xt._items, ((100, 1), (x, 3)))
 
     def testNormalization(self):
         x, y, z = 'x', 'y', 'z'
@@ -136,6 +140,7 @@ class TermTest(unittest.TestCase):
         xt = XTerm([(x, 1)])
         dxt = XTerm([('10' + x, 1)])
         self.assertTrue(xt != dxt)
+        self.assertEqual(XTerm(((10, 1), (x, 1))), dxt)
 
     def testMultiplication(self):
         x, y, z = 'x', 'y', 'z'
@@ -164,7 +169,7 @@ class TermTest(unittest.TestCase):
         xt = XTerm([(x, 1)])
         self.assertEqual(xt / xt, XTerm())
         dxt = XTerm([('10' + x, 1)])
-        self.assertEqual(xt, dxt / 10)
+        self.assertEqual(xt, dxt / Decimal(10))
 
     def testPower(self):
         x, y, z = 'x', 'y', 'z'
