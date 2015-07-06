@@ -601,7 +601,7 @@ from .qtybase import (Quantity, Unit, getUnitBySymbol, generateUnits,
 from .converter import Converter, TableConverter
 from .money import Currency, Money, ExchangeRate, registerCurrency
 
-__version__ = 0, 8, 0
+__version__ = 0, 8, 1
 
 
 # defined here in order to reduce pickle foot-print
