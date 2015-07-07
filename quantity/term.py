@@ -95,9 +95,6 @@ class Term:
                 self._normalized = self
 
     def _reduceItems(self, itemList, nItems=None, keepItemOrder=True):
-        # if iter(itemList) is iter(itemList):    # do we have an iterator?
-        #     itemList = tuple(itemList)
-        # nItems = len(itemList)
         if nItems == 1:             # already reduced
             return tuple(_filterItems(itemList))
         if nItems == 2:
@@ -219,7 +216,7 @@ class Term:
         return None
 
     def reciprocal(self):
-        return self.__class__(((elem, -exp) for (elem, exp) in self))
+        return self.__class__(_reciprocal(self), reduceItems=False)
 
     def __iter__(self):
         return iter(self._items)
@@ -267,7 +264,7 @@ class Term:
         cls = self.__class__
         if isinstance(other, cls):
             nItems = len(self) + len(other)
-            items = self._reduceItems(chain(self, other.reciprocal()),
+            items = self._reduceItems(chain(self, _reciprocal(other)),
                                       nItems=nItems)
         elif isinstance(other, Real):
             nItems = len(self) + 1
@@ -283,7 +280,7 @@ class Term:
         """other / self"""
         if isinstance(other, Real):
             nItems = len(self) + 1
-            items = self._reduceItems(chain(((other, 1),), self.reciprocal()),
+            items = self._reduceItems(chain(((other, 1),), _reciprocal(self)),
                                       nItems=nItems)
             return self.__class__(items, reduceItems=False)
         return NotImplemented
@@ -337,6 +334,10 @@ def _filterItems(items):
     return ((elem, exp) for (elem, exp) in items
             # eliminate items equivalent to 1:
             if exp != 0 and elem != 1)
+
+
+def _reciprocal(items):
+    return ((elem, -exp) for (elem, exp) in items)
 
 
 def _iterNormalized(term, isBaseElem, normalizeElem):
