@@ -53,6 +53,12 @@ NUM_TYPES = (Real, StdLibDecimal)
 # decimal 1 constant
 DECIMAL_1 = Decimal(1)
 
+# cache for results of operations on quantity class definitions
+QTY_CLS_OP_CACHE = {}
+
+#cache for results of operations on unit definitions
+UNIT_OP_CACHE = {}
+
 
 # decorator defining meta class, portable between Python 2 / Python 3
 def withMetaCls(metaCls):
@@ -498,7 +504,7 @@ class QTermElem:
 
     @property
     def unit(self):
-        """The elemets unit."""
+        """The elements unit."""
         raise NotImplementedError
 
     @property
@@ -794,26 +800,44 @@ class Unit(QTermElem):
 
     def __mul__(self, other):
         """self * other"""
-        if isinstance(other, NUM_TYPES):
-            return self._QTerm(((other, 1), (self, 1)), reduceItems=False)
-        elif isinstance(other, Unit):
-            return self._QTerm(((self, 1), (other, 1)))
+        if isinstance(other, Unit):
+            try:    # try cache
+                return UNIT_OP_CACHE[(operator.mul, self, other)]
+            except KeyError:
+                pass
+            # no cache hit
+            res = self._QTerm(((self, 1), (other, 1)))
+            # cache it
+            UNIT_OP_CACHE[(operator.mul, self, other)] = res
+        elif isinstance(other, NUM_TYPES):
+            res = self._QTerm(((other, 1), (self, 1)), reduceItems=False)
         elif isinstance(other, self._QTerm):
-            return self._QTerm(((self, 1),)) * other
-        return NotImplemented
+            res = self._QTerm(((self, 1),)) * other
+        else:
+            return NotImplemented
+        return res
 
     # other * self
     __rmul__ = __mul__
 
     def __div__(self, other):
         """self / other"""
-        if isinstance(other, NUM_TYPES):
-            return self._QTerm(((1 / other, 1), (self, 1)), reduceItems=False)
-        elif isinstance(other, Unit):
-            return self._QTerm(((self, 1), (other, -1)))
+        if isinstance(other, Unit):
+            try:    # try cache
+                return UNIT_OP_CACHE[(operator.truediv, self, other)]
+            except KeyError:
+                pass
+            # no cache hit
+            res = self._QTerm(((self, 1), (other, -1)))
+            # cache it
+            UNIT_OP_CACHE[(operator.truediv, self, other)] = res
+        elif isinstance(other, NUM_TYPES):
+            res = self._QTerm(((1 / other, 1), (self, 1)), reduceItems=False)
         elif isinstance(other, self._QTerm):
-            return self._QTerm(((self, 1),)) / other
-        return NotImplemented
+            res = self._QTerm(((self, 1),)) / other
+        else:
+            return NotImplemented
+        return res
 
     __truediv__ = __div__
 
@@ -1238,15 +1262,23 @@ class Quantity(QTermElem):
         op must be operator.mul, operator.truediv, operator.floordiv or
         operator.mod.
         Raises UndefinedResultError if resulting class is not defined."""
-        resQtyDef = op(self.Quantity.clsDefinition,
-                       other.Quantity.clsDefinition)
+        selfQtyCls, otherQtyCls = self.Quantity, other.Quantity
+        try:    # try cache
+            return QTY_CLS_OP_CACHE[(op, selfQtyCls, otherQtyCls)]
+        except KeyError:
+            pass
+        # no cache hit
+        resQtyDef = op(selfQtyCls.clsDefinition, otherQtyCls.clsDefinition)
         if resQtyDef:
             try:
-                return _registry.getQuantityCls(resQtyDef)
+                resQtyCls = _registry.getQuantityCls(resQtyDef)
             except ValueError:
                 raise UndefinedResultError(op, self, other)
         else:
-            return _Unitless
+            resQtyCls = _Unitless
+        # cache it
+        QTY_CLS_OP_CACHE[(op, selfQtyCls, otherQtyCls)] = resQtyCls
+        return resQtyCls
 
     def __mul__(self, other):
         """self * other"""
