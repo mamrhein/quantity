@@ -798,17 +798,17 @@ class Unit(QTermElem):
         raise IncompatibleUnitsError("Can't convert '%s' to '%s'",
                                      equiv.unit.name, self.name)
 
-    def __mul__(self, other):
+    def __mul__(self, other, op_cache=UNIT_OP_CACHE):
         """self * other"""
         if isinstance(other, Unit):
             try:    # try cache
-                return UNIT_OP_CACHE[(operator.mul, self, other)]
+                return op_cache[(operator.mul, self, other)]
             except KeyError:
                 pass
             # no cache hit
             res = self._QTerm(((self, 1), (other, 1)))
             # cache it
-            UNIT_OP_CACHE[(operator.mul, self, other)] = res
+            op_cache[(operator.mul, self, other)] = res
         elif isinstance(other, NUM_TYPES):
             res = self._QTerm(((other, 1), (self, 1)), reduceItems=False)
         elif isinstance(other, self._QTerm):
@@ -820,17 +820,17 @@ class Unit(QTermElem):
     # other * self
     __rmul__ = __mul__
 
-    def __div__(self, other):
+    def __div__(self, other, op_cache=UNIT_OP_CACHE):
         """self / other"""
         if isinstance(other, Unit):
             try:    # try cache
-                return UNIT_OP_CACHE[(operator.truediv, self, other)]
+                return op_cache[(operator.truediv, self, other)]
             except KeyError:
                 pass
             # no cache hit
             res = self._QTerm(((self, 1), (other, -1)))
             # cache it
-            UNIT_OP_CACHE[(operator.truediv, self, other)] = res
+            op_cache[(operator.truediv, self, other)] = res
         elif isinstance(other, NUM_TYPES):
             res = self._QTerm(((1 / other, 1), (self, 1)), reduceItems=False)
         elif isinstance(other, self._QTerm):
@@ -1256,7 +1256,7 @@ class Quantity(QTermElem):
                                          self, other)
         return NotImplemented
 
-    def _getResQtyCls(self, other, op):
+    def _getResQtyCls(self, other, op, op_cache=QTY_CLS_OP_CACHE):
         """Return class resulting from op(self, other).
 
         op must be operator.mul, operator.truediv, operator.floordiv or
@@ -1264,7 +1264,7 @@ class Quantity(QTermElem):
         Raises UndefinedResultError if resulting class is not defined."""
         selfQtyCls, otherQtyCls = self.Quantity, other.Quantity
         try:    # try cache
-            return QTY_CLS_OP_CACHE[(op, selfQtyCls, otherQtyCls)]
+            return op_cache[(op, selfQtyCls, otherQtyCls)]
         except KeyError:
             pass
         # no cache hit
@@ -1277,7 +1277,7 @@ class Quantity(QTermElem):
         else:
             resQtyCls = _Unitless
         # cache it
-        QTY_CLS_OP_CACHE[(op, selfQtyCls, otherQtyCls)] = resQtyCls
+        op_cache[(op, selfQtyCls, otherQtyCls)] = resQtyCls
         return resQtyCls
 
     def __mul__(self, other):
