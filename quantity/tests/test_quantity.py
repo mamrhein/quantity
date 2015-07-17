@@ -22,8 +22,9 @@ from decimalfp import Decimal, set_rounding
 from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
     ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
 from quantity import (Quantity, Unit, getUnitBySymbol, generateUnits, sum,
-                      QuantityError, IncompatibleUnitsError,
-                      UndefinedResultError, TableConverter)
+                      QuantityError, UndefinedResultError,
+                      IncompatibleUnitsError, UnitConversionError,
+                      TableConverter)
 from quantity.qtybase import typearg, MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
@@ -291,7 +292,7 @@ class Test2_Unit(unittest.TestCase):
         q = (X('3', Mx) / Y('1', ssy)) * Z('3') ** 2
         self.assertEqual(round(xtz2py(q)), 7500)
         self.assertRaises(IncompatibleUnitsError, Mx, y)
-        self.assertRaises(IncompatibleUnitsError, u1, u2)
+        self.assertRaises(UnitConversionError, u1, u2)
 
     def testComparision(self):
         self.assertEqual(x, x)
@@ -444,9 +445,9 @@ class Test3_Quantity(unittest.TestCase):
         r = q500x.convert(Mx)
         self.assertEqual((r.amount, r.unit), (Decimal('0.0005'), Mx))
         self.assertRaises(IncompatibleUnitsError, q500x.convert, y)
-        self.assertRaises(IncompatibleUnitsError, (1 ^ u1).convert, u2)
+        self.assertRaises(UnitConversionError, (1 ^ u1).convert, u2)
         q7u2pkx = QpX(Decimal(7), u2pkx)
-        self.assertRaises(IncompatibleUnitsError, q7u2pkx.convert, u1px)
+        self.assertRaises(UnitConversionError, q7u2pkx.convert, u1px)
         U.registerConverter(uConv)
         # u1 = 5 u2 - 3 = 25 u3 + 1.5
         qu1 = Q(Decimal('1.7'), u1)

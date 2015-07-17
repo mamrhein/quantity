@@ -25,6 +25,8 @@ from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
 from decimalfp import Decimal
 import quantity
+from .exceptions import (QuantityError, IncompatibleUnitsError,
+                         UndefinedResultError, UnitConversionError)
 from .term import Term
 from .converter import RefUnitConverter
 
@@ -65,44 +67,6 @@ def withMetaCls(metaCls):
     def _createCls(cls):
         return metaCls(cls.__name__, cls.__bases__, dict(cls.__dict__))
     return _createCls
-
-
-class QuantityError(TypeError):
-
-    """Exception raised when a quantity can not not be instanciated with the
-    given parameters."""
-
-
-class IncompatibleUnitsError(QuantityError):
-
-    """Exception raised when operands do not have compatible units."""
-
-    def __init__(self, msg, operand1, operand2):
-        if isinstance(operand1, QTermElem):
-            operand1 = operand1.__class__.__name__
-        if isinstance(operand2, QTermElem):
-            operand2 = operand2.__class__.__name__
-        QuantityError.__init__(self, msg % (operand1, operand2))
-
-
-class UndefinedResultError(QuantityError):
-
-    """Exception raised when operation results in an undefined quantity."""
-
-    opSym = {operator.mul: '*',
-             operator.truediv: '/',
-             operator.floordiv: '//',
-             operator.mod: '%',
-             operator.pow: '**'
-             }
-
-    def __init__(self, op, operand1, operand2):
-        if isinstance(operand1, QTermElem):
-            operand1 = operand1.__class__.__name__
-        if isinstance(operand2, QTermElem):
-            operand2 = operand2.__class__.__name__
-        QuantityError.__init__(self, "Undefined result: %s %s %s" %
-                               (operand1, self.opSym[op], operand2))
 
 
 class QuantityRegistry():
@@ -741,7 +705,7 @@ class Unit(QTermElem):
         if isinstance(other, self.Unit):
             try:
                 return self.amount == self(other)
-            except IncompatibleUnitsError:
+            except UnitConversionError:
                 pass
         return False
 
@@ -769,7 +733,8 @@ class Unit(QTermElem):
                 factor ^ self == 1 ^ equiv
 
         Raises:
-            IncompatibleUnitsError: conversion not possible
+            IncompatibleUnitsError: self and equiv are of incompatible types
+            UnitConversionError: conversion factor not available
             TypeError: no :class:`Quantity` or :class:`Unit` instance given
         """
         try:
@@ -784,9 +749,10 @@ class Unit(QTermElem):
                                          equiv.Quantity, self.Quantity)
         # try registered converters:
         for conv in self.registeredConverters():
-            amnt = conv(equiv, self)
-            if amnt is not None:
-                return amnt
+            try:
+                return conv(equiv, self)
+            except UnitConversionError:
+                pass
         # if derived Unit class, try to convert base units:
         cls = self.Unit
         if cls.isDerivedQuantity():
@@ -795,8 +761,8 @@ class Unit(QTermElem):
             if len(resDef) <= 1:
                 return equiv.amount * resDef.amount
         # no success, give up
-        raise IncompatibleUnitsError("Can't convert '%s' to '%s'",
-                                     equiv.unit.name, self.name)
+        raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                  equiv.unit, self)
 
     def __mul__(self, other, op_cache=UNIT_OP_CACHE):
         """self * other"""

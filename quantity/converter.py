@@ -18,22 +18,39 @@
 """Provides classes used to convert quantities."""
 
 from __future__ import absolute_import, division, unicode_literals
+from .exceptions import IncompatibleUnitsError, UnitConversionError
+
 
 __metaclass__ = type
 
 
 class Converter:
 
-    """Convert a quantity's amount to the equivalent amount for another
-    unit.
-
-    A quantity converter can be any callable with a signature like
-    conv(qty, toUnit) -> number f so that type(qty)(f, toUnit) == qty.
-
-    Must return None if conversion can not be done."""
+    """A quantity converter can be any callable with a signature like
+    conv(qty, toUnit) -> number f so that type(qty)(f, toUnit) == qty."""
 
     def __call__(self, qty, toUnit):
-        return None
+        """Convert a quantity's amount to the equivalent amount for another
+        unit.
+
+        Args:
+            qty (sub-class of :class:`Quantity`): quantity thats amount is to
+                be converted
+            toUnit (sub-class of :class:`Unit`): unit thats equivalent amount
+                to be returned
+
+        Returns:
+            number: factor f so that f ^ toUNit == qty
+
+        Raises:
+            IncompatibleUnitsError: qty and toUnit are of incompatible types
+            UnitConversionError: conversion factor not available
+        """
+        if qty.Unit is not toUnit.Unit:
+            raise IncompatibleUnitsError("Can't convert a '%s' to a '%s'.",
+                                         qty.Unit, toUnit.Unit)
+        raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                  qty.unit, toUnit)
 
 
 class RefUnitConverter:
@@ -41,14 +58,29 @@ class RefUnitConverter:
     """Converter for Quantity classes that have a reference unit."""
 
     def __call__(self, qty, toUnit):
-        """Return f so that type(qty)(f, toUnit) == qty."""
+        """Return f so that type(qty)(f, toUnit) == qty.
+
+        Args:
+            qty (sub-class of :class:`Quantity`): quantity thats amount is to
+                be converted
+            toUnit (sub-class of :class:`Unit`): unit thats equivalent amount
+                to be returned
+
+        Returns:
+            number: factor f so that f ^ toUNit == qty
+
+        Raises:
+            IncompatibleUnitsError: qty and toUnit are of incompatible types
+            UnitConversionError: conversion factor not available
+        """
         if qty.unit is toUnit:          # same unit
             return qty.amount
         if qty.Unit == toUnit.Unit:     # same Unit class
             resDef = (qty.unit.normalizedDefinition
                       / toUnit.normalizedDefinition)
             return qty.amount * resDef.amount
-        return None
+        raise IncompatibleUnitsError("Can't convert a '%s' to a '%s'.",
+                                     qty.Unit, toUnit.Unit)
 
 
 class TableConverter:
@@ -113,19 +145,34 @@ class TableConverter:
     def __call__(self, qty, toUnit):
         """Return f so that type(qty)(f, toUnit) == qty.
 
-        If there is no mapping from `qty.unit` to `toUnit` or vice versa
-        defined in the conversion table, None is returned."""
+        Args:
+            qty (sub-class of :class:`Quantity`): quantity thats amount is to
+                be converted
+            toUnit (sub-class of :class:`Unit`): unit thats equivalent amount
+                to be returned
+
+        Returns:
+            number: factor f so that f ^ toUNit == qty
+
+        Raises:
+            IncompatibleUnitsError: qty and toUnit are of incompatible types
+            UnitConversionError: conversion factor not available
+        """
         if qty.unit is toUnit:          # same unit
             return qty.amount
-        try:
-            factor, offset = self._unitMap[(qty.unit, toUnit)]
-        except KeyError:
-            # try reverse
+        if qty.Unit == toUnit.Unit:     # same Unit class
             try:
-                factor, offset = self._unitMap[(toUnit, qty.unit)]
+                factor, offset = self._unitMap[(qty.unit, toUnit)]
             except KeyError:
-                return None
+                # try reverse
+                try:
+                    factor, offset = self._unitMap[(toUnit, qty.unit)]
+                except KeyError:
+                    raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                              qty.unit, toUnit)
+                else:
+                    return (qty.amount - offset) / factor
             else:
-                return (qty.amount - offset) / factor
-        else:
-            return factor * qty.amount + offset
+                return factor * qty.amount + offset
+        raise IncompatibleUnitsError("Can't convert a '%s' to a '%s'.",
+                                     qty.Unit, toUnit.Unit)

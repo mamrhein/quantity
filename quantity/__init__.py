@@ -595,9 +595,9 @@ try:
     from builtins import sum as builtin_sum
 except ImportError:
     from __builtin__ import sum as builtin_sum
-from .qtybase import (Quantity, Unit, getUnitBySymbol, generateUnits,
-                      QuantityError, IncompatibleUnitsError,
-                      UndefinedResultError)
+from .exceptions import (QuantityError, IncompatibleUnitsError,
+                         UndefinedResultError, UnitConversionError)
+from .qtybase import Quantity, Unit, getUnitBySymbol, generateUnits
 from .converter import Converter, TableConverter
 from .money import Currency, Money, ExchangeRate, registerCurrency
 
@@ -647,6 +647,7 @@ __all__ = [
     'UndefinedResultError',
     'Converter',
     'TableConverter',
+    'UnitConversionError',
     'Currency',
     'Money',
     'ExchangeRate',

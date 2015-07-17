@@ -20,8 +20,8 @@ import unittest
 import operator
 from fractions import Fraction
 from decimalfp import Decimal
-from quantity import (Quantity, QuantityError, IncompatibleUnitsError,
-                      UndefinedResultError)
+from quantity import (Quantity, QuantityError, UndefinedResultError,
+                      IncompatibleUnitsError, UnitConversionError)
 from quantity.money import (Currency, Money, ExchangeRate,
                             getCurrencyInfo, registerCurrency)
 from quantity.predefined import Mass, GRAM, KILOGRAM, OUNCE
@@ -81,7 +81,7 @@ class Test2_Money(unittest.TestCase):
         self.assertRaises(QuantityError, Money, 'x EUR')
         self.assertRaises(QuantityError, Money, '3 fgh')
         self.assertRaises(QuantityError, Money, '3 kg')
-        self.assertRaises(IncompatibleUnitsError, Money, '3 EUR', HKD)
+        self.assertRaises(UnitConversionError, Money, '3 EUR', HKD)
         self.assertEqual(Money.getQuantum(HKD), HKD.smallestFraction)
         m3eur = Money('3 EUR')
         self.assertTrue(m3eur.unit is EUR)
@@ -107,10 +107,10 @@ class Test2_Money(unittest.TestCase):
         self.assertEqual(m30c - m30c, 0 ^ EUR)
         self.assertEqual(7 * m30c, (7 * d) ^ EUR)
         self.assertEqual(m30c / 7, (d / 7) ^ EUR)
-        self.assertRaises(IncompatibleUnitsError, operator.add, m30c, 2 ^ HKD)
-        self.assertRaises(IncompatibleUnitsError, operator.sub, m30c, 2 ^ HKD)
+        self.assertRaises(UnitConversionError, operator.add, m30c, 2 ^ HKD)
+        self.assertRaises(UnitConversionError, operator.sub, m30c, 2 ^ HKD)
         self.assertRaises(UndefinedResultError, operator.mul, m30c, 2 ^ HKD)
-        self.assertRaises(IncompatibleUnitsError, operator.truediv, m30c,
+        self.assertRaises(UnitConversionError, operator.truediv, m30c,
                           2 ^ HKD)
         self.assertRaises(UndefinedResultError, operator.pow, m30c, 2)
 
