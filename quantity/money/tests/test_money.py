@@ -4,7 +4,7 @@
 ## Name:        test_money
 ## Purpose:     Test driver for package quantity.money
 ##
-## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
+## Author:      Michael Amrhein (michael@adrhinum.de)
 ##
 ## Copyright:   (c) 2015 Michael Amrhein
 ##----------------------------------------------------------------------------

@@ -3,7 +3,7 @@
 ## Name:        currencies
 ## Purpose:     Provide dict of currencies based on ISO 4217
 ##
-## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
+## Author:      Michael Amrhein (michael@adrhinum.de)
 ##
 ## Copyright:   (c) 2015 Michael Amrhein
 ## License:     This program is free software. You can redistribute it, use it

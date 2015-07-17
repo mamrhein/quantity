@@ -3,7 +3,7 @@
 ## Name:        term
 ## Purpose:     Terms of tuples of elements and corresponding exponents.
 ##
-## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
+## Author:      Michael Amrhein (michael@adrhinum.de)
 ##
 ## Copyright:   (c) 2012 ff. Michael Amrhein
 ## License:     This program is free software. You can redistribute it, use it

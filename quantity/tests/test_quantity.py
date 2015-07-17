@@ -4,7 +4,7 @@
 ## Name:        test_quantity
 ## Purpose:     Test driver for module quantity
 ##
-## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
+## Author:      Michael Amrhein (michael@adrhinum.de)
 ##
 ## Copyright:   (c) Michael Amrhein
 ##****************************************************************************

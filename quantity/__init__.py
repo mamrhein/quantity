@@ -3,7 +3,7 @@
 ## Name:        quantity (package)
 ## Purpose:     Unit-safe computations with quantities.
 ##
-## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
+## Author:      Michael Amrhein (michael@adrhinum.de)
 ##
 ## Copyright:   (c) 2012 ff. Michael Amrhein
 ## License:     This program is free software. You can redistribute it, use it

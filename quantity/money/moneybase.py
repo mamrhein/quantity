@@ -3,7 +3,7 @@
 ## Name:        moneybase
 ## Purpose:     Base classes for computations with money amounts.
 ##
-## Author:      Michael Amrhein (mamrhein@users.sourceforge.net)
+## Author:      Michael Amrhein (michael@adrhinum.de)
 ##
 ## Copyright:   (c) 2013 ff. Michael Amrhein
 ## License:     This program is free software. You can redistribute it, use it
