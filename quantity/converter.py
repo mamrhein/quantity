@@ -40,34 +40,7 @@ class Converter:
                 to be returned
 
         Returns:
-            number: factor f so that f ^ toUNit == qty
-
-        Raises:
-            IncompatibleUnitsError: qty and toUnit are of incompatible types
-            UnitConversionError: conversion factor not available
-        """
-        if qty.Unit is not toUnit.Unit:
-            raise IncompatibleUnitsError("Can't convert a '%s' to a '%s'.",
-                                         qty.Unit, toUnit.Unit)
-        raise UnitConversionError("Can't convert '%s' to '%s'.",
-                                  qty.unit, toUnit)
-
-
-class RefUnitConverter:
-
-    """Converter for Quantity classes that have a reference unit."""
-
-    def __call__(self, qty, toUnit):
-        """Return f so that type(qty)(f, toUnit) == qty.
-
-        Args:
-            qty (sub-class of :class:`Quantity`): quantity thats amount is to
-                be converted
-            toUnit (sub-class of :class:`Unit`): unit thats equivalent amount
-                to be returned
-
-        Returns:
-            number: factor f so that f ^ toUNit == qty
+            number: factor f so that f ^ toUnit == qty
 
         Raises:
             IncompatibleUnitsError: qty and toUnit are of incompatible types
@@ -75,15 +48,29 @@ class RefUnitConverter:
         """
         if qty.unit is toUnit:          # same unit
             return qty.amount
-        if qty.Unit == toUnit.Unit:     # same Unit class
-            resDef = (qty.unit.normalizedDefinition
-                      / toUnit.normalizedDefinition)
-            return qty.amount * resDef.amount
+        if qty.Unit == toUnit.Unit:
+            factor = self._getFactor(qty, toUnit)
+            if factor is None:
+                raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                          qty.unit, toUnit)
+            return factor
         raise IncompatibleUnitsError("Can't convert a '%s' to a '%s'.",
                                      qty.Unit, toUnit.Unit)
 
+    def _getFactor(self, qty, toUnit):
+        return NotImplemented
 
-class TableConverter:
+
+class RefUnitConverter(Converter):
+
+    """Converter for Quantity classes that have a reference unit."""
+
+    def _getFactor(self, qty, toUnit):
+        resDef = (qty.unit.normalizedDefinition / toUnit.normalizedDefinition)
+        return qty.amount * resDef.amount
+
+
+class TableConverter(Converter):
 
     """Converter using a conversion table.
 
@@ -142,25 +129,7 @@ class TableConverter:
         else:
             raise TypeError("A dict or list must be given.")
 
-    def __call__(self, qty, toUnit):
-        """Return f so that type(qty)(f, toUnit) == qty.
-
-        Args:
-            qty (sub-class of :class:`Quantity`): quantity thats amount is to
-                be converted
-            toUnit (sub-class of :class:`Unit`): unit thats equivalent amount
-                to be returned
-
-        Returns:
-            number: factor f so that f ^ toUNit == qty
-
-        Raises:
-            IncompatibleUnitsError: qty and toUnit are of incompatible types
-            UnitConversionError: conversion factor not available
-        """
-        if qty.unit is toUnit:          # same unit
-            return qty.amount
-        if qty.Unit == toUnit.Unit:     # same Unit class
+    def _getFactor(self, qty, toUnit):
             try:
                 factor, offset = self._unitMap[(qty.unit, toUnit)]
             except KeyError:
@@ -168,11 +137,8 @@ class TableConverter:
                 try:
                     factor, offset = self._unitMap[(toUnit, qty.unit)]
                 except KeyError:
-                    raise UnitConversionError("Can't convert '%s' to '%s'.",
-                                              qty.unit, toUnit)
+                    return None
                 else:
                     return (qty.amount - offset) / factor
             else:
                 return factor * qty.amount + offset
-        raise IncompatibleUnitsError("Can't convert a '%s' to a '%s'.",
-                                     qty.Unit, toUnit.Unit)
