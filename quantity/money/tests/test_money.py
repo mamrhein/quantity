@@ -18,6 +18,7 @@
 from __future__ import absolute_import, unicode_literals
 import unittest
 import operator
+from datetime import date
 from fractions import Fraction
 from decimalfp import Decimal
 from quantity import (Quantity, QuantityError, UndefinedResultError,
@@ -25,6 +26,10 @@ from quantity import (Quantity, QuantityError, UndefinedResultError,
 from quantity.money import (Currency, Money, ExchangeRate,
                             getCurrencyInfo, registerCurrency)
 from quantity.predefined import Mass, GRAM, KILOGRAM, OUNCE
+from quantity.money.converter import (ConstantRateConverter,
+                                      DailyRateConverter,
+                                      MonthlyRateConverter,
+                                      YearlyRateConverter)
 
 
 __metaclass__ = type
@@ -33,6 +38,7 @@ __metaclass__ = type
 EUR = registerCurrency('EUR')
 HKD = registerCurrency('HKD')
 USD = registerCurrency('USD')
+ZWL = registerCurrency('ZWL')
 
 
 class PricePerMass(Quantity):
@@ -108,7 +114,11 @@ class Test2_Money(unittest.TestCase):
         self.assertEqual(7 * m30c, (7 * d) ^ EUR)
         self.assertEqual(m30c / 7, (d / 7) ^ EUR)
         self.assertRaises(UnitConversionError, operator.add, m30c, 2 ^ HKD)
+        self.assertRaises(IncompatibleUnitsError,
+                          operator.add, m30c, 2 ^ GRAM)
         self.assertRaises(UnitConversionError, operator.sub, m30c, 2 ^ HKD)
+        self.assertRaises(IncompatibleUnitsError,
+                          operator.sub, m30c, 2 ^ GRAM)
         self.assertRaises(UndefinedResultError, operator.mul, m30c, 2 ^ HKD)
         self.assertRaises(UnitConversionError, operator.truediv, m30c,
                           2 ^ HKD)
@@ -245,3 +255,107 @@ class Test3_ExchangeRate(unittest.TestCase):
         self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, 5)
         self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, Mass(7))
         self.assertRaises(TypeError, operator.truediv, fxEUR2HKD, p)
+
+
+class Test4_Converter(unittest.TestCase):
+
+    def setUp(self):
+        constantRates = [(USD, Decimal('1.2'), 1),
+                         (HKD, Decimal('8.5'), 1)]
+        self.constantRateConverter = ConstantRateConverter(EUR, constantRates)
+        dailyRates = list(_genRates())
+        self.dailyRateConverter = DailyRateConverter(EUR, dailyRates)
+        monthlyRates = [(dt.year, dt.month, termCurrency, termAmount,
+                         unitMultiple)
+                        for dt, termCurrency, termAmount, unitMultiple
+                        in dailyRates if dt.day == 1]
+        self.monthlyRateConverter = MonthlyRateConverter(EUR, monthlyRates)
+        yearlyRates = [(year, termCurrency, termAmount,
+                        unitMultiple)
+                       for year, month, termCurrency, termAmount, unitMultiple
+                       in monthlyRates if month == 1]
+        self.yearlyRateConverter = YearlyRateConverter(EUR, yearlyRates)
+
+    def testRates(self):
+        today = date.today()
+        year, month, day = today.timetuple()[:3]
+        # constant rates
+        conv = self.constantRateConverter
+        self.assertEqual(conv.baseCurrency, EUR)
+        rateEUR2USD = conv.getRate(EUR, USD, today)
+        self.assertEqual(rateEUR2USD.quotation, (EUR, USD, Decimal('1.2')))
+        rateHKD2EUR = conv.getRate(HKD, EUR)
+        self.assertEqual(rateHKD2EUR, conv.getRate(EUR, HKD).inverted())
+        rateHKD2USD = conv.getRate(HKD, USD, date(2004, 12, 17))
+        self.assertEqual(rateHKD2USD,
+                         conv.getRate(EUR, USD) / conv.getRate(EUR, HKD))
+        rateZWL2EUR = conv.getRate(ZWL, EUR)
+        self.assertEqual(rateZWL2EUR, None)
+        # daily rates
+        conv = self.dailyRateConverter
+        rateEUR2USD = conv.getRate(EUR, USD)
+        self.assertEqual(rateEUR2USD.rate,
+                         Decimal("%i.%02i%i" % (day, month, year)))
+        rateEUR2USD = conv.getRate(EUR, USD, date(year, 1, 1))
+        self.assertEqual(rateEUR2USD.rate,
+                         Decimal("%i.%02i%i" % (1, 1, year)))
+        rateEUR2HKD = conv.getRate(EUR, HKD, date(year - 1, 2, 2))
+        self.assertEqual(rateEUR2HKD.rate,
+                         2 * Decimal("%i.%02i%i" % (2, 2, year - 1)))
+        if day <= 3:
+            refDate = date(year, month, 4)
+        else:
+            refDate = date(year, month, day - 1)
+        rateEUR2HKD = conv.getRate(EUR, HKD, refDate)
+        self.assertEqual(rateEUR2HKD, None)
+        # monthly rates
+        conv = self.monthlyRateConverter
+        rateEUR2USD = conv.getRate(EUR, USD)
+        self.assertEqual(rateEUR2USD.rate,
+                         Decimal("%i.%02i%i" % (1, month, year)))
+        rateEUR2USD = conv.getRate(EUR, USD, date(year, 1, 17))
+        self.assertEqual(rateEUR2USD.rate,
+                         Decimal("%i.%02i%i" % (1, 1, year)))
+        rateEUR2HKD = conv.getRate(EUR, HKD, date(year - 1, 2, 24))
+        self.assertEqual(rateEUR2HKD.rate,
+                         2 * Decimal("%i.%02i%i" % (1, 2, year - 1)))
+        if month <= 3:
+            refDate = date(year, 4, 14)
+        else:
+            refDate = date(year, month - 1, 14)
+        rateEUR2HKD = conv.getRate(EUR, HKD, refDate)
+        self.assertEqual(rateEUR2HKD, None)
+        # yearly rates
+        conv = self.yearlyRateConverter
+        rateEUR2USD = conv.getRate(EUR, USD)
+        self.assertEqual(rateEUR2USD.rate,
+                         Decimal("%i.%02i%i" % (1, 1, year)))
+        rateEUR2USD = conv.getRate(EUR, USD, date(year, 11, 17))
+        self.assertEqual(rateEUR2USD.rate,
+                         Decimal("%i.%02i%i" % (1, 1, year)))
+        rateEUR2HKD = conv.getRate(EUR, HKD, date(year - 1, 2, 24))
+        self.assertEqual(rateEUR2HKD.rate,
+                         2 * Decimal("%i.%02i%i" % (1, 1, year - 1)))
+        rateEUR2HKD = conv.getRate(EUR, HKD, date(year - 2, 1, 1))
+        self.assertEqual(rateEUR2HKD, None)
+
+
+# helper functions
+
+
+def _genRates():
+    today = date.today()
+    thisYear = today.year
+    prevYear = thisYear - 1
+    thisMonth = today.month
+    for day in (1, 2):
+        for month in (1, 2, thisMonth):
+            for year in (prevYear, thisYear):
+                dt = date(year, month, day)
+                rate = Decimal("%i.%02i%i" % (day, month, year))
+                yield (dt, USD, rate, 1)
+                yield (dt, HKD, 2 * rate, 1)
+    year, month, day = today.timetuple()[:3]
+    rate = Decimal("%i.%02i%i" % (day, month, year))
+    yield (today, USD, rate, 1)
+    yield (today, HKD, 2 * rate, 1)
