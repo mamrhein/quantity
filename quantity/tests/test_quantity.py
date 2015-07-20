@@ -132,12 +132,16 @@ u1 = U('u1', 'Q unit 1')
 u2 = U('u2')
 u3 = U('u3')
 
-# u1 = 5 u2 - 3 = 25 u3 + 1.5
-uConvTable = [(u1, u2, Decimal(5), -3),
-              (u2, u1, Decimal('0.2'), Decimal('0.6')),
-              (u1, u3, Decimal(25), Decimal('1.5')),
-              (u3, u2, Decimal('0.2'), Decimal('-3.3'))]
-uConv = TableConverter(uConvTable)
+# x u1 = (5 * x - 3) u2 = (25 * x + 1.5) u3
+uConvTab1 = [(u1, u2, Decimal(5), -3),
+             (u2, u1, Decimal('0.2'), Decimal('0.6')),
+             (u1, u3, Decimal(25), Decimal('1.5')),
+             (u3, u2, Decimal('0.2'), Decimal('-3.3'))]
+uConv1 = TableConverter(uConvTab1)
+
+# x u1 = (5 * x - 1) u2
+uConvTab2 = [(u1, u2, Decimal(5), -1)]
+uConv2 = TableConverter(uConvTab2)
 
 
 defQpX = Q / X
@@ -448,10 +452,12 @@ class Test3_Quantity(unittest.TestCase):
         self.assertRaises(UnitConversionError, (1 ^ u1).convert, u2)
         q7u2pkx = QpX(Decimal(7), u2pkx)
         self.assertRaises(UnitConversionError, q7u2pkx.convert, u1px)
-        U.registerConverter(uConv)
-        # u1 = 5 u2 - 3 = 25 u3 + 1.5
+        U.registerConverter(uConv1)
+        # x u1 = (5 * x - 3) u2 = (25 * x + 1.5) u3
         qu1 = Q(Decimal('1.7'), u1)
         qu2 = qu1.convert(u2)
+        self.assertEqual(qu2.amount, Decimal('5.5'))
+        self.assertTrue(qu2.unit is u2)
         qu3 = qu1.convert(u3)
         self.assertTrue(qu1 == qu2 == qu3)
         q50u1 = Q(Decimal(50), u1)
@@ -466,6 +472,19 @@ class Test3_Quantity(unittest.TestCase):
         self.assertEqual(u1px(q7u2pkx), Decimal('0.0035'))
         r = q7u2pkx.convert(u1px)
         self.assertEqual((r.amount, r.unit), (Decimal('0.0035'), u1px))
+        # add additional converter
+        U.registerConverter(uConv2)
+        # x u1 = (5 * x - 1) u2
+        qu1 = Q(Decimal(2), u1)
+        qu2 = qu1.convert(u2)
+        self.assertEqual(qu2.amount, Decimal(9))
+        qu2 = qu1.convert(u2)
+        self.assertEqual(qu1, qu2)
+        # remove converter
+        U.removeConverter(uConv2)
+        # # x u1 = (5 * x - 3) u2
+        qu2 = qu1.convert(u2)
+        self.assertEqual(qu2.amount, Decimal(7))
 
     def testComparision(self):
         x3 = X(3)

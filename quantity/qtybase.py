@@ -654,7 +654,7 @@ class Unit(QTermElem):
     @classmethod
     def registeredConverters(cls):
         """Return an iterator over the converters registered in cls."""
-        return iter(cls._converters)
+        return reversed(cls._converters)
 
     @property
     def definition(self):
