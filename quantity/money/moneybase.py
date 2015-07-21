@@ -104,6 +104,36 @@ class Currency(Unit):
         curr._smallestFraction = smallestFraction
         return curr
 
+    @classmethod
+    def registerConverter(cls, conv):
+        """Add converter 'conv' to the list of converters registered in 'cls'.
+
+        Money converters should not be registered directly by using this
+        method. Instead, this should be done by using them as context managers
+        in a 'with' statement."""
+        cls._converters.append(conv)
+
+    @classmethod
+    def removeConverter(cls, conv):
+        """Remove the last instance of converter 'conv' from the list of
+        converters registered in 'cls'.
+
+        Raises ValueError if 'conv' is not the most recently registered
+        converter in 'cls'.
+
+        That means that money converters must be unregistered in reversed
+        order of registration. To enforce this, money converters should be
+        registered an unregistered by using them as context managers in a
+        'with' statement."""
+        if cls._converters[-1] is conv:
+            cls._converters.pop()
+        elif conv in cls._converters:
+            raise ValueError("Attempt to unregister converter which is not "
+                             "the most recently registered one.")
+        else:
+            raise ValueError("Attempt to unregister an unregistered "
+                             "converter.")
+
     @property
     def isoCode(self):
         """ISO 4217 3-character code."""

@@ -18,6 +18,17 @@ Classes
         inverseQuotation, inverted, __hash__, __eq__, __mul__, __div__,
         __rdiv__
 
+.. autoclass:: MoneyConverter
+    :members: baseCurrency, getRate, __call__
+
+.. autoclass:: ConstantRateConverter
+
+.. autoclass:: YearlyRateConverter
+
+.. autoclass:: MonthlyRateConverter
+
+.. autoclass:: DailyRateConverter
+
 Functions
 =========
 

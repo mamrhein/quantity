@@ -258,6 +258,9 @@ exchange rates, as long as the resulting unit is defined.
 from __future__ import absolute_import, unicode_literals
 from .moneybase import Currency, Money, ExchangeRate
 from .currencies import getCurrencyInfo, registerCurrency
+from .converter import (MoneyConverter, ConstantRateConverter,
+                        DailyRateConverter, MonthlyRateConverter,
+                        YearlyRateConverter)
 
 
 __metaclass__ = type
@@ -269,4 +272,9 @@ __all__ = [
     'ExchangeRate',
     'getCurrencyInfo',
     'registerCurrency',
+    'MoneyConverter',
+    'ConstantRateConverter',
+    'DailyRateConverter',
+    'MonthlyRateConverter',
+    'YearlyRateConverter',
 ]

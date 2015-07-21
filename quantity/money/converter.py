@@ -22,7 +22,7 @@ from __future__ import absolute_import, unicode_literals
 from datetime import date
 from decimalfp import Decimal
 from .. import UnitConversionError
-from . import ExchangeRate
+from . import Currency, ExchangeRate
 
 
 __metaclass__ = type
@@ -32,6 +32,25 @@ class MoneyConverter:
     """Abstract base class of Money converters."""
 
     def __call__(self, moneyAmnt, toCurrency, effectiveDate=None):
+        """Convert a money amount in one currency to the equivalent amount for
+        another currency.
+
+        Args:
+            moneyAmnt (:class:`Money`): money amount to be converted
+            toCurrency (:class:`Currency`): currency for which the  equivalent
+                amount is to be returned
+            effectiveDate (date): date for which the exchange rate used must
+                be effective (default: None)
+
+        If `effectiveDate` is not given, the current date is used as
+        reference.
+
+        Returns:
+            number: amount equiv so that equiv ^ toCurrency == moneyAmnt
+
+        Raises:
+            UnitConversionError: exchange rate not available
+        """
         rate = self.getRate(moneyAmnt.currency, toCurrency, effectiveDate)
         if rate is None:
             raise UnitConversionError("Can't convert '%s' to '%s'.",
@@ -40,6 +59,7 @@ class MoneyConverter:
 
     @property
     def baseCurrency(self):
+        """The currency used as reference currency."""
         return self._baseCurrency
 
     def getRate(self, unitCurrency, termCurrency, effectiveDate=None):
@@ -52,7 +72,7 @@ class MoneyConverter:
             effectiveDate (date): date at which the rate must be effective
                 (default: None)
 
-        if `effectiveDate` is not given, the current date is used as
+        If `effectiveDate` is not given, the current date is used as
         reference.
 
         Returns:
@@ -87,6 +107,16 @@ class MoneyConverter:
 
     def _getRate(self, termCurrency, effectiveDate):
         return NotImplemented
+
+    def __enter__(self):
+        """Register self as converter in class Currency."""
+        Currency.registerConverter(self)
+        return self
+
+    def __exit__(self, *args):
+        """Unregister self as converter in class Currency."""
+        Currency.removeConverter(self)
+        return None
 
 
 class ConstantRateConverter(MoneyConverter):

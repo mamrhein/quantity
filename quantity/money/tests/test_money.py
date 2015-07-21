@@ -339,6 +339,72 @@ class Test4_Converter(unittest.TestCase):
         rateEUR2HKD = conv.getRate(EUR, HKD, date(year - 2, 1, 1))
         self.assertEqual(rateEUR2HKD, None)
 
+    def testRegistration(self):
+        # assert that there are no registered money converters yet
+        self.assertFalse(list(Currency.registeredConverters()))
+        Currency.registerConverter(self.constantRateConverter)
+        self.assertEqual(list(Currency.registeredConverters()),
+                         [self.constantRateConverter])
+        Currency.registerConverter(self.monthlyRateConverter)
+        self.assertEqual(list(Currency.registeredConverters()),
+                         [self.monthlyRateConverter,
+                          self.constantRateConverter])
+        self.assertRaises(ValueError, Currency.removeConverter,
+                          self.yearlyRateConverter)
+        self.assertRaises(ValueError, Currency.removeConverter,
+                          self.constantRateConverter)
+        Currency.registerConverter(self.monthlyRateConverter)
+        self.assertEqual(list(Currency.registeredConverters()),
+                         [self.monthlyRateConverter,
+                          self.monthlyRateConverter,
+                          self.constantRateConverter])
+        Currency.removeConverter(self.monthlyRateConverter)
+        self.assertEqual(list(Currency.registeredConverters()),
+                         [self.monthlyRateConverter,
+                          self.constantRateConverter])
+        Currency.removeConverter(self.monthlyRateConverter)
+        self.assertEqual(list(Currency.registeredConverters()),
+                         [self.constantRateConverter])
+        with self.constantRateConverter as conv1:
+            self.assertEqual(list(Currency.registeredConverters()),
+                             [conv1, self.constantRateConverter])
+            with self.yearlyRateConverter as conv2:
+                self.assertEqual(conv2, self.yearlyRateConverter)
+                self.assertEqual(list(Currency.registeredConverters()),
+                                 [conv2, conv1, self.constantRateConverter])
+            self.assertEqual(list(Currency.registeredConverters()),
+                             [conv1, self.constantRateConverter])
+        self.assertEqual(list(Currency.registeredConverters()),
+                         [self.constantRateConverter])
+        Currency.removeConverter(self.constantRateConverter)
+        self.assertFalse(list(Currency.registeredConverters()))
+
+    def testConversion(self):
+        today = date.today()
+        year, month, day = today.timetuple()[:3]
+        # assert that there are no registered money converters yet
+        self.assertFalse(list(Currency.registeredConverters()))
+        m4EUR = 4 ^ EUR
+        self.assertRaises(UnitConversionError, m4EUR.convert, USD)
+        with self.constantRateConverter:
+            self.assertEqual(m4EUR.convert(USD), Decimal('4.8') ^ USD)
+            with self.yearlyRateConverter:
+                amnt = 4 * Decimal("%i.%02i%i" % (1, 1, year))
+                self.assertEqual(m4EUR.convert(USD), amnt ^ USD)
+                with self.monthlyRateConverter:
+                    amnt = 4 * Decimal("%i.%02i%i" % (1, month, year))
+                    self.assertEqual(m4EUR.convert(USD), amnt ^ USD)
+                    with self.dailyRateConverter:
+                        amnt = 4 * Decimal("%i.%02i%i" % (day, month, year))
+                        self.assertEqual(m4EUR.convert(USD), amnt ^ USD)
+                    amnt = 4 * Decimal("%i.%02i%i" % (1, month, year))
+                    self.assertEqual(m4EUR.convert(USD), amnt ^ USD)
+                amnt = 4 * Decimal("%i.%02i%i" % (1, 1, year))
+                self.assertEqual(m4EUR.convert(USD), amnt ^ USD)
+            self.assertEqual(m4EUR.convert(USD), Decimal('4.8') ^ USD)
+        # assert that there are no registered money converters yet
+        self.assertFalse(list(Currency.registeredConverters()))
+
 
 # helper functions
 
