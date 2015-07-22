@@ -121,12 +121,28 @@ class MoneyConverter:
 
 class ConstantRateConverter(MoneyConverter):
     """Money converter that uses constant rates for all times.
+
+    Args:
+        baseCurrency (:class:`Currency`): currency used as reference currency
+        convTable (iterable): list of entries to initialize the converter
+
+    Each entry in `convTable` must be comprised of the following elements:
+
+    * termCurrency: currency of equivalent amount, aka price currency
+
+    * termAmount: equivalent amount of term currency
+
+    * unitMultiple: amount of base currency
+
+    `termCurrency` is used as the key for the internal conversion table. If
+    there are more than one entry with the same term currency in `convTable`,
+    the last entry will overwrite the others.
     """
 
-    def __init__(self, unitCurrency, convTable):
-        self._baseCurrency = unitCurrency
+    def __init__(self, baseCurrency, convTable):
+        self._baseCurrency = baseCurrency
         self._rateDict = {termCurrency:
-                          ExchangeRate(unitCurrency, unitMultiple,
+                          ExchangeRate(baseCurrency, unitMultiple,
                                        termCurrency, termAmount)
                           for termCurrency, termAmount, unitMultiple
                           in convTable}
@@ -136,12 +152,31 @@ class ConstantRateConverter(MoneyConverter):
 
 
 class YearlyRateConverter(MoneyConverter):
-    """Money converter that uses different rates per year."""
+    """Money converter that uses different rates per year.
 
-    def __init__(self, unitCurrency, convTable):
-        self._baseCurrency = unitCurrency
+    Args:
+        baseCurrency (:class:`Currency`): currency used as reference currency
+        convTable (iterable): list of entries to initialize the converter
+
+    Each entry in `convTable` must be comprised of the following elements:
+
+    * year: year for which the entry is effective
+
+    * termCurrency: currency of equivalent amount, aka price currency
+
+    * termAmount: equivalent amount of term currency
+
+    * unitMultiple: amount of base currency
+
+    The tuple (`year`, `termCurrency`) is used as the key for the internal
+    conversion table. If there are more than one entry with the same tuple in
+    `convTable`, the last entry will overwrite the others.
+    """
+
+    def __init__(self, baseCurrency, convTable):
+        self._baseCurrency = baseCurrency
         self._rateDict = {(year, termCurrency):
-                          ExchangeRate(unitCurrency, unitMultiple,
+                          ExchangeRate(baseCurrency, unitMultiple,
                                        termCurrency, termAmount)
                           for year, termCurrency, termAmount, unitMultiple
                           in convTable}
@@ -153,12 +188,33 @@ class YearlyRateConverter(MoneyConverter):
 
 
 class MonthlyRateConverter(MoneyConverter):
-    """Money converter that uses different rates per month."""
+    """Money converter that uses different rates per month.
 
-    def __init__(self, unitCurrency, convTable):
-        self._baseCurrency = unitCurrency
+    Args:
+        baseCurrency (:class:`Currency`): currency used as reference currency
+        convTable (iterable): list of entries to initialize the converter
+
+    Each entry in `convTable` must be comprised of the following elements:
+
+    * year: year for which the entry is effective
+
+    * month: month for which the entry is effective
+
+    * termCurrency: currency of equivalent amount, aka price currency
+
+    * termAmount (number): equivalent amount of term currency
+
+    * unitMultiple (Integral): amount of base currency
+
+    The tuple (`year`, `month`, `termCurrency`) is used as the key for the
+    internal conversion table. If there are more than one entry with the same
+    tuple in `convTable`, the last entry will overwrite the others.
+    """
+
+    def __init__(self, baseCurrency, convTable):
+        self._baseCurrency = baseCurrency
         self._rateDict = {(year, month, termCurrency):
-                          ExchangeRate(unitCurrency, unitMultiple,
+                          ExchangeRate(baseCurrency, unitMultiple,
                                        termCurrency, termAmount)
                           for (year, month, termCurrency, termAmount,
                                unitMultiple)
@@ -171,12 +227,31 @@ class MonthlyRateConverter(MoneyConverter):
 
 
 class DailyRateConverter(MoneyConverter):
-    """Money converter that uses different rates per day."""
+    """Money converter that uses different rates per day.
 
-    def __init__(self, unitCurrency, convTable):
-        self._baseCurrency = unitCurrency
+    Args:
+        baseCurrency (:class:`Currency`): currency used as reference currency
+        convTable (iterable): list of entries to initialize the converter
+
+    Each entry in `convTable` must be comprised of the following elements:
+
+    * day: date for which the entry is effective
+
+    * termCurrency: currency of equivalent amount, aka price currency
+
+    * termAmount: equivalent amount of term currency
+
+    * unitMultiple: amount of base currency
+
+    The tuple (`day`, `termCurrency`) is used as the key for the internal
+    conversion table. If there are more than one entry with the same tuple in
+    `convTable`, the last entry will overwrite the others.
+    """
+
+    def __init__(self, baseCurrency, convTable):
+        self._baseCurrency = baseCurrency
         self._rateDict = {(dt, termCurrency):
-                          ExchangeRate(unitCurrency, unitMultiple,
+                          ExchangeRate(baseCurrency, unitMultiple,
                                        termCurrency, termAmount)
                           for dt, termCurrency, termAmount, unitMultiple
                           in convTable}
