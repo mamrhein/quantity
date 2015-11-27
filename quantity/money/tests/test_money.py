@@ -18,7 +18,7 @@
 from __future__ import absolute_import, unicode_literals
 import unittest
 import operator
-from datetime import date
+from datetime import date, timedelta
 from fractions import Fraction
 from decimalfp import Decimal
 from quantity import (Quantity, QuantityError, UndefinedResultError,
@@ -26,10 +26,7 @@ from quantity import (Quantity, QuantityError, UndefinedResultError,
 from quantity.money import (Currency, Money, ExchangeRate,
                             getCurrencyInfo, registerCurrency)
 from quantity.predefined import Mass, GRAM, KILOGRAM, OUNCE
-from quantity.money.converter import (ConstantRateConverter,
-                                      DailyRateConverter,
-                                      MonthlyRateConverter,
-                                      YearlyRateConverter)
+from quantity.money.converter import MoneyConverter
 
 
 __metaclass__ = type
@@ -262,23 +259,80 @@ class Test4_Converter(unittest.TestCase):
     def setUp(self):
         constantRates = [(USD, Decimal('1.2'), 1),
                          (HKD, Decimal('8.5'), 1)]
-        self.constantRateConverter = ConstantRateConverter(EUR, constantRates)
+        conv = MoneyConverter(EUR)
+        conv.update(None, constantRates)
+        self.constantRateConverter = conv
         dailyRates = list(_genRates())
-        self.dailyRateConverter = DailyRateConverter(EUR, dailyRates)
-        monthlyRates = [(dt.year, dt.month, termCurrency, termAmount,
-                         unitMultiple)
-                        for dt, termCurrency, termAmount, unitMultiple
-                        in dailyRates if dt.day == 1]
-        self.monthlyRateConverter = MonthlyRateConverter(EUR, monthlyRates)
-        yearlyRates = [(year, termCurrency, termAmount,
-                        unitMultiple)
-                       for year, month, termCurrency, termAmount, unitMultiple
-                       in monthlyRates if month == 1]
-        self.yearlyRateConverter = YearlyRateConverter(EUR, yearlyRates)
+        conv = MoneyConverter(EUR)
+        for dt, rates in dailyRates:
+            conv.update(dt, rates)
+        self.dailyRateConverter = conv
+        monthlyRates = [((dt.year, dt.month), rates)
+                        for dt, rates
+                        in dailyRates
+                        if dt.day == 1]
+        conv = MoneyConverter(EUR)
+        for mon, rates in monthlyRates:
+            conv.update(mon, rates)
+        self.monthlyRateConverter = conv
+        yearlyRates = [(year, rates)
+                       for (year, month), rates
+                       in monthlyRates
+                       if month == 1]
+        conv = MoneyConverter(EUR)
+        for year, rates in yearlyRates:
+            conv.update(year, rates)
+        self.yearlyRateConverter = conv
+
+    def testUpdate(self):
+        rates = [(USD, Decimal('1.2'), 1),
+                 (HKD, Decimal('8.5'), 1)]
+        conv = MoneyConverter(EUR)
+        # invalid day
+        self.assertRaises(ValueError, conv.update, '2015-04-31', rates)
+        # invalid month
+        self.assertRaises(ValueError, conv.update, '2015-14-01', rates)
+        self.assertRaises(ValueError, conv.update, '2015-14', rates)
+        # unrecognized date format
+        self.assertRaises(ValueError, conv.update, '11.11.2015', rates)
+        # invalid date format
+        self.assertRaises(ValueError, conv.update, '-7-01-01', rates)
+        # year out of range
+        for year in (date.min.year - 1, date.max.year + 1):
+            self.assertRaises(ValueError, conv.update, '%i-01-01' % year,
+                              rates)
+            self.assertRaises(ValueError, conv.update, '%i-01' % year, rates)
+            self.assertRaises(ValueError, conv.update, str(year), rates)
+            self.assertRaises(ValueError, conv.update, year, rates)
+        # check different types of validity
+        validities = (None, date(2015, 4, 3), (2015, 4), 2015)
+        for validity in validities:
+            conv = MoneyConverter(EUR)
+            conv.update(validity, rates)
+            self.assertTrue(conv._typeOfValidity is type(validity))
+            for otherValidity in validities:
+                if validity != otherValidity:
+                    self.assertRaises(ValueError, conv.update, otherValidity,
+                                      rates)
 
     def testRates(self):
         today = date.today()
+        yesterday = today - timedelta(days=1)
         year, month, day = today.timetuple()[:3]
+        rates = [(USD, Decimal('1.2'), 1),
+                 (HKD, Decimal('8.5'), 1)]
+        # default effective date is today
+        conv = MoneyConverter(EUR)
+        conv.update(today, rates)
+        self.assertEqual(conv.getRate(EUR, USD),
+                         conv.getRate(EUR, USD, today))
+        self.assertTrue(conv.getRate(EUR, USD, yesterday) is None)
+        # default effective date is yesterday
+        conv = MoneyConverter(EUR, getDfltEffectiveDate=lambda: yesterday)
+        conv.update(yesterday, rates)
+        self.assertEqual(conv.getRate(EUR, USD),
+                         conv.getRate(EUR, USD, yesterday))
+        self.assertTrue(conv.getRate(EUR, USD, today) is None)
         # constant rates
         conv = self.constantRateConverter
         self.assertEqual(conv.baseCurrency, EUR)
@@ -419,9 +473,9 @@ def _genRates():
             for year in (prevYear, thisYear):
                 dt = date(year, month, day)
                 rate = Decimal("%i.%02i%i" % (day, month, year))
-                yield (dt, USD, rate, 1)
-                yield (dt, HKD, 2 * rate, 1)
+                yield (dt, ((USD, rate, 1),
+                            (HKD, 2 * rate, 1)))
     year, month, day = today.timetuple()[:3]
     rate = Decimal("%i.%02i%i" % (day, month, year))
-    yield (today, USD, rate, 1)
-    yield (today, HKD, 2 * rate, 1)
+    yield (today, ((USD, rate, 1),
+                   (HKD, 2 * rate, 1)))

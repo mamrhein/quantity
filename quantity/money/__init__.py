@@ -202,6 +202,19 @@ currency:
 >>> mEUR / fxHKD2EUR
 Money(Decimal('44.25'), Currency(u'HKD'))
 
+Using money converters
+^^^^^^^^^^^^^^^^^^^^^^
+
+Money converters can be used to hold different exchange rates. They can be
+registered with the class :class:`Currency` in order to support implicit
+conversion of money amounts from one currency into another.
+
+TODO: update doc for MoneyConverter
+
+For example, a money converter with monthly rates can be created like this:
+
+
+
 Combining Money with other quantities
 -------------------------------------
 
@@ -258,9 +271,7 @@ exchange rates, as long as the resulting unit is defined.
 from __future__ import absolute_import, unicode_literals
 from .moneybase import Currency, Money, ExchangeRate
 from .currencies import getCurrencyInfo, registerCurrency
-from .converter import (MoneyConverter, ConstantRateConverter,
-                        DailyRateConverter, MonthlyRateConverter,
-                        YearlyRateConverter)
+from .converter import MoneyConverter
 
 
 __metaclass__ = type
@@ -273,8 +284,4 @@ __all__ = [
     'getCurrencyInfo',
     'registerCurrency',
     'MoneyConverter',
-    'ConstantRateConverter',
-    'DailyRateConverter',
-    'MonthlyRateConverter',
-    'YearlyRateConverter',
 ]

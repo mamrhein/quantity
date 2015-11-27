@@ -123,7 +123,7 @@ class Currency(Unit):
 
         That means that money converters must be unregistered in reversed
         order of registration. To enforce this, money converters should be
-        registered an unregistered by using them as context managers in a
+        registered and unregistered by using them as context managers in a
         'with' statement."""
         if cls._converters[-1] is conv:
             cls._converters.pop()
