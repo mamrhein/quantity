@@ -75,8 +75,9 @@ class MoneyConverter:
             effectiveDate (date): date for which the exchange rate used must
                 be effective (default: None)
 
-        If `effectiveDate` is not given, the current date is used as
-        reference.
+        If `effectiveDate` is not given, the return value of the callable
+        given as `getDfltEffectiveDate` to :class:`MoneyConverter` is used as
+        reference (default: today).
 
         Returns:
             number: amount equiv so that equiv ^ toCurrency == moneyAmnt
@@ -125,11 +126,10 @@ class MoneyConverter:
 
         Each entry in `rateSpecs` must be comprised of the following elements:
 
-        * termCurrency: currency of equivalent amount, aka price currency
-
-        * termAmount: equivalent amount of term currency
-
-        * unitMultiple: amount of base currency
+        - `termCurrency` (:class:`~Currency`): currency of equivalent amount,
+          aka price currency
+        - `termAmount` (number): equivalent amount of term currency
+        - `unitMultiple` (Integral): amount of base currency
 
         `validity` and `termCurrency` are used together as the key for the
         internal exchange rate dictionary.
@@ -203,8 +203,9 @@ class MoneyConverter:
             effectiveDate (date): date at which the rate must be effective
                 (default: None)
 
-        If `effectiveDate` is not given, the current date is used as
-        reference.
+        If `effectiveDate` is not given, the return value of the callable
+        given as `getDfltEffectiveDate` to :class:`MoneyConverter` is used as
+        reference (default: today).
 
         Returns:
             :class:`ExchangeRate`: exchange rate from `unitCurrency` to
