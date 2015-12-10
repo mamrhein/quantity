@@ -202,8 +202,9 @@ class Money(Quantity):
         TypeError: a byte string is given that can not be decoded using the
             standard encoding
         ValueError: given string does not represent a `Money` amount
-        IncompatibleUnitsError: the currency derived from the symbol given in
-            `mStr` can not be converted to given `currency`
+        :exp:`~quantity.IncompatibleUnitsError`: the currency derived from
+            the symbol given in `mStr` can not be converted to given
+            `currency`
     """
 
     Unit = Currency
@@ -495,7 +496,7 @@ class ExchangeRate:
                 unit currency
 
         Raises:
-            ValueError: resulting unit is not defined
+            :class:`~quantity.QuantityError`: resulting unit is not defined
         """
         if isinstance(other, Money):
             if other.unit is self.termCurrency:

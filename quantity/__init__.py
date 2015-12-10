@@ -17,65 +17,10 @@
 
 """Unit-safe computations with quantities.
 
-Introduction
-============
-
-What is a quantity?
--------------------
-
-"The value of a quantity is generally expressed as the product of a number
-and a unit. The unit is simply a particular example of the quantity concerned
-which is used as a reference, and the number is the ratio of the value of the
-quantity to the unit." (Bureau International des Poids et Mesures: The
-International System of Units, 8th edition, 2006)
-
-Basic types of quantities are defined "by convention", they do not depend on
-other types of quantities, for example Length, Mass or Duration.
-
-Derived types of quantities, on the opposite, are defined as products of other
-types of quantities raised by some exponent.
-
-Examples:
-
-* Volume = Length ** 3
-
-* Velocity = Length ** 1 * Duration ** -1
-
-* Acceleration = Length ** 1 * Duration ** -2
-
-* Force = Mass ** 1 * Acceleration ** 1
-
-Each type of quantity may have one special unit which is used as a reference
-for the definition of all other units, for example Metre, Kilogram and
-Second. The other units are then defined by their relation to the reference
-unit.
-
-If a type of quantity is derived from types of quantities that all have a
-reference unit, then the reference unit of that type is defined by a formula
-that follows the formula defining the type of quantity.
-
-Examples:
-
-* Velocity -> Metre per Second = Metre ** 1 * Second ** -1
-
-* Acceleration -> Metre per Second squared = Metre ** 1 * Second ** -2
-
-* Force -> Newton = Kilogram ** 1 * Metre ** 1 * Second ** -2
-
-
-"Systems of measure"
---------------------
-
-There may be different systems which define quantities, their units and the
-relations between these units in a different way.
-
-This is not directly supported by this module. For each type of quantity there
-can be only no or exactly one reference unit. But, if you have units from
-different systems for the same type of quantity, you can define these units
-and provide mechanisms to convert between them (see :ref:`converters_label`).
-
 Usage
 =====
+
+.. _defining_a_qty_label:
 
 Defining a quantity class
 -------------------------
@@ -266,8 +211,8 @@ of converting between units.
 
     >>> t27c = Temperature(Decimal(27), CELSIUS)
     >>> t27c.convert(FAHRENHEIT)
-    quantity.quantity.IncompatibleUnitsError: Can't convert 'Degree Celsius'
-    to 'Degree Fahrenheit'
+    quantity.quantity.IncompatibleUnitsError: Can't convert 'Degree Celsius' \
+to 'Degree Fahrenheit'
 
 .. _converters_label:
 
@@ -290,8 +235,8 @@ callables can be registered as converters.
     >>> Temperature.Unit.registerConverter(celsius2fahrenheit)
     >>> Temperature.Unit.registerConverter(fahrenheit2celsius)
     >>> list(Temperature.Unit.registeredConverters())
-    [<function celsius2fahrenheit at 0x7fab71bfef50>,
-    <function fahrenheit2celsius at 0x7fab71bf7cf8>]
+    [<function celsius2fahrenheit at 0x7fab71bfef50>, \
+<function fahrenheit2celsius at 0x7fab71bf7cf8>]
 
 For the signature of the callables used as converters see :class:`Converter`.
 
@@ -590,7 +535,7 @@ used.
     u'*****19.36 m\xb3 '
 """
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import
 try:
     from builtins import sum as builtin_sum
 except ImportError:

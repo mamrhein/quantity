@@ -15,7 +15,8 @@
 ## $Revision$
 
 
-r"""Defines commonly used quantities.
+r"""The module `quantity.predefined` provides definitions of commonly used
+quantities and units.
 
 Length
 ^^^^^^

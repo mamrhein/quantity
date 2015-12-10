@@ -25,17 +25,25 @@ Classes
         __eq__, __lt__, __le__, __gt__, __ge__,
         __call__
 
+.. _converter_classes_label:
+
 .. autoclass:: Converter
 
 .. autoclass:: TableConverter
     :members:
 
+.. _functions_label:
+
 Functions
 =========
 
 .. autofunction:: getUnitBySymbol
+
 .. autofunction:: generateUnits
+
 .. autofunction:: sum
+
+.. _exceptions_label:
 
 Exceptions
 ==========
@@ -46,11 +54,4 @@ Exceptions
 
 .. autoclass:: UndefinedResultError
 
-
-Submodules
-==========
-
-quantity.predefined
--------------------
-
-.. automodule:: quantity.predefined
+.. autoclass:: UnitConversionError

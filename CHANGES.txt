@@ -5,6 +5,15 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
+0.8.2       Converters raise new exception 'UnitConversionError' instead of
+            returning None.
+            Changed priority of converters: they are tried in *reversed* order
+            of registration.
+            Added 'MoneyConverter' ('quantity.money.converter.py').
+
+0.8.1       Refactored class 'Term'.
+            Some bug fixes.
+
 0.8.0       Exceptions raised by Quantity.__new__ changed to QuantityError.
             Added function 'generateUnits'.
             Added sub-package 'money'.

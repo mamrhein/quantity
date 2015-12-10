@@ -19,18 +19,11 @@ Classes
         __rdiv__
 
 .. autoclass:: MoneyConverter
-    :members: baseCurrency, getRate, __call__
-
-.. autoclass:: ConstantRateConverter
-
-.. autoclass:: YearlyRateConverter
-
-.. autoclass:: MonthlyRateConverter
-
-.. autoclass:: DailyRateConverter
+    :members: baseCurrency, update, getRate, __call__
 
 Functions
 =========
 
 .. autofunction:: getCurrencyInfo
+
 .. autofunction:: registerCurrency

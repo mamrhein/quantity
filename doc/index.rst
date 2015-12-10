@@ -3,15 +3,21 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to quantity's documentation!
-====================================
+quantity - Package for Unit-safe Computations
+=============================================
+
+This package provides classes and functions for unit-safe computations with
+quantities (including money).
 
 Contents:
 
 .. toctree::
-   :maxdepth: 5
+   :maxdepth: 3
+   :numbered:
 
+   intro
    quantity
+   predefined
    money
 
 :ref:`genindex`
