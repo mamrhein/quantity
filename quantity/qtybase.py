@@ -867,7 +867,7 @@ class Quantity(QTermElem):
 
     """Base class used to define types of quantities.
 
-    Instances of `Quantity` can be created in two ways, by providing a
+    Instances of :class:`Quantity` can be created in two ways, by providing a
     numerical amount and - optionally - a unit or by providing a string
     representation of a quantity.
 
@@ -889,8 +889,8 @@ class Quantity(QTermElem):
             called
 
     Raises:
-        TypeError: `amount` is not a Real or Decimal number and can not be
-            converted to a Decimal number
+        TypeError: `amount` is not a `Real` or `Decimal` number and can not be
+            converted to a `Decimal` number
         ValueError: no unit given and the :class:`Quantity` sub-class doesn't
             define a reference unit
         TypeError: `unit` is not an instance of the :class:`Unit` sub-class
@@ -902,18 +902,18 @@ class Quantity(QTermElem):
         qStr (unicode string): string representation of a quantity
         unit (:class:`Unit` sub-class): the quantity's unit (optional)
 
-    `qStr` must contain a numerical value and a unit symbol, separated atleast
-    by one blank. Any surrounding white space is ignored. If `unit` is given
-    in addition, the resulting quantity's unit is set to this unit and its
-    amount is converted accordingly.
+    `qStr` must contain a numerical value and a unit symbol, separated at
+    least by one blank. Any surrounding white space is ignored. If `unit` is
+    given in addition, the resulting quantity's unit is set to this unit and
+    its amount is converted accordingly.
 
     Returns:
         instance of :class:`Quantity` sub-class corresponding to symbol in
             `qRepr`
 
     Raises:
-        QuantityError: amount given in `qStr` is not a Real or Decimal number
-            and can not be converted to a Decimal number
+        QuantityError: amount given in `qStr` is not a `Real` or `Decimal`
+            number and can not be converted to a `Decimal` number
         QuantityError: no unit given and the :class:`Quantity` sub-class
             doesn't define a reference unit
         QuantityError: `unit` is not an instance of the :class:`Unit`
@@ -1020,10 +1020,9 @@ class Quantity(QTermElem):
             symbol (str): symbol to look-up
 
         Returns:
-            :class:`Unit` sub-class: if a unit with given `symbol` exists
+            :class:`Unit` sub-class, if a unit with given `symbol` exists
                 within the :class:`Unit` sub-class associated with this
-                :class:`Quantity` sub-class
-            None: otherwise
+                :class:`Quantity` sub-class, otherwise None
         """
         return cls.Unit.getUnitBySymbol(symbol)
 

@@ -70,7 +70,7 @@ A **basic** type of quantity is declared just by sub-classing
 giving a definition based on more basic types of quantities. For details see
 :ref:`defining_a_qty_label`.
 
-Utility functions and classes
+Utility Functions and Classes
 -----------------------------
 
 In addition, the package :mod:`quantity` provides some utility functions (see

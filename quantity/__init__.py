@@ -15,7 +15,7 @@
 ## $Revision$
 
 
-"""Unit-safe computations with quantities.
+u"""Unit-safe computations with quantities.
 
 Usage
 =====
@@ -123,7 +123,7 @@ cross-product of all units of the quantity classes the class is derived from.
 
 In order to define a **quantized** quantity, the smallest possible fraction
 (in terms of the reference unit) can be given as class variable `quantum`. The
-class method :meth:`Quantity.getQuantum` can then be used to retrieve to
+class method :meth:`Quantity.getQuantum` can then be used to retrieve the
 smallest fraction for any unit.
 
     >>> class DataVolume(Quantity):

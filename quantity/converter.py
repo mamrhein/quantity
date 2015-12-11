@@ -81,13 +81,13 @@ class TableConverter(Converter):
     Each item of the conversion table defines a conversion from one unit to
     another unit and consists of four elements:
 
-    * fromUnit: unit of the quantity to be converted
+    * fromUnit (:class:`Unit` sub-class): unit of the quantity to be converted
 
-    * toUnit: target unit of the conversion
+    * toUnit (:class:`Unit` sub-class): target unit of the conversion
 
-    * factor: factor to be applied to the quantity's amount
+    * factor (`number`): factor to be applied to the quantity's amount
 
-    * offset: an amount added after applying the factor
+    * offset (`number`): an amount added after applying the factor
 
     When a `dict` is given as `convTable`, each key / value pair must map a
     tuple (fromUnit, toUnit) to a tuple (factor, offset).

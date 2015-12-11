@@ -15,7 +15,7 @@
 ## $Revision$
 
 
-"""Currency-safe computations with money amounts.
+u"""Currency-safe computations with money amounts.
 
 Usage
 =====
@@ -241,6 +241,9 @@ another (using the default reference date, see below).
     >>> twoEUR = 2 ^ EUR
     >>> twoEUR.convert(USD)
     Money(Decimal('2.19'), Currency(u'USD'))
+
+A money converter can also be registered and unregistered by using it as
+context manager in a `with` statement.
 
 In order to use a default reference date other than the current date, a
 callable can be given to :class:`MoneyConverter`. It must be callable without

@@ -9,7 +9,7 @@ Classes
 
 .. autoclass:: Quantity
     :members: amount, unit, refUnit, definition, normalizedDefinition,
-        convert, quantize, allocate, __hash__,
+        getUnitBySymbol, getQuantum, convert, quantize, allocate, __hash__,
         __eq__, __lt__, __le__, __gt__, __ge__,
         __abs__, __neg__, __pos__,
         __add__, __radd__, __sub__, __rsub__,
@@ -28,6 +28,7 @@ Classes
 .. _converter_classes_label:
 
 .. autoclass:: Converter
+    :members: __call__
 
 .. autoclass:: TableConverter
     :members:

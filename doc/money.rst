@@ -19,7 +19,7 @@ Classes
         __rdiv__
 
 .. autoclass:: MoneyConverter
-    :members: baseCurrency, update, getRate, __call__
+    :members: baseCurrency, update, getRate, __call__, __enter__, __exit__
 
 Functions
 =========
