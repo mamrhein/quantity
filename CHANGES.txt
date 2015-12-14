@@ -5,7 +5,7 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
-0.8.2       Converters raise new exception 'UnitConversionError' instead of
+0.9.0       Converters raise new exception 'UnitConversionError' instead of
             returning None.
             Changed priority of converters: they are tried in *reversed* order
             of registration.

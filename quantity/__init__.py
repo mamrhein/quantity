@@ -83,7 +83,7 @@ a definition by multiplying a scaling factor with that unit:
 Using one unit as a reference and defining all other units by giving
 a scaling factor is only possible if the units have the same scale. Otherwise,
 units have to be instantiated via the coresponding :class:`Unit` sub-class
-without giving a definition.
+without giving a definition:
 
     >>> class Temperature(Quantity):
     ...     pass
@@ -124,7 +124,7 @@ cross-product of all units of the quantity classes the class is derived from.
 In order to define a **quantized** quantity, the smallest possible fraction
 (in terms of the reference unit) can be given as class variable `quantum`. The
 class method :meth:`Quantity.getQuantum` can then be used to retrieve the
-smallest fraction for any unit.
+smallest fraction for any unit:
 
     >>> class DataVolume(Quantity):
     ...     refUnitName = 'Byte'
@@ -141,7 +141,7 @@ Instantiating quantities
 
 The simplest way to create an instance of a :class:`Quantity` subclass is to
 call the class giving an amount and a unit. If the unit is omitted, the
-quantity's reference unit is used (if one is defined).
+quantity's reference unit is used (if one is defined):
 
     >>> Length(15, MILLIMETRE)
     Length(Decimal(15), Length.Unit(u'mm'))
@@ -167,20 +167,20 @@ accordingly:
     Length(Decimal('0.017'), Length.Unit(u'km'))
 
 Instead of calling a subclass, the class :class:`Quantity` can be used as a
-factory function ...
+factory function …:
 
     >>> Quantity(15, MILLIMETRE)
     Length(Decimal(15), Length.Unit(u'mm'))
     >>> Quantity('17.5 km')
     Length(Decimal('17.5'), Length.Unit(u'km'))
 
-... as long as a unit is given:
+… as long as a unit is given:
 
     >>> Quantity(17.5)
     ValueError: A unit must be given.
 
 If the :class:`Quantity` subclass defines a `quantum`, the amount of each
-instance is automatically rounded to this quantum.
+instance is automatically rounded to this quantum:
 
     >>> DataVolume('1/7', KILOBYTE)
     DataVolume(Decimal('0.142875'), DataVolume.Unit('kB'))
@@ -220,7 +220,7 @@ Converters
 ^^^^^^^^^^
 
 For types of quantities that do not have a reference unit, one or more
-callables can be registered as converters.
+callables can be registered as converters:
 
     >>> def fahrenheit2celsius(qty, toUnit):
     ...     if qty.unit is FAHRENHEIT and toUnit is CELSIUS:
@@ -308,20 +308,20 @@ All other comparison operators raise an `IncompatibleUnitsError` in this case.
 Addition and subtraction
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Quantities can be added to or subtracted from other quantities ...
+Quantities can be added to or subtracted from other quantities …:
 
     >>> Length(27) + Length(9)
     Length(Decimal(36))
     >>> Length(27) - Length(91)
     Length(Decimal(-64))
 
-... as long as they are instances of the same quantity type:
+… as long as they are instances of the same quantity type:
 
     >>> Length(27) + Duration(9)
     IncompatibleUnitsError: Can't add a 'Length' and a 'Duration'
 
 When quantities with different units are added or subtracted, the values are
-converted to the unit of the first, if possible ...:
+converted to the unit of the first, if possible …:
 
     >>> Length(27) + Length(12, CENTIMETRE)
     Length(Decimal('27.12'))
@@ -330,7 +330,7 @@ converted to the unit of the first, if possible ...:
     >>> Temperature(20, CELSIUS) - Temperature(50, FAHRENHEIT)
     Temperature(Decimal('10'), Temperature.Unit(u'\xb0C'))
 
-... but an exception is raised, if not:
+… but an exception is raised, if not:
 
     >>> Temperature(20, CELSIUS) - Temperature(281, KELVIN)
     IncompatibleUnitsError: Can't convert 'Kelvin' to 'Degree Celsius'
@@ -338,19 +338,19 @@ converted to the unit of the first, if possible ...:
 Multiplication and division
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Quantities can be multiplied or divided by scalars, preserving the unit ...:
+Quantities can be multiplied or divided by scalars, preserving the unit:
 
     >>> 7.5 * Length(3, CENTIMETRE)
     Length(Decimal('22.5'), Length.Unit(u'cm'))
     >>> Duration(66, MINUTE) / 11
     Duration(Decimal(6), Duration.Unit(u'min'))
 
-Quantities can be multiplied or divided by other quantities ...:
+Quantities can be multiplied or divided by other quantities …:
 
     >>> Length(15, METRE) / Duration(3, SECOND)
     Velocity(Decimal(5))
 
-... as long as the resulting type of quantity is defined ...:
+… as long as the resulting type of quantity is defined …:
 
     >>> Duration(4, SECOND) * Length(7)
     UndefinedResultError: Undefined result: Duration * Length
@@ -363,7 +363,7 @@ Quantities can be multiplied or divided by other quantities ...:
     >>> Length(12, KILOMETRE) / Duration(2, MINUTE) / Duration(50, SECOND)
     Acceleration(Decimal(2))
 
-... or the result is a scalar:
+… or the result is a scalar:
 
     >>> Duration(2, MINUTE) / Duration(50, SECOND)
     Decimal('2.4')
@@ -373,8 +373,8 @@ When cascading operations, all intermediate results have to be defined:
     >>> Length(6, KILOMETRE) * Length(13,  METRE) * Length(250, METRE)
     UndefinedResultError: Undefined result: Length * Length
     >>> class Area(Quantity):
-    ...         defineAs = Length ** 2
-    ...         refUnitName = 'Square Metre'
+    ...     defineAs = Length ** 2
+    ...     refUnitName = 'Square Metre'
     ...
     >>> Length(6, KILOMETRE) * Length(13,  METRE) * Length(250, METRE)
     Volume(Decimal(19500000, 3))
@@ -400,14 +400,14 @@ The amount of a quantity can be rounded by using the standard `round`
 function.
 
 If an Integral is given as precision, a copy of the quanitity is returned,
-with its amount rounded accordingly.
+with its amount rounded accordingly:
 
     >>> round(Length(Decimal('17.375'), MILLIMETRE), 1)
     Length(Decimal('17.4'), Length.Unit('mm'))
 
 In addition, a unit or a quantity (of the same type) can be given to specify
 the requested precision. The resulting quantity will then be the integer
-multiple of that precision closest to the called quantity.
+multiple of that precision closest to the called quantity:
 
     >>> round(Length(Decimal('17.375'), METRE), CENTIMETRE)
     Length(Decimal('17.38'))
@@ -461,7 +461,7 @@ Apportioning
 ------------
 
 The method :meth:`Quantity.allocate` can be used to apportion a quantity
-according to a sequence of ratios.
+according to a sequence of ratios:
 
     >>> m = Mass('10 kg')
     >>> ratios = [38, 5, 2, 15]
@@ -526,7 +526,7 @@ In addition, :class:`Quantity` supports the standard `format` function. The
 format specifier should use two keys: 'a' for the amount and 'u' for the unit,
 where 'a' can be followed by a valid format spec for numbers and 'u' by a
 valid format spec for strings. If no format specifier is given, '{a} {u}' is
-used.
+used:
 
     >>> v = Volume('19.36')
     >>> format(v)
@@ -546,7 +546,7 @@ from .qtybase import Quantity, Unit, getUnitBySymbol, generateUnits
 from .converter import Converter, TableConverter
 from .money import Currency, Money, ExchangeRate, registerCurrency
 
-__version__ = 0, 8, 1
+__version__ = 0, 9, 0
 
 
 # defined here in order to reduce pickle foot-print
