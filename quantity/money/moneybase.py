@@ -140,11 +140,6 @@ class Currency(Unit):
         return self._symbol
 
     @property
-    def name(self):
-        """Name of this currency."""
-        return self._name or self._isoCode
-
-    @property
     def smallestFraction(self):
         """The smallest fraction available for this currency."""
         return self._smallestFraction
