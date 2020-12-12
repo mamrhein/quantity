@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-##----------------------------------------------------------------------------
-## Name:        qtybase
-## Purpose:     Provide base classes for defining quantities
-##
-## Author:      Michael Amrhein (michael@adrhinum.de)
-##
-## Copyright:   (c) 2012 ff. Michael Amrhein
-## License:     This program is free software. You can redistribute it, use it
-##              and/or modify it under the terms of the 2-clause BSD license.
-##              For license details please read the file LICENSE.TXT provided
-##              together with the source code.
-##----------------------------------------------------------------------------
-## $Source$
-## $Revision$
+# ----------------------------------------------------------------------------
+# Name:        qtybase
+# Purpose:     Provide base classes for defining quantities
+#
+# Author:      Michael Amrhein (michael@adrhinum.de)
+#
+# Copyright:   (c) 2012 ff. Michael Amrhein
+# License:     This program is free software. You can redistribute it, use it
+#              and/or modify it under the terms of the 2-clause BSD license.
+#              For license details please read the file LICENSE.TXT provided
+#              together with the source code.
+# ----------------------------------------------------------------------------
+# $Source$
+# $Revision$
 
 
 """Provide base classes for defining quantities."""

@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-##----------------------------------------------------------------------------
-## Name:        currencies
-## Purpose:     Provide dict of currencies based on ISO 4217
-##
-## Author:      Michael Amrhein (michael@adrhinum.de)
-##
-## Copyright:   (c) 2015 Michael Amrhein
-## License:     This program is free software. You can redistribute it, use it
-##              and/or modify it under the terms of the 2-clause BSD license.
-##              For license details please read the file LICENSE.TXT provided
-##              together with the source code.
-##----------------------------------------------------------------------------
-## $Source$
-## $Revision$
+# ----------------------------------------------------------------------------
+# Name:        currencies
+# Purpose:     Provide dict of currencies based on ISO 4217
+#
+# Author:      Michael Amrhein (michael@adrhinum.de)
+#
+# Copyright:   (c) 2015 Michael Amrhein
+# License:     This program is free software. You can redistribute it, use it
+#              and/or modify it under the terms of the 2-clause BSD license.
+#              For license details please read the file LICENSE.TXT provided
+#              together with the source code.
+# ----------------------------------------------------------------------------
+# $Source$
+# $Revision$
 
 
 """Provide dict of currencies based on ISO 4217."""

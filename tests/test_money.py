@@ -1,15 +1,15 @@
 #!usr/bin/env python
 # -*- coding: utf-8 -*-
-##----------------------------------------------------------------------------
-## Name:        test_money
-## Purpose:     Test driver for package quantity.money
-##
-## Author:      Michael Amrhein (michael@adrhinum.de)
-##
-## Copyright:   (c) 2015 Michael Amrhein
-##----------------------------------------------------------------------------
-## $Source$
-## $Revision$
+# ----------------------------------------------------------------------------
+# Name:        test_money
+# Purpose:     Test driver for package quantity.money
+#
+# Author:      Michael Amrhein (michael@adrhinum.de)
+#
+# Copyright:   (c) 2015 Michael Amrhein
+# ----------------------------------------------------------------------------
+# $Source$
+# $Revision$
 
 
 """Test driver for package quantity.money"""

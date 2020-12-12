@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
-##----------------------------------------------------------------------------
-## Name:        money (package)
-## Purpose:     Currency-safe computations with money amounts.
-##
-## Author:      Michael Amrhein (michael@adrhinum.de)
-##
-## Copyright:   (c) 2013 ff. Michael Amrhein
-## License:     This program is free software. You can redistribute it, use it
-##              and/or modify it under the terms of the 2-clause BSD license.
-##              For license details please read the file LICENSE.TXT provided
-##              together with the source code.
-##----------------------------------------------------------------------------
-## $Source$
-## $Revision$
+# ----------------------------------------------------------------------------
+# Name:        money (package)
+# Purpose:     Currency-safe computations with money amounts.
+#
+# Author:      Michael Amrhein (michael@adrhinum.de)
+#
+# Copyright:   (c) 2013 ff. Michael Amrhein
+# License:     This program is free software. You can redistribute it, use it
+#              and/or modify it under the terms of the 2-clause BSD license.
+#              For license details please read the file LICENSE.TXT provided
+#              together with the source code.
+# ----------------------------------------------------------------------------
+# $Source$
+# $Revision$
 
 
 u"""Currency-safe computations with money amounts.

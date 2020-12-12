@@ -1,15 +1,15 @@
 #!usr/bin/env python
 # -*- coding: utf-8 -*-
-##****************************************************************************
-## Name:        test_quantity
-## Purpose:     Test driver for module quantity
-##
-## Author:      Michael Amrhein (michael@adrhinum.de)
-##
-## Copyright:   (c) Michael Amrhein
-##****************************************************************************
-## $Source$
-## $Revision$
+# ****************************************************************************
+# Name:        test_quantity
+# Purpose:     Test driver for module quantity
+#
+# Author:      Michael Amrhein (michael@adrhinum.de)
+#
+# Copyright:   (c) Michael Amrhein
+# ****************************************************************************
+# $Source$
+# $Revision$
 
 
 from __future__ import absolute_import, division, unicode_literals
