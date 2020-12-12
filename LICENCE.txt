@@ -1,4 +1,4 @@
-Copyright (c) 2014 Michael Amrhein
+Copyright (c) 2014 ff. Michael Amrhein
 
 All rights reserved.
 
