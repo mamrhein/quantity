@@ -18,11 +18,7 @@
 """Provide dict of currencies based on ISO 4217."""
 
 
-from __future__ import absolute_import, unicode_literals
-from . import Currency
-
-
-__metaclass__ = type
+from .moneybase import Currency
 
 
 published = '2014-08-15'
@@ -388,7 +384,7 @@ def getCurrencyInfo(isoCode):
     """Return infos from ISO 4217 currency database.
 
     Args:
-        isoCode (string): ISO 4217 3-character code for the currency to be
+        isoCode (str): ISO 4217 3-character code for the currency to be
             looked-up
 
     Returns:
@@ -403,10 +399,6 @@ def getCurrencyInfo(isoCode):
         which are used as functional currency, not those used for bond
         markets, noble metals and testing purposes.
     """
-    try:        # transform to unicode
-        isoCode = isoCode.decode()
-    except (AttributeError, UnicodeEncodeError):
-        pass
     try:
         return _currencyDict[isoCode]
     except KeyError:

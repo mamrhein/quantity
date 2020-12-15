@@ -18,21 +18,13 @@
 """Base classes for computations with money amounts"""
 
 
-from __future__ import absolute_import, division, unicode_literals
+from fractions import Fraction
 import math
 from numbers import Integral
+
 from decimalfp import Decimal
-from fractions import Fraction
-from .. import Quantity, Unit, QuantityError
 
-
-# unicode handling Python 2 / Python 3
-str = type(u'')
-bytes = type(b'')
-str_types = (bytes, str)
-
-
-__metaclass__ = type
+from ..qtybase import Quantity, Unit, QuantityError
 
 
 class Currency(Unit):
@@ -73,7 +65,7 @@ class Currency(Unit):
     def __new__(cls, isoCode, name=None, minorUnit=None,
                 smallestFraction=None):
         """Create `Currency` instance."""
-        if not isinstance(isoCode, str_types):
+        if not isinstance(isoCode, str):
             raise TypeError("IsoCode must be a string.")
         if not isoCode:
             raise ValueError("IsoCode must be given.")
@@ -262,7 +254,7 @@ class ExchangeRate:
 
     def __init__(self, unitCurrency, unitMultiple, termCurrency, termAmount):
         if not isinstance(unitCurrency, Currency):
-            if isinstance(unitCurrency, str_types):
+            if isinstance(unitCurrency, str):
                 unitCurrSym = unitCurrency
                 unitCurrency = Currency.getUnitBySymbol(unitCurrSym)
                 if unitCurrency is None:
@@ -272,7 +264,7 @@ class ExchangeRate:
                 raise TypeError("Can't use a '%s' as unit currency."
                                 % type(unitCurrency))
         if not isinstance(termCurrency, Currency):
-            if isinstance(termCurrency, str_types):
+            if isinstance(termCurrency, str):
                 termCurrSym = termCurrency
                 termCurrency = Currency.getUnitBySymbol(termCurrSym)
                 if termCurrency is None:

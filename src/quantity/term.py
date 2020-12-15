@@ -18,20 +18,10 @@
 """Terms of tuples of elements and corresponding exponents."""
 
 
-from __future__ import absolute_import, unicode_literals
-from numbers import Real
-from itertools import chain, groupby
 from functools import reduce
+from itertools import chain, groupby
+from numbers import Real
 from operator import mul
-
-# unicode handling Python 2 / Python 3
-import sys
-PY_VERSION = sys.version_info[0]
-del sys
-if PY_VERSION < 3:
-    str = unicode
-
-__metaclass__ = type
 
 
 # characters for string representation of terms
@@ -131,7 +121,7 @@ class Term:
                 return tuple(_filterItems(((elem2, exp2), (elem1, exp1))))
             # least relevant case: 2 numeric elements
             if elem1IsNum and elem2IsNum:
-                num = elem1 ** exp1 * elem2 ** exp
+                num = elem1 ** exp1 * elem2 ** exp2
                 if num != 1:
                     return ((num, 1),)
         # more than 2 items or number of items unknown:
@@ -295,7 +285,7 @@ class Term:
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self._items))
 
-    def __unicode__(self):
+    def __str__(self):
         elemsPosExp = []
         elemsNegExp = []
         expMap = [1, -1]
@@ -319,12 +309,6 @@ class Term:
         else:
             divSign = negExpPart = ''
         return posExpPart + divSign + negExpPart
-
-    if PY_VERSION < 3:
-        def __str__(self):
-            return self.__unicode__().encode('utf8')
-    else:
-        __str__ = __unicode__
 
 
 # helper functions

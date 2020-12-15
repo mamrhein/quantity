@@ -18,18 +18,10 @@
 """Provides classes used to convert money amounts."""
 
 
-from __future__ import absolute_import, unicode_literals
 from datetime import date
+
 from .. import UnitConversionError
-from . import Currency, ExchangeRate
-
-
-__metaclass__ = type
-
-
-# string handling Python 2.x / Python 3.x
-bytes = type(b'')
-str = type(u'')
+from .moneybase import Currency, ExchangeRate
 
 
 class MoneyConverter:

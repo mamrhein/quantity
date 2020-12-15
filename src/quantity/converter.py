@@ -17,11 +17,7 @@
 
 """Provides classes used to convert quantities."""
 
-from __future__ import absolute_import, division, unicode_literals
 from .exceptions import IncompatibleUnitsError, UnitConversionError
-
-
-__metaclass__ = type
 
 
 class Converter:

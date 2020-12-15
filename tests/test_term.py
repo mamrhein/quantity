@@ -12,18 +12,14 @@
 # $Revision$
 
 
-from __future__ import absolute_import, division, unicode_literals
-import unittest
 import operator
+import unittest
 from numbers import Real
-from decimalfp import Decimal
-from quantity.term import _mulSign, _divSign, _powerChars, Term
 
-# unicode handling Python 2 / Python 3
-try:
-    str = unicode
-except NameError:
-    pass
+from decimalfp import Decimal
+
+from quantity.term import Term, _divSign, _mulSign, _powerChars
+
 
 # parse string
 import re

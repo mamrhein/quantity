@@ -15,22 +15,19 @@
 """Test driver for package quantity.money"""
 
 
-from __future__ import absolute_import, unicode_literals
-import unittest
 import operator
+import unittest
 from datetime import date, timedelta
 from fractions import Fraction
+
 from decimalfp import Decimal
-from quantity import (Quantity, QuantityError, UndefinedResultError,
-                      IncompatibleUnitsError, UnitConversionError)
-from quantity.money import (Currency, Money, ExchangeRate,
-                            getCurrencyInfo, registerCurrency)
-from quantity.predefined import Mass, GRAM, KILOGRAM, OUNCE
+
+from quantity import (IncompatibleUnitsError, Quantity, QuantityError,
+                      UndefinedResultError, UnitConversionError)
+from quantity.money import (Currency, ExchangeRate, Money, getCurrencyInfo,
+                            registerCurrency)
 from quantity.money.converter import MoneyConverter
-
-
-__metaclass__ = type
-
+from quantity.predefined import GRAM, KILOGRAM, OUNCE, Mass
 
 EUR = registerCurrency('EUR')
 HKD = registerCurrency('HKD')
@@ -40,6 +37,7 @@ ZWL = registerCurrency('ZWL')
 
 class PricePerMass(Quantity):
     defineAs = Money / Mass
+
 
 EURpKG = PricePerMass.Unit(defineAs=EUR / KILOGRAM)
 HKDpKG = PricePerMass.Unit(defineAs=HKD / KILOGRAM)

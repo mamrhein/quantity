@@ -535,24 +535,22 @@ used:
     u'*****19.36 m\xb3 '
 """
 
-from __future__ import absolute_import
-try:
-    from builtins import sum as builtin_sum
-except ImportError:
-    from __builtin__ import sum as builtin_sum
-from .exceptions import (QuantityError, IncompatibleUnitsError,
-                         UndefinedResultError, UnitConversionError)
-from .qtybase import Quantity, Unit, getUnitBySymbol, generateUnits
+from builtins import sum as builtin_sum
+
 from .converter import Converter, TableConverter
-from .money import Currency, Money, ExchangeRate, registerCurrency
+from .exceptions import (IncompatibleUnitsError, QuantityError,
+                         UndefinedResultError, UnitConversionError)
+from .money import Currency, ExchangeRate, Money, registerCurrency
+from .qtybase import Quantity, Unit, generateUnits, getUnitBySymbol
+
 
 __version__ = 0, 9, 0
 
 
 # defined here in order to reduce pickle foot-print
-def r(qRepr):
+def r(q_repr):
     """Reconstruct quantity from string representation."""
-    return Quantity(qRepr)
+    return Quantity(q_repr)
 
 
 def sum(sequence, start=None):

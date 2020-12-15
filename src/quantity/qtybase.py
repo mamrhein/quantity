@@ -17,39 +17,23 @@
 
 """Provide base classes for defining quantities."""
 
-from __future__ import absolute_import, division, unicode_literals
-import itertools
-import operator
-from numbers import Integral, Real
-from fractions import Fraction
 from decimal import Decimal as StdLibDecimal
+from fractions import Fraction
+import itertools
+from numbers import Integral, Real
+import operator
+
 from decimalfp import Decimal
+
 import quantity
 from .exceptions import (QuantityError, IncompatibleUnitsError,
                          UndefinedResultError, UnitConversionError)
 from .term import Term
 from .converter import RefUnitConverter
 
-__metaclass__ = type
 
-
-# unicode handling, dict iterator and izip Python 2 / Python 3
-import sys
-PY_VERSION = sys.version_info[0]
-del sys
-typearg = str       # first argument for type must be native str in both
-str = type(u'')
-bytes = type(b'')
-str_types = (bytes, str)
-if PY_VERSION < 3:
-    itervalues = lambda d: d.itervalues()
-    zip = itertools.izip
-else:
-    itervalues = lambda d: d.values()
-
-
-# because decimal.Decimal is not registered as number, we have to test it
-# explicitly
+# Because decimal.Decimal is not registered as number, we have to test it
+# explicitly:
 NUM_TYPES = (Real, StdLibDecimal)
 
 # decimal 1 constant
@@ -58,7 +42,7 @@ DECIMAL_1 = Decimal(1)
 # cache for results of operations on quantity class definitions
 QTY_CLS_OP_CACHE = {}
 
-#cache for results of operations on unit definitions
+# cache for results of operations on unit definitions
 UNIT_OP_CACHE = {}
 
 
@@ -247,7 +231,7 @@ class MetaQTerm(type):
                                                       reduceItems=False)
                 else:
                     unitClsDef = None
-                unitCls = self.Unit = MetaQTerm(typearg(name + 'Unit'),
+                unitCls = self.Unit = MetaQTerm(f"{name}Unit",
                                                 (Unit,),
                                                 {'Quantity': self,
                                                 'defineAs': unitClsDef})
@@ -615,7 +599,7 @@ class Unit(QTermElem):
     @classmethod
     def registeredUnits(cls):
         """Return an iterator over the units registered in cls."""
-        return itervalues(cls._symDict)
+        return cls._symDict.values()
 
     @classmethod
     def getUnitBySymbol(cls, symbol):
@@ -839,21 +823,9 @@ class Unit(QTermElem):
         """repr(self)"""
         return "%s.Unit(%s)" % (self.Quantity.__name__, repr(self.symbol))
 
-    if PY_VERSION < 3:
-
-        def __unicode__(self):
-            """unicode(self)"""
-            return "%s" % self.symbol
-
-        def __str__(self):
-            """str(self)"""
-            return self.__unicode__().encode('utf8')
-
-    else:
-
-        def __str__(self):
-            """str(self)"""
-            return "%s" % self.symbol
+    def __str__(self):
+        """str(self)"""
+        return "%s" % self.symbol
 
     def __format__(self, fmtSpec):
         """Convert to string (according to fmtSpec).
@@ -909,7 +881,7 @@ class Quantity(QTermElem):
 
     Returns:
         instance of :class:`Quantity` sub-class corresponding to symbol in
-            `qRepr`
+            `q_repr`
 
     Raises:
         QuantityError: amount given in `qStr` is not a `Real` or `Decimal`
@@ -941,7 +913,7 @@ class Quantity(QTermElem):
                 amount = Decimal(amount)
             except ValueError:
                 amount = Fraction(amount)
-        elif isinstance(amount, str_types):
+        elif isinstance(amount, str):
             if isinstance(amount, bytes):
                 try:
                     qRepr = amount.decode()
@@ -1350,21 +1322,9 @@ class Quantity(QTermElem):
             return "%s(%s, %s)" % (self.__class__.__name__, repr(self.amount),
                                    repr(self.unit))
 
-    if PY_VERSION < 3:
-
-        def __unicode__(self):
-            """unicode(self)"""
-            return "%s %s" % (self.amount, self.unit)
-
-        def __str__(self):
-            """str(self)"""
-            return self.__unicode__().encode('utf8')
-
-    else:
-
-        def __str__(self):
-            """str(self)"""
-            return "%s %s" % (self.amount, self.unit)
+    def __str__(self):
+        """str(self)"""
+        return "%s %s" % (self.amount, self.unit)
 
     def __format__(self, fmtSpec=""):
         """Convert to string (according to format specifier).

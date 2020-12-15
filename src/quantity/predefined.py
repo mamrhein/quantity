@@ -291,12 +291,11 @@ Kelvin     [°C] = [K] - 273.15         [°F] = [K] * 9/5 - 459.67   -
 ========== =========================== =========================== ===========================
 """
 
-from __future__ import absolute_import, division, unicode_literals
 from fractions import Fraction
-from decimalfp import Decimal
-from . import Quantity, TableConverter
 
-__metaclass__ = type
+from decimalfp import Decimal
+
+from . import Quantity, TableConverter
 
 
 class Length(Quantity):

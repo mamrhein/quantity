@@ -327,13 +327,9 @@ exchange rates, as long as the resulting unit is defined:
 """
 
 
-from __future__ import absolute_import
-from .moneybase import Currency, Money, ExchangeRate
-from .currencies import getCurrencyInfo, registerCurrency
 from .converter import MoneyConverter
-
-
-__metaclass__ = type
+from .currencies import getCurrencyInfo, registerCurrency
+from .moneybase import Currency, Money, ExchangeRate
 
 
 __all__ = [

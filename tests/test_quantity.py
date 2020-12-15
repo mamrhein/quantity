@@ -12,46 +12,20 @@
 # $Revision$
 
 
-from __future__ import absolute_import, division, unicode_literals
-import unittest
+from decimal import Decimal as StdLibDecimal
+from fractions import Fraction
 import operator
 from pickle import dumps, loads
-from fractions import Fraction
-from decimal import Decimal as StdLibDecimal
-from decimalfp import Decimal, set_rounding
-from decimalfp import ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP, \
-    ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP
+import unittest
+
+from decimalfp import Decimal, set_dflt_rounding_mode, ROUNDING
+
 from quantity import (Quantity, Unit, getUnitBySymbol, generateUnits, sum,
                       QuantityError, UndefinedResultError,
                       IncompatibleUnitsError, UnitConversionError,
                       TableConverter)
-from quantity.qtybase import typearg, MetaQTerm, _registry
+from quantity.qtybase import MetaQTerm, _registry
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
-
-rounding_modes = [ROUND_DOWN, ROUND_UP, ROUND_HALF_DOWN, ROUND_HALF_UP,
-                  ROUND_HALF_EVEN, ROUND_CEILING, ROUND_FLOOR, ROUND_05UP]
-
-# Python 2 / Python 3:
-try:
-    int.__round__
-except AttributeError:
-    PY_VERSION = 2
-
-    # support __round__ in 2.x
-    import __builtin__
-    py2_round = __builtin__.round
-
-    def round(number, ndigits=0):
-        try:
-            return number.__round__(ndigits)
-        except AttributeError:
-            return py2_round(number, ndigits)
-
-    # unicode handling
-    bytes = str
-    str = unicode
-else:
-    PY_VERSION = 3
 
 
 QTerm = Quantity._QTerm
@@ -202,8 +176,8 @@ class Test1_MetaQTerm(unittest.TestCase):
 
     def testQuantityReg(self):
         self.assertTrue(_registry.getQuantityCls(X.clsDefinition) is X)
-        self.assertRaises(ValueError, MetaQTerm, typearg('X_Y'),
-                          (Quantity,), {typearg('defineAs'): defXpY})
+        self.assertRaises(ValueError, MetaQTerm, 'X_Y',
+                          (Quantity,), {'defineAs': defXpY})
 
     def testUnitReg(self):
         self.assertTrue(X.Unit._symDict[X.refUnit.symbol] is X.refUnit)
@@ -222,11 +196,6 @@ class Test1_MetaQTerm(unittest.TestCase):
         self.assertRaises(TypeError, operator.mul, X, X(1))
         self.assertRaises(TypeError, operator.mul, 5, X)
         self.assertRaises(TypeError, operator.mul, X(1), X)
-        if PY_VERSION < 3:
-            self.assertRaises(TypeError, operator.div, X, 5)
-            self.assertRaises(TypeError, operator.div, X, X(1))
-            self.assertRaises(TypeError, operator.div, 5, X)
-            self.assertRaises(TypeError, operator.div, X(1), X)
         self.assertRaises(TypeError, operator.truediv, X, 5)
         self.assertRaises(TypeError, operator.truediv, X, X(1))
         self.assertRaises(TypeError, operator.truediv, 5, X)
@@ -317,24 +286,14 @@ class Test2_Unit(unittest.TestCase):
         self.assertFalse(x == q1x)
         self.assertTrue(q1x != x)
         self.assertTrue(x != q1x)
-        if PY_VERSION == 2:
-            self.assertEqual(x.__lt__(q1x), NotImplemented)
-            self.assertEqual(x.__le__(q1x), NotImplemented)
-            self.assertEqual(x.__gt__(q1x), NotImplemented)
-            self.assertEqual(x.__ge__(q1x), NotImplemented)
-            self.assertEqual(q1x.__lt__(x), NotImplemented)
-            self.assertEqual(q1x.__le__(x), NotImplemented)
-            self.assertEqual(q1x.__gt__(x), NotImplemented)
-            self.assertEqual(q1x.__ge__(x), NotImplemented)
-        else:
-            self.assertRaises(TypeError, operator.lt, x, q1x)
-            self.assertRaises(TypeError, operator.le, x, q1x)
-            self.assertRaises(TypeError, operator.gt, x, q1x)
-            self.assertRaises(TypeError, operator.ge, x, q1x)
-            self.assertRaises(TypeError, operator.lt, q1x, x)
-            self.assertRaises(TypeError, operator.le, q1x, x)
-            self.assertRaises(TypeError, operator.gt, q1x, x)
-            self.assertRaises(TypeError, operator.ge, q1x, x)
+        self.assertRaises(TypeError, operator.lt, x, q1x)
+        self.assertRaises(TypeError, operator.le, x, q1x)
+        self.assertRaises(TypeError, operator.gt, x, q1x)
+        self.assertRaises(TypeError, operator.ge, x, q1x)
+        self.assertRaises(TypeError, operator.lt, q1x, x)
+        self.assertRaises(TypeError, operator.le, q1x, x)
+        self.assertRaises(TypeError, operator.gt, q1x, x)
+        self.assertRaises(TypeError, operator.ge, q1x, x)
 
     def testAddition(self):
         self.assertRaises(TypeError, operator.add, x, 3)
@@ -532,7 +491,7 @@ class Test3_Quantity(unittest.TestCase):
             d = Decimal(i / 7, 3)
             for u in (x, kx):
                 q = X(d, u)
-                for rounding in rounding_modes:
+                for rounding in ROUNDING:
                     self.assertEqual(q.quantize(x, rounding),
                                      d.quantize(u(x), rounding) ^ u)
         for i in range(-34, 39, 11):
@@ -540,7 +499,7 @@ class Test3_Quantity(unittest.TestCase):
             d = Decimal(f, 15)
             for u in (x, kx):
                 q = X(f, u)
-                for rounding in rounding_modes:
+                for rounding in ROUNDING:
                     self.assertEqual(q.quantize(x, rounding),
                                      d.quantize(u(x), rounding) ^ u)
         for u in [t, kt]:
@@ -644,7 +603,7 @@ class Test3_Quantity(unittest.TestCase):
         self.assertRaises(TypeError, sum, ql, 5)
 
     def testAllocate(self):
-        set_rounding(ROUND_HALF_UP)
+        set_dflt_rounding_mode(ROUNDING.ROUND_HALF_UP)
         T._quantum = Decimal('0.01')
         qty = Decimal(10) ^ T.refUnit
         # negative rounding error
