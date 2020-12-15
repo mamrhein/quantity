@@ -200,4 +200,4 @@ in order to define a new quantity. This is, for example, useful for defining
 prices per quantum.
 
 For more details see the documentation provided with the source distribution
-or [here](http://pythonhosted.org/quantity).
+or [here](https://quantity.readthedocs.io/).

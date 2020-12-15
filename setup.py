@@ -11,7 +11,7 @@ setup(
     name="quantity",
     author="Michael Amrhein",
     author_email="michael@adrhinum.de",
-    url="https://pypi.python.org/pypi/quantity",
+    url="https://github.com/mamrhein/quantity",
     description="Unit-safe computations with quantities (including money)",
     long_description=long_description,
     long_description_content_type="text/markdown",
