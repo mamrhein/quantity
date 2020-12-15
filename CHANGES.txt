@@ -5,6 +5,11 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
+0.10.0      Dropped compatibility with Python 2.x.
+            Set required Python version to 3.6.
+            Updated required version of 'decimalfp' to 0.11.1.
+            Changed project layout.
+
 0.9.0       Converters raise new exception 'UnitConversionError' instead of
             returning None.
             Changed priority of converters: they are tried in *reversed* order
