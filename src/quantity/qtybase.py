@@ -46,13 +46,6 @@ QTY_CLS_OP_CACHE = {}
 UNIT_OP_CACHE = {}
 
 
-# decorator defining meta class, portable between Python 2 / Python 3
-def withMetaCls(metaCls):
-    def _createCls(cls):
-        return metaCls(cls.__name__, cls.__bases__, dict(cls.__dict__))
-    return _createCls
-
-
 class QuantityRegistry():
 
     """Registers Quantity classes by definition."""
@@ -379,8 +372,7 @@ class MetaQTerm(type):
         return self.__name__
 
 
-@withMetaCls(MetaQTerm)
-class QTermElem:
+class QTermElem(metaclass=MetaQTerm):
 
     """Abstract base class for Quantity and Unit."""
 
