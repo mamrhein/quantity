@@ -542,9 +542,9 @@ from .exceptions import (IncompatibleUnitsError, QuantityError,
                          UndefinedResultError, UnitConversionError)
 from .money import Currency, ExchangeRate, Money, registerCurrency
 from .qtybase import Quantity, Unit, generateUnits, getUnitBySymbol
+from .version import version as _scm_version_tag
 
-
-__version__ = 0, 9, 0
+__version__ = tuple(int(s) for s in _scm_version_tag.split('.')[:3])
 
 
 # defined here in order to reduce pickle foot-print
