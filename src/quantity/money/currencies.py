@@ -85,7 +85,7 @@ def registerCurrency(isoCode):
     Raises:
         ValueError: currency with code `isoCode` not in database
     """
-    regCurrency = Currency.getUnitBySymbol(isoCode)
+    regCurrency = Currency.get_unit_by_symbol(isoCode)
     if regCurrency is not None:         # currency already registered
         return regCurrency
     isoCode, isoNumCode, name, minorUnit, countries = getCurrencyInfo(isoCode)

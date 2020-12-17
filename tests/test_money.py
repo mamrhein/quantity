@@ -62,14 +62,14 @@ class Test1_Currency(unittest.TestCase):
         self.assertEqual(XXT.isoCode, XXT.symbol)
         self.assertEqual(XXT.name, 'XTest')
         self.assertEqual(XXT.smallestFraction, Decimal('0.001'))
-        self.assertTrue(Currency.getUnitBySymbol('XXT') is XXT)
+        self.assertTrue(Currency.get_unit_by_symbol('XXT') is XXT)
         self.assertTrue(Currency('XXT') is XXT)
 
     def testCurrencyDatabase(self):
         self.assertEqual(getCurrencyInfo('EUR')[0], 'EUR')
         self.assertRaises(ValueError, getCurrencyInfo, 'abc')
         EUR = registerCurrency('EUR')
-        self.assertTrue(EUR is Currency.getUnitBySymbol('EUR'))
+        self.assertTrue(EUR is Currency.get_unit_by_symbol('EUR'))
 
 
 class Test2_Money(unittest.TestCase):

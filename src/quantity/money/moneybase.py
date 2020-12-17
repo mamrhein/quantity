@@ -256,7 +256,7 @@ class ExchangeRate:
         if not isinstance(unitCurrency, Currency):
             if isinstance(unitCurrency, str):
                 unitCurrSym = unitCurrency
-                unitCurrency = Currency.getUnitBySymbol(unitCurrSym)
+                unitCurrency = Currency.get_unit_by_symbol(unitCurrSym)
                 if unitCurrency is None:
                     raise ValueError("Unknown ISO 4217 code: '%s'."
                                      % unitCurrSym)
@@ -266,7 +266,7 @@ class ExchangeRate:
         if not isinstance(termCurrency, Currency):
             if isinstance(termCurrency, str):
                 termCurrSym = termCurrency
-                termCurrency = Currency.getUnitBySymbol(termCurrSym)
+                termCurrency = Currency.get_unit_by_symbol(termCurrSym)
                 if termCurrency is None:
                     raise ValueError("Unknown ISO 4217 code: '%s'."
                                      % termCurrSym)

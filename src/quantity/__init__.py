@@ -536,40 +536,42 @@ used:
 """
 
 from builtins import sum as builtin_sum
+from typing import Any, Iterable
 
 from .converter import Converter, TableConverter
 from .exceptions import (IncompatibleUnitsError, QuantityError,
                          UndefinedResultError, UnitConversionError)
 from .money import Currency, ExchangeRate, Money, registerCurrency
-from .qtybase import Quantity, Unit, generateUnits, getUnitBySymbol
+from .qtybase import Quantity, Unit, generateUnits
+from .qtyreg import get_unit_by_symbol
 from .version import version as _scm_version_tag
 
 __version__ = tuple(int(s) for s in _scm_version_tag.split('.')[:3])
 
 
 # defined here in order to reduce pickle foot-print
-def r(q_repr):
+def r(q_repr: str) -> Quantity:
     """Reconstruct quantity from string representation."""
     return Quantity(q_repr)
 
 
-def sum(sequence, start=None):
-    """sum(sequence[, start]) -> value
+def sum(items: Iterable, start: Any = None):
+    """sum(items[, start]) -> value
 
     Args:
-        sequence: iterable of numbers or number-like objects (NOT strings)
+        items: iterable of numbers or number-like objects (NOT strings)
         start: starting value to be added (default: None)
 
     Returns:
-        sum of all elements in `sequence` plus the value of `start` (if not
-        None). When `sequence` is empty, returns `start`, if not None,
+        sum of all elements in `items` plus the value of `start` (if not
+        None). When `items` is empty, returns `start`, if not None,
         otherwise 0.
 
-    In contrast to the built-in function 'sum' this allows to sum sequences of
-    number-like objects (like quantities) without having to provide a start
-    value.
+    In contrast to the built-in function 'sum' this function allows to sum
+    sequences of number-like objects (like quantities) without having to
+    provide a start value.
     """
-    it = iter(sequence)
+    it = iter(items)
     if start is None:
         try:
             start = next(it)
@@ -582,7 +584,7 @@ def sum(sequence, start=None):
 __all__ = [
     'Quantity',
     'Unit',
-    'getUnitBySymbol',
+    'get_unit_by_symbol',
     'generateUnits',
     'sum',
     'QuantityError',

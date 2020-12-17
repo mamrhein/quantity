@@ -20,11 +20,12 @@ import unittest
 
 from decimalfp import Decimal, set_dflt_rounding_mode, ROUNDING
 
-from quantity import (Quantity, Unit, getUnitBySymbol, generateUnits, sum,
+from quantity import (Quantity, Unit, generateUnits, sum,
                       QuantityError, UndefinedResultError,
                       IncompatibleUnitsError, UnitConversionError,
                       TableConverter)
-from quantity.qtybase import MetaQTerm, _registry
+from quantity.qtybase import MetaQTerm
+from quantity.qtyreg import get_quantity_cls, get_unit_by_symbol
 from quantity.term import _mulSign, _SUPERSCRIPT_CHARS
 
 
@@ -175,7 +176,7 @@ class Test1_MetaQTerm(unittest.TestCase):
         self.assertEqual(X.quantum, None)
 
     def testQuantityReg(self):
-        self.assertTrue(_registry.getQuantityCls(X.clsDefinition) is X)
+        self.assertTrue(get_quantity_cls(X.clsDefinition) is X)
         self.assertRaises(ValueError, MetaQTerm, 'X_Y',
                           (Quantity,), {'defineAs': defXpY})
 
@@ -208,7 +209,7 @@ class Test1_MetaQTerm(unittest.TestCase):
     def testGetUnitBySymbol(self):
         for qty in [X, Xinv, Y, XpY, YpX, Z, Z2, XtZ2pY, K, Q, QpX]:
             for unit in qty.Unit.registeredUnits():
-                self.assertTrue(getUnitBySymbol(unit.symbol) is unit)
+                self.assertTrue(get_unit_by_symbol(unit.symbol) is unit)
 
     def testGenerateUnits(self):
         # 'K' has only a reference unit so far

@@ -17,17 +17,22 @@
 
 """Provide base classes for defining quantities."""
 
+# Standard library imports
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
 import itertools
 from numbers import Integral, Real
 import operator
 
+# Third-party imports
 from decimalfp import Decimal
 
+# Local imports
 import quantity
 from .exceptions import (QuantityError, IncompatibleUnitsError,
                          UndefinedResultError, UnitConversionError)
+from .qtyreg import (get_quantity_cls, get_unit_by_symbol,
+                     register_quantity_cls)
 from .term import Term
 from .converter import RefUnitConverter
 
@@ -44,112 +49,6 @@ QTY_CLS_OP_CACHE = {}
 
 # cache for results of operations on unit definitions
 UNIT_OP_CACHE = {}
-
-
-class QuantityRegistry():
-
-    """Registers Quantity classes by definition."""
-
-    def __init__(self):
-        self._qtyDefMap = {}
-        self._qtyList = []
-
-    def registerQuantityCls(self, qtyCls):
-        """Register Quantity class.
-
-        Registers a sub-class of :class:`Quantity` by its normalized
-        definition.
-
-        Args:
-            qtyCls (MetaQTerm): sub-class of :class:`Quantity` to be
-                registered
-
-        Returns:
-            int: index of registered class
-
-        Raises:
-            ValueError: class with same definition already registered
-        """
-        qtyDef = qtyCls.normalizedClsDefinition
-        try:
-            idx = self._qtyDefMap[qtyDef]
-        except KeyError:
-            qtyList = self._qtyList
-            qtyList.append(qtyCls)
-            idx = len(qtyList) - 1
-            self._qtyDefMap[qtyDef] = idx
-            return idx
-        else:
-            regCls = self._qtyList[idx]
-            if regCls == qtyCls:
-                return idx
-            else:
-                raise ValueError(
-                    "Class with same definition already registered.")
-
-    def getQuantityCls(self, qtyDef):
-        """Get Quantity class by definition.
-
-        Args:
-            qtyDef (MetaQTerm._QClsDefinition): definition of class to
-                be looked-up
-
-        Returns:
-            MetaQTerm: sub-class of :class:`Quantity` registered with
-                definition `qtyDef`
-
-        Raises:
-            ValueError: no sub-class of :class:`Quantity` registered with
-                definition `qtyDef`
-        """
-        normQtyDef = qtyDef.normalized()
-        try:
-            idx = self._qtyDefMap[normQtyDef]
-        except KeyError:
-            raise ValueError('No quantity class registered with given '
-                             'definition.')
-        return self._qtyList[idx]
-
-    def getUnitBySymbol(self, symbol):
-        """Return the unit with symbol `symbol`.
-
-        Args:
-            symbol (str): symbol to look-up
-
-        Returns:
-            :class:`Unit` sub-class if a unit with given `symbol` exists in
-                one of the registered quantities' `Unit` class, otherwise
-                `None`
-        """
-        for qty in self:
-            unit = qty.getUnitBySymbol(symbol)
-            if unit:
-                return unit
-        return None
-
-    def __len__(self):
-        return len(self._qtyList)
-
-    def __iter__(self):
-        return iter(self._qtyList)
-
-
-# Global registry of Quantities
-_registry = QuantityRegistry()
-
-
-def getUnitBySymbol(symbol):
-    """getUnitBySymbol(symbol) -> unit
-
-    Args:
-        symbol (string): symbol to look-up
-
-    Returns:
-        :class:`Unit` sub-class if a unit with given `symbol` exists in
-            one of the registered quantities' `Unit` class, otherwise
-            `None`
-    """
-    return _registry.getUnitBySymbol(symbol)
 
 
 class MetaQTerm(type):
@@ -209,7 +108,7 @@ class MetaQTerm(type):
             # add reference to self
             self.Quantity = self
             # register self
-            self._regIdx = _registry.registerQuantityCls(self)
+            self._regIdx = register_quantity_cls(self)
             # unit class given?
             try:
                 unitCls = self.Unit
@@ -290,6 +189,10 @@ class MetaQTerm(type):
     def isDerivedQuantity(self):
         """Return True if self is derived from other quantity classes."""
         return not self.isBaseQuantity()
+
+    def get_unit_by_symbol(self, symbol):
+        """Must be implemented as class method in instances!"""
+        return None
 
     @property
     def refUnit(self):
@@ -594,7 +497,7 @@ class Unit(QTermElem):
         return cls._symDict.values()
 
     @classmethod
-    def getUnitBySymbol(cls, symbol):
+    def get_unit_by_symbol(cls, symbol):
         """Return the unit with symbol `symbol`.
 
         Args:
@@ -605,6 +508,7 @@ class Unit(QTermElem):
                 within this :class:`Unit` sub-class
             None: otherwise
         """
+        # TODO: remove decode
         try:        # transform to unicode
             symbol = symbol.decode()
         except (AttributeError, UnicodeEncodeError):
@@ -926,7 +830,7 @@ class Quantity(QTermElem):
                                         % sAmount)
             if len(parts) > 1:
                 sSym = parts[1].strip()
-                unitFromSym = getUnitBySymbol(sSym)
+                unitFromSym = get_unit_by_symbol(sSym)
                 if unitFromSym:
                     if unit is None:
                         unit = unitFromSym
@@ -977,7 +881,7 @@ class Quantity(QTermElem):
         return cls.Quantity(amount, unit)
 
     @classmethod
-    def getUnitBySymbol(cls, symbol):
+    def get_unit_by_symbol(cls, symbol):
         """Return the unit with symbol `symbol`.
 
         Args:
@@ -988,7 +892,7 @@ class Quantity(QTermElem):
                 within the :class:`Unit` sub-class associated with this
                 :class:`Quantity` sub-class, otherwise None
         """
-        return cls.Unit.getUnitBySymbol(symbol)
+        return cls.Unit.get_unit_by_symbol(symbol)
 
     @staticmethod
     def _quantize(amount, unit, quant=None, rounding=None):
@@ -1201,7 +1105,7 @@ class Quantity(QTermElem):
         resQtyDef = op(selfQtyCls.clsDefinition, otherQtyCls.clsDefinition)
         if resQtyDef:
             try:
-                resQtyCls = _registry.getQuantityCls(resQtyDef)
+                resQtyCls = get_quantity_cls(resQtyDef)
             except ValueError:
                 raise UndefinedResultError(op, self, other)
         else:
@@ -1257,7 +1161,7 @@ class Quantity(QTermElem):
             return NotImplemented
         resQtyDef = self.Quantity ** exp
         try:
-            resQtyCls = _registry.getQuantityCls(resQtyDef)
+            resQtyCls = get_quantity_cls(resQtyDef)
         except ValueError:
             raise UndefinedResultError(operator.pow, self, exp)
         resQTerm = self.amount ** exp * self.unit ** exp
@@ -1358,7 +1262,7 @@ class _Unitless:
                            other.Quantity.clsDefinition)
             if resQtyDef:
                 try:
-                    resQtyCls = _registry.getQuantityCls(resQtyDef)
+                    resQtyCls = get_quantity_cls(resQtyDef)
                 except ValueError:
                     raise UndefinedResultError(op, self, other)
                 resQTerm = (self.amount / other.amount) / other.unit
@@ -1405,7 +1309,7 @@ def generateUnits(qCls):
     for term in comb:
         unitDef = QTerm(term)
         symbol = str(unitDef)
-        if unitCls.getUnitBySymbol(symbol):
+        if unitCls.get_unit_by_symbol(symbol):
             # unit already registered
             continue
         unitCls(symbol, defineAs=unitDef)
