@@ -427,7 +427,7 @@ class ExchangeRate:
 
     __rmul__ = __mul__
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         """self / other
 
         Args:
@@ -453,9 +453,7 @@ class ExchangeRate:
                                     other.termCurrency, other.unitCurrency))
         return NotImplemented
 
-    __truediv__ = __div__
-
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         """other / self
 
         **1. Form**
@@ -500,8 +498,6 @@ class ExchangeRate:
                 raise QuantityError("Resulting unit not defined: %s."
                                     % resTerm.unitTerm)
         return NotImplemented
-
-    __rtruediv__ = __rdiv__
 
     def __repr__(self):
         """repr(self)"""

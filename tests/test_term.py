@@ -43,7 +43,7 @@ class XElem(str, NonNumTermElem):
         else:
             return 1, XElem(base)
 
-    def __div__(self, other: 'XElem'):
+    def __truediv__(self, other: 'XElem'):
         snum, sbase = _parseString(self).groups()
         onum, obase = _parseString(other).groups()
         if sbase == obase:

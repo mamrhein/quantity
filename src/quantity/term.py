@@ -47,7 +47,7 @@ class NonNumTermElem(metaclass=ABCMeta):
         """True if elem is a base element; i.e. can not be decomposed."""
 
     @abstractmethod
-    def __div__(self, other: 'NonNumTermElem') \
+    def __truediv__(self, other: 'NonNumTermElem') \
             -> Union['NonNumTermElem', Real]:
         """self / other"""
 
@@ -288,7 +288,7 @@ class Term(metaclass=ABCMeta):
 
     __rmul__ = __mul__
 
-    def __div__(self, other) -> 'Term':
+    def __truediv__(self, other) -> 'Term':
         """self / other"""
         cls = self.__class__
         if isinstance(other, cls):
@@ -303,9 +303,7 @@ class Term(metaclass=ABCMeta):
             return NotImplemented
         return cls(items, reduce_items=False)
 
-    __truediv__ = __div__
-
-    def __rdiv__(self, other) -> 'Term':
+    def __rtruediv__(self, other) -> 'Term':
         """other / self"""
         if isinstance(other, Real):
             n_items = len(self) + 1
@@ -313,8 +311,6 @@ class Term(metaclass=ABCMeta):
                                        n_items=n_items)
             return self.__class__(items, reduce_items=False)
         return NotImplemented
-
-    __rtruediv__ = __rdiv__
 
     def __pow__(self, exp: int) -> 'Term':
         """self ** exp"""

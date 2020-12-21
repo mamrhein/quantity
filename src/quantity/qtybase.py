@@ -243,7 +243,7 @@ class MetaQTerm(type):
 
     __rmul__ = __mul__
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         """self / other"""
         if isinstance(other, MetaQTerm):
             return self._asClsDefinition() / other._asClsDefinition()
@@ -251,17 +251,13 @@ class MetaQTerm(type):
             return self._asClsDefinition() / other
         return NotImplemented
 
-    __truediv__ = __div__
-
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         """other / self"""
         if isinstance(other, MetaQTerm):
             return other._asClsDefinition() / self._asClsDefinition()
         if isinstance(other, self._QClsDefinition):
             return other / self._asClsDefinition()
         return NotImplemented
-
-    __rtruediv__ = __rdiv__
 
     def __pow__(self, exp):
         """self ** exp"""
@@ -663,7 +659,7 @@ class Unit(QTermElem):
     # other * self
     __rmul__ = __mul__
 
-    def __div__(self, other, op_cache=UNIT_OP_CACHE):
+    def __truediv__(self, other, op_cache=UNIT_OP_CACHE):
         """self / other"""
         if isinstance(other, Unit):
             try:    # try cache
@@ -682,17 +678,13 @@ class Unit(QTermElem):
             return NotImplemented
         return res
 
-    __truediv__ = __div__
-
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         """other / self"""
         if isinstance(other, NUM_TYPES):
             return self._QTerm(((other, 1), (self, -1)), reduce_items=False)
         elif isinstance(other, self._QTerm):
             return other / self._QTerm(((self, 1),), reduce_items=False)
         return NotImplemented
-
-    __rtruediv__ = __rdiv__
 
     def __pow__(self, exp):
         """self ** exp"""
@@ -1126,7 +1118,7 @@ class Quantity(QTermElem):
     # other * self
     __rmul__ = __mul__
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         """self / other"""
         if isinstance(other, NUM_TYPES):
             return self.Quantity(self.amount / other, self.unit)
@@ -1141,15 +1133,11 @@ class Quantity(QTermElem):
                 return resQtyCls._fromQTerm(resQTerm)
         return NotImplemented
 
-    __truediv__ = __div__
-
-    def __rdiv__(self, other):
+    def __rtruediv__(self, other):
         """other / self"""
         if isinstance(other, NUM_TYPES):
             return _Unitless(other) / self
         return NotImplemented
-
-    __rtruediv__ = __rdiv__
 
     def __pow__(self, exp):
         """self ** exp"""
@@ -1250,7 +1238,7 @@ class _Unitless:
     def amount(self):
         return self._amount
 
-    def __div__(self, other):
+    def __truediv__(self, other):
         """self / other"""
         if isinstance(other, Quantity):
             op = operator.truediv
@@ -1264,8 +1252,6 @@ class _Unitless:
                 resQTerm = (self.amount / other.amount) / other.unit
                 return resQtyCls._fromQTerm(resQTerm)
         return NotImplemented
-
-    __truediv__ = __div__
 
     def __str__(self):
         return "%s" % (self.amount)
