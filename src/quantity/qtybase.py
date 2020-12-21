@@ -33,7 +33,7 @@ from .exceptions import (QuantityError, IncompatibleUnitsError,
                          UndefinedResultError, UnitConversionError)
 from .qtyreg import (get_quantity_cls, get_unit_by_symbol,
                      register_quantity_cls)
-from .term import Term
+from .term import NonNumTermElem, Term
 from .converter import RefUnitConverter
 
 
@@ -62,19 +62,15 @@ class MetaQTerm(type):
         __slots__ = []
 
         @staticmethod
-        def isBaseElem(qCls):
-            """True if qCls is a base quantity class."""
-            return qCls.isBaseQuantity()
+        def normalize_elem(qty_cls: 'MetaQTerm') \
+                -> 'MetaQTerm._QClsDefinition':
+            """Return the normalized definition of `qty_cls`."""
+            return qty_cls.normalizedClsDefinition
 
         @staticmethod
-        def normalizeElem(qCls):
-            """Return the normalized definition of qCls."""
-            return qCls.normalizedClsDefinition
-
-        @staticmethod
-        def normSortKey(qCls):
-            """Return sort key for qCls."""
-            return qCls.Quantity._regIdx + 1
+        def norm_sort_key(qty_cls: 'MetaQTerm') -> int:
+            """Return sort key for `qty_cls`."""
+            return qty_cls.Quantity._regIdx + 1
 
     def __new__(cls, name, bases, clsdict):
         # hide refUnitSymbol, refUnitName and quantum
@@ -120,7 +116,7 @@ class MetaQTerm(type):
                 if qtyClsDef:
                     items = ((qtyCls.Unit, exp) for qtyCls, exp in qtyClsDef)
                     unitClsDef = self._QClsDefinition(items,
-                                                      reduceItems=False)
+                                                      reduce_items=False)
                 else:
                     unitClsDef = None
                 unitCls = self.Unit = MetaQTerm(f"{name}Unit",
@@ -166,7 +162,7 @@ class MetaQTerm(type):
             self._converters = []
 
     def _asClsDefinition(self):
-        return self._QClsDefinition([(self, 1)], reduceItems=False)
+        return self._QClsDefinition([(self, 1)], reduce_items=False)
 
     @property
     def clsDefinition(self):
@@ -185,6 +181,8 @@ class MetaQTerm(type):
         """Return True if self is not derived from other quantity classes."""
         # base quantity -> class definition is None or empty term (_Unitless)
         return self._clsDefinition is None or len(self._clsDefinition) == 0
+
+    # is_base_elem = isBaseQuantity
 
     def isDerivedQuantity(self):
         """Return True if self is derived from other quantity classes."""
@@ -287,19 +285,15 @@ class QTermElem(metaclass=MetaQTerm):
         __slots__ = []
 
         @staticmethod
-        def isBaseElem(qty):
-            """True if qty.unit is a base unit."""
-            return qty.unit.isBaseUnit()
-
-        @staticmethod
-        def normalizeElem(qty):
-            """Return qty as normalized QTerm."""
+        def normalize_elem(qty: 'QTermElem') -> 'QTermElem._QTerm':
+            """Return `qty` as normalized QTerm."""
             return qty.normalizedDefinition
 
         @staticmethod
-        def normSortKey(qty):
-            """Return sort key for qty."""
+        def norm_sort_key(qty: 'QTermElem') -> int:
+            """Return sort key for `qty`."""
             try:
+                # noinspection PyProtectedMember
                 return qty.Quantity._regIdx + 1
             except AttributeError:
                 return 0
@@ -313,11 +307,11 @@ class QTermElem(metaclass=MetaQTerm):
 
         @property
         def amount(self):
-            return self.numElem or DECIMAL_1
+            return self.num_elem or DECIMAL_1
 
         @property
         def unitTerm(self):
-            if self.numElem is None:
+            if self.num_elem is None:
                 return self
             return self.__class__(self[1:])
 
@@ -326,8 +320,8 @@ class QTermElem(metaclass=MetaQTerm):
         """The quantity's or units definition."""
         cls = self._QTerm
         if self.amount == 1:
-            return cls(((self.unit, 1),), reduceItems=False)
-        return cls(((self.amount, 1), (self.unit, 1)), reduceItems=False)
+            return cls(((self.unit, 1),), reduce_items=False)
+        return cls(((self.amount, 1), (self.unit, 1)), reduce_items=False)
 
     @property
     def normalizedDefinition(self):
@@ -541,7 +535,7 @@ class Unit(QTermElem):
     def definition(self):
         """Return the definition of the unit."""
         if self._definition is None:
-            return self._QTerm(((self, 1),), reduceItems=False)
+            return self._QTerm(((self, 1),), reduce_items=False)
         return self._definition
 
     @property
@@ -576,6 +570,8 @@ class Unit(QTermElem):
         """Return True if the unit is a base unit, i. e. it's not derived
         from another unit."""
         return self._definition is None
+
+    is_base_elem = isBaseUnit
 
     def isDerivedUnit(self):
         """Return True if the unit is derived from another unit."""
@@ -657,7 +653,7 @@ class Unit(QTermElem):
             # cache it
             op_cache[(operator.mul, self, other)] = res
         elif isinstance(other, NUM_TYPES):
-            res = self._QTerm(((other, 1), (self, 1)), reduceItems=False)
+            res = self._QTerm(((other, 1), (self, 1)), reduce_items=False)
         elif isinstance(other, self._QTerm):
             res = self._QTerm(((self, 1),)) * other
         else:
@@ -679,7 +675,7 @@ class Unit(QTermElem):
             # cache it
             op_cache[(operator.truediv, self, other)] = res
         elif isinstance(other, NUM_TYPES):
-            res = self._QTerm(((1 / other, 1), (self, 1)), reduceItems=False)
+            res = self._QTerm(((1 / other, 1), (self, 1)), reduce_items=False)
         elif isinstance(other, self._QTerm):
             res = self._QTerm(((self, 1),)) / other
         else:
@@ -691,9 +687,9 @@ class Unit(QTermElem):
     def __rdiv__(self, other):
         """other / self"""
         if isinstance(other, NUM_TYPES):
-            return self._QTerm(((other, 1), (self, -1)), reduceItems=False)
+            return self._QTerm(((other, 1), (self, -1)), reduce_items=False)
         elif isinstance(other, self._QTerm):
-            return other / self._QTerm(((self, 1),), reduceItems=False)
+            return other / self._QTerm(((self, 1),), reduce_items=False)
         return NotImplemented
 
     __rtruediv__ = __rdiv__
@@ -702,7 +698,7 @@ class Unit(QTermElem):
         """self ** exp"""
         if not isinstance(exp, Integral):
             return NotImplemented
-        return self._QTerm(((self, exp),), reduceItems=False)
+        return self._QTerm(((self, exp),), reduce_items=False)
 
     def __rxor__(self, other):
         """other ^ self
@@ -1294,7 +1290,7 @@ def generateUnits(qCls):
         ValueError: given quantity class is not a derived quantity
 
     The function creates and registers all units from the cross-product of all
-    units of the quantity classes the class `qCls` is derived from, provided
+    units of the quantity classes the class `qty_cls` is derived from, provided
     that the corresponding symbol is not already registered.
     """
     if qCls.isBaseQuantity():
