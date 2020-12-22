@@ -544,9 +544,7 @@ from .exceptions import (IncompatibleUnitsError, QuantityError,
 from .money import Currency, ExchangeRate, Money, registerCurrency
 from .qtybase import Quantity, Unit, generateUnits
 from .qtyreg import get_unit_by_symbol
-from .version import version as _scm_version_tag
-
-__version__ = tuple(int(s) for s in _scm_version_tag.split('.')[:3])
+from .version import version_tuple as __version__
 
 
 # defined here in order to reduce pickle foot-print
