@@ -49,7 +49,7 @@ class Converter:
             to_unit (:class:`Unit`): unit for equivalent amount
 
         Returns:
-            Real: factor f so that f * to_unit == qty
+            Real: factor f so that f * `to_unit` == `qty`
 
         Raises:
             IncompatibleUnitsError: qty and to_unit are incompatible
@@ -68,6 +68,7 @@ class Converter:
             qty.Quantity, to_unit.Quantity)
 
     def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
+        """Return factor f so that f * `to_unit` == `qty`."""
         return NotImplemented
 
 
@@ -76,6 +77,7 @@ class RefUnitConverter(Converter):
     """Converter for Quantity classes that have a reference unit."""
 
     def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
+        """Return factor f so that f * `to_unit` == `qty`."""
         res_def = (qty.unit.normalizedDefinition /
                    to_unit.normalizedDefinition)
         return qty.amount * res_def.amount
@@ -144,6 +146,7 @@ class TableConverter(Converter):
             raise TypeError("A Mapping or list must be given.")
 
     def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
+        """Return factor f so that f * `to_unit` == `qty`."""
         try:
             factor, offset = self._unitMap[(qty.unit, to_unit)]
         except KeyError:
