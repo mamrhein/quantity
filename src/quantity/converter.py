@@ -60,11 +60,12 @@ class Converter:
         if qty.Quantity is to_unit.Quantity:
             factor = self._get_factor(qty, to_unit)
             if factor is None:
-                raise UnitConversionError(f"Can't convert '{qty.unit}' "
-                                          f"to '{to_unit}'.")
+                raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                          qty.unit, to_unit)
             return factor
-        raise IncompatibleUnitsError(f"Can't convert a '{qty.Quantity}' unit "
-                                     f"to a '{to_unit.Quantity}' unit.")
+        raise IncompatibleUnitsError(
+            "Can't convert a '%s' unit to a '%s' unit.",
+            qty.Quantity, to_unit.Quantity)
 
     def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
         return NotImplemented
