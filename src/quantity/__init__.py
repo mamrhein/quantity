@@ -536,8 +536,6 @@ used:
     '*****19.36 m\xb3 '
 """
 
-from builtins import sum as builtin_sum
-from typing import Any, Iterable
 
 from .converter import Converter, TableConverter
 from .exceptions import (IncompatibleUnitsError, QuantityError,
@@ -545,6 +543,7 @@ from .exceptions import (IncompatibleUnitsError, QuantityError,
 from .money import Currency, ExchangeRate, Money, registerCurrency
 from .qtybase import Quantity, Unit, generateUnits
 from .qtyreg import get_unit_by_symbol
+from .utils import sum
 from .version import version_tuple as __version__
 
 
@@ -552,32 +551,6 @@ from .version import version_tuple as __version__
 def r(q_repr: str) -> Quantity:
     """Reconstruct quantity from string representation."""
     return Quantity(q_repr)
-
-
-def sum(items: Iterable, start: Any = None):
-    """sum(items[, start]) -> value
-
-    Args:
-        items: iterable of numbers or number-like objects (NOT strings)
-        start: starting value to be added (default: None)
-
-    Returns:
-        sum of all elements in `items` plus the value of `start` (if not
-        None). When `items` is empty, returns `start`, if not None,
-        otherwise 0.
-
-    In contrast to the built-in function 'sum' this function allows to sum
-    sequences of number-like objects (like quantities) without having to
-    provide a start value.
-    """
-    it = iter(items)
-    if start is None:
-        try:
-            start = next(it)
-        except StopIteration:
-            # return 0 in order to be backwards compatible
-            return 0
-    return builtin_sum(it, start)
 
 
 __all__ = [
