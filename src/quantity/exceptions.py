@@ -18,6 +18,7 @@
 """Quantity specific exceptions."""
 
 import operator
+from typing import Any
 
 
 class QuantityError(TypeError):
@@ -30,7 +31,7 @@ class IncompatibleUnitsError(QuantityError):
 
     """Exception raised when operands do not have compatible units."""
 
-    def __init__(self, msg, operand1, operand2):
+    def __init__(self, msg: str, operand1: Any, operand2: Any):
         if not isinstance(operand1, type):
             operand1 = operand1.__class__.__name__
         if not isinstance(operand2, type):
@@ -49,7 +50,7 @@ class UndefinedResultError(QuantityError):
              operator.pow: '**'
              }
 
-    def __init__(self, op, operand1, operand2):
+    def __init__(self, op: type(operator.mul), operand1: Any, operand2: Any):
         if not isinstance(operand1, type):
             operand1 = operand1.__class__.__name__
         if not isinstance(operand2, type):
@@ -63,5 +64,5 @@ class UnitConversionError(QuantityError):
     """Exception raised when a conversion between two compatible units
     fails."""
 
-    def __init__(self, msg, fromUnit, toUnit):
-        QuantityError.__init__(self, msg % (fromUnit, toUnit))
+    def __init__(self, msg: str, from_unit: Any, to_unit: Any):
+        QuantityError.__init__(self, msg % (from_unit, to_unit))
