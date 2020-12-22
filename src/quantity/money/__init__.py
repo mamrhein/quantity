@@ -15,7 +15,7 @@
 # $Revision$
 
 
-u"""Currency-safe computations with money amounts.
+"""Currency-safe computations with money amounts.
 
 Usage
 =====
@@ -31,7 +31,7 @@ easiest way to do this is to call the function :func:`registerCurrency`:
     ... TND = registerCurrency('TND')
     ... USD = registerCurrency('USD')
     >>> EUR, HKD, TND, USD
-    (Currency(u'EUR'), Currency(u'HKD'), Currency(u'TND'), Currency(u'USD'))
+    (Currency('EUR'), Currency('HKD'), Currency('TND'), Currency('USD'))
 
 The function is backed by a database of currencies defined in ISO 4217. It
 takes the 3-character ISO 4217 code as parameter.
@@ -41,9 +41,9 @@ symbol (which is the 3-character ISO 4217 code) and a name. In addition, it
 holds the smallest fraction defined for amounts in this currency:
 
     >>> TND.symbol
-    u'TND'
+    'TND'
     >>> TND.name
-    u'Tunisian Dinar'
+    'Tunisian Dinar'
     >>> TND.smallestFraction
     Decimal('0.001')
 
@@ -54,23 +54,23 @@ As :class:`Money` derives from :class:`~quantity.Quantity`, an instance can
 simply be created by giving an amount and a unit:
 
     >>> Money(30, EUR)
-    Money(Decimal(30, 2), Currency(u'EUR'))
+    Money(Decimal(30, 2), Currency('EUR'))
 
 All amounts of money are rounded according to the smallest fraction defined
 for the currency:
 
     >>> Money(3.128, EUR)
-    Money(Decimal('3.13'), Currency(u'EUR'))
+    Money(Decimal('3.13'), Currency('EUR'))
     >>> Money(41.1783, TND)
-    Money(Decimal('41.178'), Currency(u'TND'))
+    Money(Decimal('41.178'), Currency('TND'))
 
 As with other quantities, money amounts can also be derived from a string or
 build using the operator `^`:
 
     >>> Money('3.18 USD')
-    Money(Decimal('3.18'), Currency(u'USD'))
+    Money(Decimal('3.18'), Currency('USD'))
     >>> 3.18 ^ USD
-    Money(Decimal('3.18'), Currency(u'USD'))
+    Money(Decimal('3.18'), Currency('USD'))
 
 Computing with money amounts
 ----------------------------
@@ -81,7 +81,7 @@ there is no fixed relation between currencies, there is no implicit conversion
 between money amounts of different currencies:
 
     >>> Money(30, EUR) + Money(3.18, EUR)
-    Money(Decimal('33.18'), Currency(u'EUR'))
+    Money(Decimal('33.18'), Currency('EUR'))
     >>> Money(30, EUR) + Money(3.18, USD)
     IncompatibleUnitsError: Can't convert 'US Dollar' to 'Euro'
 
@@ -89,9 +89,9 @@ Resulting values are always quantized to the smallest fraction defined with
 the currency:
 
     >>> Money('3.20 USD') / 3
-    Money(Decimal('1.07'), Currency(u'USD'))
+    Money(Decimal('1.07'), Currency('USD'))
     >>> Money('3.20 TND') / 3
-    Money(Decimal('1.067'), Currency(u'TND'))
+    Money(Decimal('1.067'), Currency('TND'))
 
 Converting between different currencies
 ---------------------------------------
@@ -106,7 +106,7 @@ amount in term currency equivalent to unit multiple in unit currency:
 
     >>> fxEUR2HKD = ExchangeRate(EUR, 1, HKD, Decimal('8.395804'))
     >>> fxEUR2HKD
-    ExchangeRate(Currency(u'EUR'), Decimal(1), Currency(u'HKD'), \
+    ExchangeRate(Currency('EUR'), Decimal(1), Currency('HKD'), \
 Decimal('8.395804'))
 
 `unitMultiple` and `termAmount` will always be adjusted so that the resulting
@@ -115,7 +115,7 @@ unit multiple is a power to 10 and the resulting term amounts magnitude is >=
 
     >>> fxTND2EUR = ExchangeRate(TND, 5, EUR, Decimal('0.0082073'))
     >>> fxTND2EUR
-    ExchangeRate(Currency(u'TND'), Decimal(100), Currency(u'EUR'), \
+    ExchangeRate(Currency('TND'), Decimal(100), Currency('EUR'), \
 Decimal('0.164146'))
 
 The resulting rate for an amount of 1 unit currency in term currency can be
@@ -128,7 +128,7 @@ The property :attr:`ExchangeRate.quotation` gives a tuple of unit currency,
 term currency and rate:
 
     >>> fxTND2EUR.quotation
-    (Currency(u'TND'), Currency(u'EUR'), Decimal('0.00164146'))
+    (Currency('TND'), Currency('EUR'), Decimal('0.00164146'))
 
 The properties :attr:`ExchangeRate.inverseRate` and
 :attr:`ExchangeRate.inverseQuotation` give the rate and the quotation in the
@@ -137,14 +137,14 @@ opposite direction (but do not round the rate!):
     >>> fxTND2EUR.inverseRate
     Fraction(50000000, 82073)
     >>> fxTND2EUR.inverseQuotation
-    (Currency(u'EUR'), Currency(u'TND'), Fraction(50000000, 82073))
+    (Currency('EUR'), Currency('TND'), Fraction(50000000, 82073))
 
 The inverse ExchangeRate can be created by calling the method
 :meth:`ExchangeRate.inverted`:
 
     >>> fxEUR2TND = fxTND2EUR.inverted()
     >>> fxEUR2TND
-    ExchangeRate(Currency(u'EUR'), Decimal(1), Currency(u'TND'), \
+    ExchangeRate(Currency('EUR'), Decimal(1), Currency('TND'), \
 Decimal('609.213749'))
 
 An exchange rate can be derived from two other exchange rates, provided that
@@ -154,17 +154,17 @@ rates can be multiplied with each other. If either the unit currencies or the
 term currencies are equal, the two exchange rates can be divided:
 
     >>> fxEUR2HKD * fxTND2EUR
-    ExchangeRate(Currency(u'TND'), Decimal(10), Currency(u'HKD'), \
+    ExchangeRate(Currency('TND'), Decimal(10), Currency('HKD'), \
 Decimal('0.137814'))
     >>> fxEUR2HKD / fxEUR2TND
-    ExchangeRate(Currency(u'TND'), Decimal(10), Currency(u'HKD'), \
+    ExchangeRate(Currency('TND'), Decimal(10), Currency('HKD'), \
 Decimal('0.137814'))
     >>> fxEUR2TND / fxEUR2HKD
-    ExchangeRate(Currency(u'HKD'), Decimal(1), Currency(u'TND'), \
+    ExchangeRate(Currency('HKD'), Decimal(1), Currency('TND'), \
 Decimal('72.561693'))
     >>> fxHKD2EUR = fxEUR2HKD.inverted()
     >>> fxTND2EUR / fxHKD2EUR
-    ExchangeRate(Currency(u'TND'), Decimal(10), Currency(u'HKD'), \
+    ExchangeRate(Currency('TND'), Decimal(10), Currency('HKD'), \
 Decimal('0.137814'))
 
 Converting money amounts using exchange rates
@@ -175,9 +175,9 @@ currency as unit currency results in the equivalent amount in term currency:
 
     >>> mEUR = 5.27 ^ EUR
     >>> mEUR * fxEUR2HKD
-    Money(Decimal('44.25'), Currency(u'HKD'))
+    Money(Decimal('44.25'), Currency('HKD'))
     >>> mEUR * fxEUR2TND
-    Money(Decimal('3210.556'), Currency(u'TND'))
+    Money(Decimal('3210.556'), Currency('TND'))
 
 Likewise, dividing an amount in some currency with an exchange rate with the
 same currency as term currency results in the equivalent amount in unit
@@ -185,7 +185,7 @@ currency:
 
     >>> fxHKD2EUR = fxEUR2HKD.inverted()
     >>> mEUR / fxHKD2EUR
-    Money(Decimal('44.25'), Currency(u'HKD'))
+    Money(Decimal('44.25'), Currency('HKD'))
 
 Using money converters
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -219,16 +219,16 @@ inverted rates and rates calculated by triangulation:
 
     >>> # assuming today is a date in December 2015
     >>> conv.getRate(EUR, USD)
-    ExchangeRate(Currency(u'EUR'), Decimal(1), Currency(u'USD'), \
+    ExchangeRate(Currency('EUR'), Decimal(1), Currency('USD'), \
 Decimal('1.0943', 6))
     >>> conv.getRate(HKD, EUR, date(2015, 11, 3))
-    ExchangeRate(Currency(u'HKD'), Decimal(1), Currency(u'EUR'), \
+    ExchangeRate(Currency('HKD'), Decimal(1), Currency('EUR'), \
 Decimal('0.11388', 6))
     >>> conv.getRate(USD, EUR)
-    ExchangeRate(Currency(u'USD'), Decimal(1), Currency(u'EUR'), \
+    ExchangeRate(Currency('USD'), Decimal(1), Currency('EUR'), \
 Decimal('0.913826'))
     >>> conv.getRate(HKD, USD)
-    ExchangeRate(Currency(u'HKD'), Decimal(1), Currency(u'USD'), \
+    ExchangeRate(Currency('HKD'), Decimal(1), Currency('USD'), \
 Decimal('0.129025'))
 
 A money converter can be registered with the class :class:`Currency` in order
@@ -240,7 +240,7 @@ another (using the default reference date, see below):
     Decimal('2.1886', 8)
     >>> twoEUR = 2 ^ EUR
     >>> twoEUR.convert(USD)
-    Money(Decimal('2.19'), Currency(u'USD'))
+    Money(Decimal('2.19'), Currency('USD'))
 
 A money converter can also be registered and unregistered by using it as
 context manager in a `with` statement.
@@ -255,13 +255,13 @@ arguments and return a date. It is then used by
     >>> conv.update(yesterday(), [(USD, Decimal('1.0943'), 1)])
     >>> conv.update(datetime.date.today(), [(USD, Decimal('1.0917'), 1)])
     >>> conv.getRate(EUR, USD)
-    ExchangeRate(Currency(u'EUR'), Decimal(1), Currency(u'USD'), \
+    ExchangeRate(Currency('EUR'), Decimal(1), Currency('USD'), \
 Decimal('1.0917', 6))
     >>> conv = MoneyConverter(EUR, getDfltEffectiveDate=yesterday)
     >>> conv.update(yesterday(), [(USD, Decimal('1.0943'), 1)])
     >>> conv.update(datetime.date.today(), [(USD, Decimal('1.0917'), 1)])
     >>> conv.getRate(EUR, USD)
-    ExchangeRate(Currency(u'EUR'), Decimal(1), Currency(u'USD'), \
+    ExchangeRate(Currency('EUR'), Decimal(1), Currency('USD'), \
 Decimal('1.0943', 6))
 
 As other quantity converters, a :class:`MoneyConverter` instance can be called
@@ -294,7 +294,7 @@ created for the derived quantity …:
 
     >>> EURpKG = PricePerMass.Unit(defineAs=EUR/KILOGRAM)
     >>> list(PricePerMass.Unit.registeredUnits())
-    [PricePerMass.Unit(u'EUR/kg')]
+    [PricePerMass.Unit('EUR/kg')]
 
 As with other derived quantities, the function :func:`~quantity.generateUnits`
 can be used to create all units from the cross-product of units of the base
@@ -305,10 +305,10 @@ other quantities:
 
     >>> p = 17.45 ^ EURpKG
     >>> p * Decimal('1.05')
-    PricePerMass(Decimal('18.354', 4), PricePerMass.Unit(u'EUR/kg'))
+    PricePerMass(Decimal('18.354', 4), PricePerMass.Unit('EUR/kg'))
     >>> m = 530 ^ GRAM
     >>> m * p
-    Money(Decimal('9.26'), Currency(u'EUR'))
+    Money(Decimal('9.26'), Currency('EUR'))
 
 Note that instances of the derived class are not automatically quantized to
 the quantum defined for the currency:
@@ -323,7 +323,7 @@ exchange rates, as long as the resulting unit is defined:
     QuantityError: Resulting unit not defined: HKD/kg.
     >>> HKDpKG = PricePerMass.Unit(defineAs=HKD/KILOGRAM)
     >>> p * fxEUR2HKD
-    PricePerMass(Decimal('146.75865392'), PricePerMass.Unit(u'HKD/kg'))
+    PricePerMass(Decimal('146.75865392'), PricePerMass.Unit('HKD/kg'))
 """
 
 

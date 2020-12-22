@@ -15,7 +15,8 @@
 # $Revision$
 
 
-u"""Unit-safe computations with quantities.
+# TODO: update doc
+"""Unit-safe computations with quantities.
 
 Usage
 =====
@@ -144,7 +145,7 @@ call the class giving an amount and a unit. If the unit is omitted, the
 quantity's reference unit is used (if one is defined):
 
     >>> Length(15, MILLIMETRE)
-    Length(Decimal(15), Length.Unit(u'mm'))
+    Length(Decimal(15), Length.Unit('mm'))
     >>> Length(15)
     Length(Decimal(15))
 
@@ -152,27 +153,27 @@ Alternatively, the two-args infix operator '^' can be used to combine an
 amount and a unit:
 
     >>> 17.5 ^ KILOMETRE
-    Length(Decimal('17.5'), Length.Unit(u'km'))
+    Length(Decimal('17.5'), Length.Unit('km'))
 
 Also, it's possible to create a :class:`Quantity` instance from a string
 representation:
 
     >>> Length('17.5 km')
-    Length(Decimal('17.5'), Length.Unit(u'km'))
+    Length(Decimal('17.5'), Length.Unit('km'))
 
 If a unit is given in addition, the resulting quantity is converted
 accordingly:
 
     >>> Length('17 m', KILOMETRE)
-    Length(Decimal('0.017'), Length.Unit(u'km'))
+    Length(Decimal('0.017'), Length.Unit('km'))
 
 Instead of calling a subclass, the class :class:`Quantity` can be used as a
 factory function …:
 
     >>> Quantity(15, MILLIMETRE)
-    Length(Decimal(15), Length.Unit(u'mm'))
+    Length(Decimal(15), Length.Unit('mm'))
     >>> Quantity('17.5 km')
-    Length(Decimal('17.5'), Length.Unit(u'km'))
+    Length(Decimal('17.5'), Length.Unit('km'))
 
 … as long as a unit is given:
 
@@ -255,13 +256,13 @@ The example given above can be implemented as follows:
     >>> Temperature.Unit.registerConverter(tempConv)
     >>> t27c = Temperature(Decimal(27), CELSIUS)
     >>> t27c.convert(FAHRENHEIT)
-    Temperature(Decimal('80.6'), Temperature.Unit(u'\xb0F'))
+    Temperature(Decimal('80.6'), Temperature.Unit('\xb0F'))
 
 It is suffient to define the conversion in one direction, because a
 reversed conversion is used automatically:
 
 >>> t27c.convert(FAHRENHEIT).convert(CELSIUS)
-Temperature(Decimal(27), Temperature.Unit(u'\xb0C'))
+Temperature(Decimal(27), Temperature.Unit('\xb0C'))
 
 Unit-safe computations
 ----------------------
@@ -328,7 +329,7 @@ converted to the unit of the first, if possible …:
     >>> Length(12, CENTIMETRE) + Length(17, METRE)
     Length(Decimal('1712'), Length.Unit('cm'))
     >>> Temperature(20, CELSIUS) - Temperature(50, FAHRENHEIT)
-    Temperature(Decimal('10'), Temperature.Unit(u'\xb0C'))
+    Temperature(Decimal('10'), Temperature.Unit('\xb0C'))
 
 … but an exception is raised, if not:
 
@@ -341,9 +342,9 @@ Multiplication and division
 Quantities can be multiplied or divided by scalars, preserving the unit:
 
     >>> 7.5 * Length(3, CENTIMETRE)
-    Length(Decimal('22.5'), Length.Unit(u'cm'))
+    Length(Decimal('22.5'), Length.Unit('cm'))
     >>> Duration(66, MINUTE) / 11
-    Duration(Decimal(6), Duration.Unit(u'min'))
+    Duration(Decimal(6), Duration.Unit('min'))
 
 Quantities can be multiplied or divided by other quantities …:
 
@@ -451,11 +452,11 @@ round a quantity to any quantum according to any rounding mode:
 
     >>> l = Length('1.7296 km')
     >>> l.quantize(METRE)
-    Length(Decimal('1.73', 3), Length.Unit(u'km'))
+    Length(Decimal('1.73', 3), Length.Unit('km'))
     >>> l.quantize(25 ^ METRE)
-    Length(Decimal('1.725'), Length.Unit(u'km'))
+    Length(Decimal('1.725'), Length.Unit('km'))
     >>> l.quantize(25 ^ METRE, ROUND_UP)
-    Length(Decimal('1.75', 3), Length.Unit(u'km'))
+    Length(Decimal('1.75', 3), Length.Unit('km'))
 
 Apportioning
 ------------
@@ -480,23 +481,23 @@ with an amount other than 0:
     >>> b = 10 ^ KILOBYTE
     >>> portions, remainder = b.allocate(ratios, disperseRoundingError=False)
     >>> portions
-    [DataVolume(Decimal('6.333375'), DataVolume.Unit(u'kB')),
-     DataVolume(Decimal('0.833375'), DataVolume.Unit(u'kB')),
-     DataVolume(Decimal('0.333375'), DataVolume.Unit(u'kB')),
-     DataVolume(Decimal('2.5', 6), DataVolume.Unit(u'kB'))]
+    [DataVolume(Decimal('6.333375'), DataVolume.Unit('kB')),
+     DataVolume(Decimal('0.833375'), DataVolume.Unit('kB')),
+     DataVolume(Decimal('0.333375'), DataVolume.Unit('kB')),
+     DataVolume(Decimal('2.5', 6), DataVolume.Unit('kB'))]
     >>> remainder
-    DataVolume(Decimal('-0.000125'), DataVolume.Unit(u'kB')))
+    DataVolume(Decimal('-0.000125'), DataVolume.Unit('kB')))
 
 By default the remainder will be dispersed:
 
     >>> portions, remainder = b.allocate(ratios)
     >>> portions
-    [DataVolume(Decimal('6.333375'), DataVolume.Unit(u'kB')),
-     DataVolume(Decimal('0.833375'), DataVolume.Unit(u'kB')),
-     DataVolume(Decimal('0.33325', 6), DataVolume.Unit(u'kB')),
-     DataVolume(Decimal('2.5', 6), DataVolume.Unit(u'kB'))],
+    [DataVolume(Decimal('6.333375'), DataVolume.Unit('kB')),
+     DataVolume(Decimal('0.833375'), DataVolume.Unit('kB')),
+     DataVolume(Decimal('0.33325', 6), DataVolume.Unit('kB')),
+     DataVolume(Decimal('2.5', 6), DataVolume.Unit('kB'))],
     >>> remainder
-    DataVolume(Decimal(0, 6), DataVolume.Unit(u'kB')))
+    DataVolume(Decimal(0, 6), DataVolume.Unit('kB')))
 
 As well as of numbers, quantities can be used as ratios (as long as they have
 compatible units):
@@ -504,11 +505,11 @@ compatible units):
     >>> l = 10 ^ LITRE
     >>> ratios = [350 ^ GRAM, 500 ^ GRAM, 3 ^ KILOGRAM, 150 ^ GRAM]
     >>> l.allocate(ratios)
-    ([Volume(Decimal('0.875', 4), Volume.Unit(u'l')),
-      Volume(Decimal('1.25', 3), Volume.Unit(u'l')),
-      Volume(Decimal('7.5', 2), Volume.Unit(u'l')),
-      Volume(Decimal('0.375', 4), Volume.Unit(u'l'))],
-     Volume(Decimal(0, 4), Volume.Unit(u'l')))
+    ([Volume(Decimal('0.875', 4), Volume.Unit('l')),
+      Volume(Decimal('1.25', 3), Volume.Unit('l')),
+      Volume(Decimal('7.5', 2), Volume.Unit('l')),
+      Volume(Decimal('0.375', 4), Volume.Unit('l'))],
+     Volume(Decimal(0, 4), Volume.Unit('l')))
 
 Formatting as string
 --------------------
@@ -523,16 +524,16 @@ followed by a blank and the quantity's units symbol.
     Python 2.x returns an utf8-encoded bytes string.
 
 In addition, :class:`Quantity` supports the standard `format` function. The
-format specifier should use two keys: 'a' for the amount and 'u' for the unit,
-where 'a' can be followed by a valid format spec for numbers and 'u' by a
+format specifier should use two keys: 'a' for the amount and '' for the unit,
+where 'a' can be followed by a valid format spec for numbers and '' by a
 valid format spec for strings. If no format specifier is given, '{a} {u}' is
 used:
 
     >>> v = Volume('19.36')
     >>> format(v)
-    u'19.36 m\xb3'
+    '19.36 m\xb3'
     >>> format(v, '{a:*>10.2f} {u:<3}')
-    u'*****19.36 m\xb3 '
+    '*****19.36 m\xb3 '
 """
 
 from builtins import sum as builtin_sum

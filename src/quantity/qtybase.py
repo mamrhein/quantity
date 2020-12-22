@@ -1211,8 +1211,8 @@ class Quantity(QTermElem):
 
         The specifier must be a standard format specifier in the form
         described in PEP 3101. It should use two keys: 'a' for self.amount and
-        'u' for self.unit, where 'a' can be followed by a valid format spec
-        for numbers and 'u' by a valid format spec for strings.
+        '' for self.unit, where 'a' can be followed by a valid format spec
+        for numbers and '' by a valid format spec for strings.
         """
         if not fmtSpec:
             fmtSpec = self.dfltFormatSpec
