@@ -298,6 +298,25 @@ from decimalfp import Decimal
 from . import Quantity, TableConverter
 
 
+class Mass(Quantity):
+    refUnitName = 'Kilogram'
+    refUnitSymbol = 'kg'
+
+KILOGRAM = Mass.refUnit
+
+GRAM = Mass.Unit('g', 'Gram', Decimal('0.001') * KILOGRAM)
+MILLIGRAM = Mass.Unit('mg', 'Milligram', Decimal('0.000001') * KILOGRAM)
+TONNE = Mass.Unit('t', 'Tonne', Decimal(1000) * KILOGRAM)
+
+# some imperial units
+POUND = Mass.Unit('lb', 'Pound', Decimal('0.45359237') * KILOGRAM)
+STONE = Mass.Unit('st', 'Stone', Decimal(14) * POUND)
+OUNCE = Mass.Unit('oz', 'Ounce', Decimal('0.0625') * POUND)
+
+# others
+CARAT = Mass.Unit('ct', 'Carat', Decimal('0.2') * GRAM)
+
+
 class Length(Quantity):
     refUnitName = 'Metre'
     refUnitSymbol = 'm'
@@ -317,25 +336,6 @@ YARD = Length.Unit('yd', 'Yard', Decimal(3) * FOOT)
 CHAIN = Length.Unit('ch', 'Chain', Decimal(22) * YARD)
 FURLONG = Length.Unit('fur', 'Furlog', Decimal(10) * CHAIN)
 MILE = Length.Unit('mi', 'Mile', Decimal(8) * FURLONG)
-
-
-class Mass(Quantity):
-    refUnitName = 'Kilogram'
-    refUnitSymbol = 'kg'
-
-KILOGRAM = Mass.refUnit
-
-GRAM = Mass.Unit('g', 'Gram', Decimal('0.001') * KILOGRAM)
-MILLIGRAM = Mass.Unit('mg', 'Milligram', Decimal('0.000001') * KILOGRAM)
-TONNE = Mass.Unit('t', 'Tonne', Decimal(1000) * KILOGRAM)
-
-# some imperial units
-POUND = Mass.Unit('lb', 'Pound', Decimal('0.45359237') * KILOGRAM)
-STONE = Mass.Unit('st', 'Stone', Decimal(14) * POUND)
-OUNCE = Mass.Unit('oz', 'Ounce', Decimal('0.0625') * POUND)
-
-# others
-CARAT = Mass.Unit('ct', 'Carat', Decimal('0.2') * GRAM)
 
 
 class Duration(Quantity):
