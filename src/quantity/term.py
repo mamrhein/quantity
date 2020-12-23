@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Name:        term
-# Purpose:     Terms of tuples of elements and corresponding exponents.
-#
 # Author:      Michael Amrhein (michael@adrhinum.de)
 #
 # Copyright:   (c) 2012 ff. Michael Amrhein
@@ -17,6 +14,8 @@
 
 """Terms of tuples of elements and corresponding exponents."""
 
+
+# Standard library imports
 from abc import ABCMeta, abstractmethod
 from functools import reduce
 from itertools import chain, groupby
@@ -46,10 +45,19 @@ class NonNumTermElem(metaclass=ABCMeta):
     def is_base_elem(self) -> bool:
         """True if elem is a base element; i.e. can not be decomposed."""
 
+    @property
     @abstractmethod
-    def __truediv__(self, other: 'NonNumTermElem') \
+    def normalized_definition(self) -> 'ItemListType':
+        """Return the decomposition of `self`."""
+
+    @abstractmethod
+    def norm_sort_key(self) -> int:
+        """Return sort key for `self` used for normalization of terms."""
+
+    @abstractmethod
+    def _get_factor(self, other: 'NonNumTermElem') \
             -> Union['NonNumTermElem', Real]:
-        """self / other"""
+        """Return factor f so that f * `other` == `self`."""
 
 
 ElemType = Union[NonNumTermElem, Real]
@@ -66,45 +74,37 @@ class Term(metaclass=ABCMeta):
     __slots__ = ['_items', '_normalized', '_hash']
 
     @staticmethod
-    # @abstractmethod
     def normalize_elem(elem: ElemType) -> ItemListType:
         """Return the decomposition of elem (list of items)."""
-        if isinstance(elem, Real):
+        if isinstance(elem, Real) or elem.is_base_elem():
             return [(elem, 1)]
-        return NotImplemented
+        return elem.normalized_definition
 
     @staticmethod
-    def norm_sort_key(elem: ElemType) -> Union[int, str]:
-        """Return sort key for elem; used for normalized form of term.
-
-        The type of the returned must be the same for all elements, either
-        int (>= 0) or str. Numerical elements must get the lowest sort key:
-        0 if int, '' if str."""
+    def norm_sort_key(elem: ElemType) -> int:
+        """Return sort key for `elem` used for normalized form of term."""
         if isinstance(elem, Real):
-            return ''
-        return str(elem)
-
-    @staticmethod
-    def convert(elem: ElemType, into: Any) -> Real:
-        """Return factor f so that f * Term([(into, 1)]) == Term([(elem, 1)]).
-
-        Raises TypeError if conversion is not possible."""
-        raise TypeError
+            return -1
+        return elem.norm_sort_key()
 
     def __init__(self, items: ItemListType = (),
                  reduce_items: bool = True):
         _items: Tuple[ItemType, ...]
+        n_items: Optional[int]
+        try:
+            # noinspection PyTypeChecker
+            n_items = len(items)
+        except TypeError:
+            n_items = None
         if items and reduce_items:
-            _items = self._reduce_items(items)
+            _items = self._reduce_items(items, n_items=n_items)
         else:
             _items = tuple(items)
         self._items = _items
         # optimize a common case:
         if len(_items) == 1:
             (elem, exp) = _items[0]
-            if (isinstance(elem, Real)  # TODO: remove type checks
-                    or (isinstance(elem, type) and elem.isBaseQuantity())
-                    or (not isinstance(elem, type) and elem.is_base_elem())):
+            if isinstance(elem, Real) or elem.is_base_elem():
                 self._normalized = self
 
     def _reduce_items(self, items: ItemListType,
@@ -122,20 +122,22 @@ class Term(metaclass=ABCMeta):
                 return tuple(_filter_items(((elem1, exp1), (elem2, exp2))))
             # second most relevant case: 2 non-numeric elements
             if not elem1_is_num and not elem2_is_num:
+                # same elements?
                 if elem1 is elem2:
                     exp = exp1 + exp2
                     if exp == 0:
                         return ()
                     else:
                         return ((elem1, exp),)
-                elif type(elem1) == type(elem2):
-                    try:
-                        conv = self.convert(elem2, elem1)
-                    except (NotImplementedError, TypeError):
-                        pass
-                    else:
-                        return tuple(_filter_items(((conv ** exp2, 1),
-                                                    (elem1, exp1 + exp2))))
+                # elements convertible?
+                try:
+                    # noinspection PyProtectedMember
+                    conv = elem2._get_factor(elem1)
+                except (NotImplementedError, TypeError):
+                    pass
+                else:
+                    return tuple(_filter_items(((conv ** exp2, 1),
+                                                (elem1, exp1 + exp2))))
                 if keep_item_order:
                     return tuple(_filter_items(((elem1, exp1),
                                                 (elem2, exp2))))
@@ -156,7 +158,7 @@ class Term(metaclass=ABCMeta):
         norm_sort_key = self.norm_sort_key
         sort_key: Callable[[Tuple[int, Any]], int] = lambda x: x[0]
         if keep_item_order:
-            key2_first_idx_map = {'': 0, 0: 0}
+            key2_first_idx_map = {-1: -1, 0: 0}
             map_iter = ((key2_first_idx_map.setdefault(norm_sort_key(item[0]),
                                                        idx + 1),
                         item)
@@ -167,27 +169,29 @@ class Term(metaclass=ABCMeta):
         res_items = []
         num_elem = 1
         for key, group_it in groupby(items_sorted, key=sort_key):
-            if key:  # non-numerical elements
+            if key > 0:  # non-numerical elements
                 _, item = next(group_it)
                 accum_items = [item]
                 for _, item in group_it:
                     done = False
                     for idx, otherItem in enumerate(accum_items):
                         (elem1, exp1), (elem2, exp2) = otherItem, item
+                        # same elements?
                         if elem1 is elem2:
                             accum_items[idx] = (elem1, exp1 + exp2)
                             done = True
                             break
-                        elif type(elem1) == type(elem2):
-                            try:
-                                conv = self.convert(elem2, elem1)
-                            except (NotImplementedError, TypeError):
-                                pass
-                            else:
-                                num_elem *= conv ** exp2
-                                accum_items[idx] = (elem1, exp1 + exp2)
-                                done = True
-                                break
+                        # elements convertible?
+                        try:
+                            # noinspection PyProtectedMember
+                            conv = elem2._get_factor(elem1)
+                        except (NotImplementedError, TypeError):
+                            pass
+                        else:
+                            num_elem *= conv ** exp2
+                            accum_items[idx] = (elem1, exp1 + exp2)
+                            done = True
+                            break
                     if not done:
                         accum_items.append(item)
                 res_items += (item for item in accum_items if item[1] != 0)
@@ -366,9 +370,7 @@ def _iter_normalized(term: ItemListType,
                      normalize_elem: Callable[[ElemType], ItemListType]) \
         -> Generator[ItemType, None, None]:
     for (elem, exp) in term:
-        if (isinstance(elem, Real)  # TODO: remove type checks
-                    or (isinstance(elem, type) and elem.isBaseQuantity())
-                    or (not isinstance(elem, type) and elem.is_base_elem())):
+        if isinstance(elem, Real) or elem.is_base_elem():
             yield elem, exp
         else:
             for item in _iter_normalized(((nElem, nExp * exp)
