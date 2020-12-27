@@ -1,4 +1,3 @@
-#!usr/bin/env python
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
 # Author:      Michael Amrhein (michael@adrhinum.de)
@@ -17,13 +16,11 @@
 
 
 # Standard library imports
-import operator
-import unittest
 from numbers import Real
 from typing import Tuple
 
 # Third-party imports
-
+import pytest
 from decimalfp import Decimal
 
 # Local imports
@@ -69,126 +66,143 @@ class TElem(str, NonNumTermElem):
         raise TypeError
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self})"
+        return f"{self.__class__.__name__}('{self}')"
 
 
-class TermTest(unittest.TestCase):
-
-    def testConstructor(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t = Term([(x, 1)])
-        self.assertEqual(t._items, ((x, 1),))
-        t = Term([(y, 2), (x, 1)])
-        self.assertEqual(t._items, ((y, 2), (x, 1)))
-        t = Term([(x, 2), (x, 1)])
-        self.assertEqual(t._items, ((x, 3),))
-        t = Term([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1),
-                  (x, -1)])
-        self.assertEqual(t._items, ((y, 4), (z, -1)))
-        t = Term(((y, 1), (x, 1), (x, 1), (5, 1), (y, -1)))
-        self.assertEqual(t._items, ((5, 1), (x, 2)))
-        t = Term(((y, 0), (1, 1)))
-        self.assertEqual(t._items, ())
-        xt = Term([(x, 1)])
-        self.assertEqual(xt._items, ((x, 1),))
-        xt = Term(((TElem('100x'), 1), (TElem('10x'), -1)))
-        self.assertEqual(xt._items, ((10, 1),))
-        xt = Term(((TElem('10x'), 1), (x, 1)))
-        self.assertEqual(xt._items, ((Decimal('0.1'), 1), ('10x', 2)))
-        xt = Term(((TElem('10x'), 1), (TElem('10x'), 1)))
-        self.assertEqual(xt._items, (('10x', 2),))
-        xt = Term(((x, 1), (TElem('10x'), 1)))
-        self.assertEqual(xt._items, ((10.0, 1), (x, 2)))
-        xt = Term(((x, 1), (TElem('10x'), 1), (TElem('10x'), 1)))
-        self.assertEqual(xt._items, ((100, 1), (x, 3)))
-        xt = Term(((5, 1), (TElem('10x'), 1), (2, 2)))
-        self.assertEqual(xt._items, ((20, 1), (TElem('10x'), 1)))
-        xt = Term(((25, 1), (5, -2)))
-        self.assertEqual(xt._items, ())
-        xt = Term(((10, 3), (5, -2)))
-        self.assertEqual(xt._items, ((40, 1),))
-
-    def testNormalization(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t = Term([(x, 1), (y, 2)])
-        self.assertTrue(t.is_normalized)
-        xt = Term([(x, 1)])
-        self.assertTrue(xt.is_normalized)
-        dxt = Term([(TElem('10x'), 1)])
-        self.assertTrue(not dxt.is_normalized)
-        self.assertEqual(dxt.normalized(), Term(((10, 1), (x, 1))))
-        dxMzpky = Term([(TElem('10x'), 1),
-                         (TElem('1000000z'), 1),
-                         (TElem('1000y'), -1)])
-        self.assertTrue(not dxMzpky.is_normalized)
-        self.assertEqual(dxMzpky.normalized(),
-                         Term(((10000, 1), (x, 1), (y, -1), (z, 1))))
-
-    def testHash(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t = Term([(y, 2), (x, 1), (z, 0), (y, -1)])
-        self.assertEqual(hash(t), hash(t.normalized()))
-
-    def testComparision(self):
-        x, y = TElem('x'), TElem('y')
-        t1 = Term([(y, 2), (x, 1)])
-        t2 = Term([(x, 2), (y, 1)])
-        t3 = Term([(y, 1), (x, 2)])
-        self.assertTrue(t1 != t2)
-        self.assertTrue(t1 != t3)
-        self.assertTrue(t2 == t3)
-        xt = Term([(x, 1)])
-        dxt = Term([(TElem('10x'), 1)])
-        self.assertTrue(xt != dxt)
-        self.assertEqual(Term(((10, 1), (x, 1))), dxt)
-
-    def testMultiplication(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t1 = Term([(y, 2), (x, 1)])
-        t2 = Term([(x, -2), (z, 1), (y, 1)])
-        self.assertEqual(t1 * t2, Term(((x, -1), (y, 3), (z, 1))))
-        self.assertEqual(t1 * 5, Term(((5, 1), (x, 1), (y, 2))))
-        self.assertEqual(t1 * 5, 5 * t1)
-        self.assertRaises(TypeError, operator.mul, 'a', t1)
-        self.assertRaises(TypeError, operator.mul, t1, 'a')
-        xt = Term([(x, 1)])
-        self.assertEqual(5 * xt, xt * 5)
-        dxt = Term([(TElem('10x'), 1)])
-        self.assertEqual(10 * xt, dxt)
-
-    def testDivision(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t1 = Term([(y, 2), (x, 1)])
-        t2 = Term([(x, -2), (z, 1), (y, 1)])
-        self.assertEqual(t1 / t2, Term(((x, 3), (y, 1), (z, -1))))
-        self.assertEqual(t1 / t2, t1 * t2.reciprocal())
-        self.assertEqual(t1 / 0.5, Term(((2, 1), (x, 1), (y, 2))))
-        self.assertEqual(5 / t1, Term(((5, 1), (x, -1), (y, -2))))
-        self.assertRaises(TypeError, operator.truediv, 'a', t1)
-        self.assertRaises(TypeError, operator.truediv, t1, 'a')
-        xt = Term([(x, 1)])
-        self.assertEqual(xt / xt, Term())
-        dxt = Term([(TElem('10x'), 1)])
-        self.assertEqual(xt, dxt / Decimal(10))
-
-    def testPower(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t = Term([(y, 2), (x, 1), (z, -3)])
-        self.assertEqual(t ** 5, Term(((x, 5), (y, 10), (z, -15))))
-
-    def testStr(self):
-        x, y, z = TElem('x'), TElem('y'), TElem('z')
-        t1 = Term([(y, 1), (x, 2)])
-        self.assertEqual(str(t1), 'y%sx%s' % (_mulSign, _powerChars[2]))
-        t2 = Term([(y, 2), (x, -1), (z, 3)])
-        self.assertEqual(str(t2), 'y%s%sz%s%sx' %
-                         (_powerChars[2], _mulSign, _powerChars[3], _div_sign))
-
-    def testRepr(self):
-        x, y = TElem('x'), TElem('y')
-        t1 = Term([(y, 2), (x, 1)])
-        self.assertEqual(t1, eval(repr(t1)))
+x, y, z = TElem('x'), TElem('y'), TElem('z')
 
 
-if __name__ == '__main__':
-    unittest.main()
+# noinspection PyMissingTypeHints
+@pytest.mark.parametrize(
+    ('term', 'items'),
+    (
+        (Term([(x, 1)]), ((x, 1),)),
+        (Term([(x, 1)]), ((x, 1),)),
+        (Term([(y, 2), (x, 1)]), ((y, 2), (x, 1))),
+        (Term([(x, 2), (x, 1)]), ((x, 3),)),
+        (Term([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1), (x, -1)]), ((y, 4), (z, -1))),
+        (Term(((y, 1), (x, 1), (x, 1), (5, 1), (y, -1))), ((5, 1), (x, 2))),
+        (Term(((y, 0), (1, 1))), ()),
+        (Term([(x, 1)]), ((x, 1),)),
+        (Term(((TElem('100x'), 1), (TElem('10x'), -1))), ((10, 1),)),
+        (Term(((TElem('10x'), 1), (x, 1))), ((Decimal('0.1'), 1), ('10x', 2))),
+        (Term(((TElem('10x'), 1), (TElem('10x'), 1))), (('10x', 2),)),
+        (Term(((x, 1), (TElem('10x'), 1))), ((10.0, 1), (x, 2))),
+        (Term(((x, 1), (TElem('10x'), 1), (TElem('10x'), 1))), ((100, 1), (x, 3))),
+        (Term(((5, 1), (TElem('10x'), 1), (2, 2))), ((20, 1), (TElem('10x'), 1))),
+        (Term(((25, 1), (Decimal(5), -2))), ()),
+        (Term(((10, 3), (Decimal(5), -2))), ((40, 1),)),
+    )
+)
+def test_constructor(term, items):
+    assert term._items == items
+
+
+# noinspection PyMissingTypeHints
+@pytest.mark.parametrize(
+    ("term", "normalized"),
+    (
+        (Term([(x, 1), (y, 2)]), None),
+        (Term([(x, 1)]), None),
+        (Term([(TElem('10x'), 1)]), Term(((10, 1), (x, 1)))),
+        (Term([(Decimal(10), -1), (TElem('10x'), 1)]), Term([(x, 1)])),
+        (Term([(TElem('10x'), 1), (TElem('1000000z'), 1),
+               (TElem('1000y'), -1)]),
+         Term(((10000, 1), (x, 1), (y, -1), (z, 1)))),
+    ),
+)
+def test_normalization(term, normalized):
+    if normalized is None:
+        assert term.is_normalized
+    else:
+        assert not term.is_normalized
+        assert term.normalized() == normalized
+
+
+# noinspection PyMissingTypeHints
+def test_hash():
+    t = Term([(y, 2), (x, 1), (z, 0), (y, -1)])
+    assert hash(t) == hash(t.normalized())
+
+
+# noinspection PyMissingTypeHints
+def test_comparision():
+    t1 = Term([(y, 2), (x, 1)])
+    t2 = Term([(x, 2), (y, 1)])
+    t3 = Term([(y, 1), (x, 2)])
+    assert t1 != t2
+    assert t1 != t3
+    assert t2 == t3
+    xt = Term([(x, 1)])
+    dxt = Term([(TElem('10x'), 1)])
+    assert xt != dxt
+    assert Term(((10, 1), (x, 1))) == dxt
+    assert Term(((Decimal(10), -1), (TElem('10x'), 1))) == xt
+
+
+# noinspection PyMissingTypeHints
+@pytest.mark.parametrize(
+    ("t1", "t2", "res"),
+    (
+        (Term([(y, 2), (x, 1)]), Term([(x, -2), (z, 1), (y, 1)]),
+         Term(((x, -1), (y, 3), (z, 1)))),
+        (Term([(y, 2), (x, 1)]), 5, Term(((5, 1), (x, 1), (y, 2)))),
+        (Term([(x, 1)]), 3, Term(((3, 1), (x, 1)))),
+        (10, Term([(x, 1)]), Term([(TElem('10x'), 1)])),
+    )
+)
+def test_multiplication(t1, t2, res):
+    assert res == t1 * t2
+    assert res == t2 * t1
+
+
+# noinspection PyMissingTypeHints
+@pytest.mark.parametrize(
+    ("t1", "t2", "res"),
+    (
+        (Term([(y, 2), (x, 1)]), Term([(x, -2), (z, 1), (y, 1)]),
+         Term(((x, 3), (y, 1), (z, -1)))),
+        (Term([(y, 2), (x, 1)]), 0.5, Term(((2, 1), (x, 1), (y, 2)))),
+        (5, Term([(x, 1)]), Term(((5, 1), (x, -1)))),
+        (Term([(x, 1)]), Term([(x, 1)]), Term()),
+        (Term([(TElem('10x'), 1)]), Decimal(10), Term([(x, 1)])),
+    )
+)
+def test_division(t1, t2, res):
+    assert res == t1 / t2
+    if isinstance(t2, Term):
+        assert res == t1 * t2.reciprocal()
+
+
+# noinspection PyMissingTypeHints
+def test_mul_div_raises():
+    t = Term([(x, 1)])
+    with pytest.raises(TypeError):
+        t * 'a'
+    with pytest.raises(TypeError):
+        'a' * t
+    with pytest.raises(TypeError):
+        t / 'a'
+    with pytest.raises(TypeError):
+        'a' / t
+
+
+# noinspection PyMissingTypeHints
+def test_power():
+    t = Term([(y, 2), (x, 1), (z, -3)])
+    assert t ** 5 == Term(((x, 5), (y, 10), (z, -15)))
+
+
+# noinspection PyMissingTypeHints
+def test_str():
+    t1 = Term([(y, 1), (x, 2)])
+    assert str(t1) == 'y%sx%s' % (_mulSign, _powerChars[2])
+    t2 = Term([(y, 2), (x, -1), (z, 3)])
+    assert str(t2) == 'y%s%sz%s%sx' % (_powerChars[2], _mulSign,
+                                       _powerChars[3], _div_sign)
+
+
+# noinspection PyMissingTypeHints
+def test_repr():
+    t1 = Term([(y, 2), (x, 1)])
+    assert t1, eval(repr(t1))
