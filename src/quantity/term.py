@@ -226,7 +226,7 @@ class Term(metaclass=ABCMeta):
         return self.normalized() is self
 
     @property
-    def items(self) -> ItemListType:
+    def items(self) -> Tuple[ItemType, ...]:
         """Return iterable of items in `self`."""
         return self._items
 
