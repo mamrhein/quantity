@@ -28,7 +28,7 @@ from .term import Term
 
 if TYPE_CHECKING:
     from . import Unit
-    from .qtybase import MetaQTerm
+    from .qtymeta import QuantityMeta
 
 
 class QuantityClassRegistry:
@@ -37,16 +37,16 @@ class QuantityClassRegistry:
 
     def __init__(self) -> None:
         self._qty_def_map: MutableMapping[Term, int] = {}
-        self._qty_cls_list: List[MetaQTerm] = []
+        self._qty_cls_list: List[QuantityMeta] = []
 
-    def register_quantity_cls(self, qty_cls: 'MetaQTerm') -> int:
+    def register_quantity_cls(self, qty_cls: 'QuantityMeta') -> int:
         """Register Quantity class.
 
         Registers a sub-class of :class:`Quantity` by its normalized
         definition.
 
         Args:
-            qty_cls (MetaQTerm): sub-class of :class:`Quantity` to be
+            qty_cls (QuantityMeta): sub-class of :class:`Quantity` to be
                 registered
 
         Returns:
@@ -55,7 +55,7 @@ class QuantityClassRegistry:
         Raises:
             ValueError: class with same definition already registered
         """
-        qty_def = qty_cls.normalizedClsDefinition
+        qty_def = qty_cls.normalized_definition
         try:
             idx = self._qty_def_map[qty_def]
         except KeyError:
@@ -72,15 +72,15 @@ class QuantityClassRegistry:
                 raise ValueError(
                     "Class with same definition already registered.")
 
-    def get_quantity_cls(self, qty_def: Term) -> 'MetaQTerm':
+    def get_quantity_cls(self, qty_def: Term) -> 'QuantityMeta':
         """Get Quantity class by definition.
 
         Args:
             qty_def (Term): definition of class to be looked-up
 
         Returns:
-            MetaQTerm: sub-class of :class:`Quantity` registered with
-                definition `qtyDef`
+            QuantityMeta: sub-class of :class:`Quantity` registered with
+                definition `qty_def`
 
         Raises:
             ValueError: no sub-class of :class:`Quantity` registered with
@@ -106,6 +106,7 @@ class QuantityClassRegistry:
                 `None`
         """
         for qty_cls in self:
+            # noinspection PyUnresolvedReferences
             unit = qty_cls.get_unit_by_symbol(symbol)
             if unit:
                 return unit
@@ -114,7 +115,7 @@ class QuantityClassRegistry:
     def __len__(self) -> int:
         return len(self._qty_cls_list)
 
-    def __iter__(self) -> Iterator['MetaQTerm']:
+    def __iter__(self) -> Iterator['QuantityMeta']:
         return iter(self._qty_cls_list)
 
 
