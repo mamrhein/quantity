@@ -128,7 +128,7 @@ class Term(metaclass=ABCMeta):
                     if exp == 0:
                         return ()
                     else:
-                        return ((elem1, exp),)
+                        return (elem1, exp),
                 # elements convertible?
                 try:
                     # noinspection PyProtectedMember
@@ -153,7 +153,7 @@ class Term(metaclass=ABCMeta):
             if elem1_is_num and elem2_is_num:
                 num = elem1 ** exp1 * elem2 ** exp2
                 if num != 1:
-                    return ((num, 1),)
+                    return (num, 1),
         # more than 2 items or number of items unknown:
         norm_sort_key = self.norm_sort_key
         sort_key: Callable[[Tuple[int, Any]], int] = lambda x: x[0]
@@ -311,7 +311,8 @@ class Term(metaclass=ABCMeta):
         """other / self"""
         if isinstance(other, Real):
             n_items = len(self) + 1
-            items = self._reduce_items(chain(((other, 1),), _reciprocal(self)),
+            items = self._reduce_items(chain(((other, 1),),
+                                             _reciprocal(self)),
                                        n_items=n_items)
             return self.__class__(items, reduce_items=False)
         return NotImplemented
