@@ -75,7 +75,12 @@ class QuantityMeta(type):
                 return Term(((cast(NonNumTermElem, cls), 1),)) * other
         return NotImplemented
 
-    __rmul__ = __mul__
+    def __rmul__(cls, other: Term) -> Term:
+        """Return class definition: `other` * `cls`."""
+        if isinstance(other, Term):
+            if all((isinstance(elem, QuantityMeta) for (elem, exp) in other)):
+                return other * Term(((cls, 1),))
+        return NotImplemented
 
     def __truediv__(cls, other: Union['QuantityMeta', Term]) -> Term:
         """Return class definition: `cls` / `other`."""
