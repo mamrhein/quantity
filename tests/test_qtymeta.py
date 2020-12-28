@@ -54,9 +54,15 @@ class E(metaclass=QuantityMeta):
 
 
 class F(metaclass=QuantityMeta):
-    """Derived C ** -1 * B ** 2 / A ** 2"""
+    """Derived (B ** 2 / A ** 2) / C"""
 
-    definition = C ** -1 * B ** 2 / A ** 2
+    definition = (B ** 2 / A ** 2) / C
+
+
+class G(metaclass=QuantityMeta):
+    """Derived B * (A ** 2 / E)"""
+
+    definition = B * (A ** 2 / E)
 
 
 @pytest.mark.parametrize("cls", [A, B], ids=["A", "B"])
@@ -74,8 +80,9 @@ def test_base(cls: QuantityMeta) -> None:
                          [(C, A * B),
                           (D, A ** 2),
                           (E, C / D),
-                          (F, B ** 2 / (A ** 2 * C))],
-                         ids=["C", "D", "E", "F"])
+                          (F, B ** 2 / (A ** 2 * C)),
+                          (G, B * A ** 2 / E)],
+                         ids=["C", "D", "E", "F", "G"])
 def test_derived(cls: QuantityMeta, cdef: Term) -> None:
     assert isinstance(cls, QuantityMeta)
     assert not cls.is_base_quantity()
@@ -88,8 +95,9 @@ def test_derived(cls: QuantityMeta, cdef: Term) -> None:
                          [(C, A * B),
                           (D, A ** 2),
                           (E, B / A),
-                          (F, B / A ** 3)],
-                         ids=["C", "D", "E", "F"])
+                          (F, B / A ** 3),
+                          (G, A ** 3)],
+                         ids=["C", "D", "E", "F", "G"])
 def test_normalized_def(cls: QuantityMeta, cdef: Term) -> None:
     assert cls.normalized_definition == cdef
     assert str(cls.normalized_definition) == str(cdef)
