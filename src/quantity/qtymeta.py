@@ -18,7 +18,7 @@
 
 # Third-party imports
 from numbers import Integral
-from typing import Any, cast, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 # Local imports
 from .qtyreg import register_quantity_cls
@@ -45,7 +45,7 @@ class QuantityMeta(type):
     def definition(cls) -> Term:
         """Definition of quantity class."""
         if cls._definition is None:
-            return Term(((cast(NonNumTermElem, cls), 1),))
+            return Term(((cls, 1),))
         return cls._definition
 
     def is_base_quantity(cls) -> bool:
@@ -68,11 +68,10 @@ class QuantityMeta(type):
     def __mul__(cls, other: Union['QuantityMeta', Term]) -> Term:
         """Return class definition: `cls` * `other`."""
         if isinstance(other, QuantityMeta):
-            return Term(((cast(NonNumTermElem, cls), 1),
-                         (cast(NonNumTermElem, other), 1)))
+            return Term(((cls, 1), (other, 1)))
         if isinstance(other, Term):
             if all((isinstance(elem, QuantityMeta) for (elem, exp) in other)):
-                return Term(((cast(NonNumTermElem, cls), 1),)) * other
+                return Term(((cls, 1),)) * other
         return NotImplemented
 
     def __rmul__(cls, other: Term) -> Term:
@@ -85,25 +84,23 @@ class QuantityMeta(type):
     def __truediv__(cls, other: Union['QuantityMeta', Term]) -> Term:
         """Return class definition: `cls` / `other`."""
         if isinstance(other, QuantityMeta):
-            return Term(((cast(NonNumTermElem, cls), 1),
-                         (cast(NonNumTermElem, other), -1)))
+            return Term(((cls, 1), (other, -1)))
         if isinstance(other, Term):
             if all((isinstance(elem, QuantityMeta) for (elem, exp) in other)):
-                return Term(((cast(NonNumTermElem, cls), 1),)) * \
-                       other.reciprocal()
+                return Term(((cls, 1),)) * other.reciprocal()
         return NotImplemented
 
     def __rtruediv__(cls, other: Term) -> Term:
         """Return class definition: `other` / `cls`."""
         if isinstance(other, Term):
             if all((isinstance(elem, QuantityMeta) for (elem, exp) in other)):
-                return other * Term(((cast(NonNumTermElem, cls), -1),))
+                return other * Term(((cls, -1),))
         return NotImplemented
 
     def __pow__(cls, exp: int) -> Term:
         """Return class definition: `cls` ** `exp`."""
         if isinstance(exp, Integral):
-            return Term(((cast(NonNumTermElem, cls), exp),))
+            return Term(((cls, exp),))
         return NotImplemented
 
     def __str__(cls) -> str:

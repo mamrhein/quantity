@@ -23,6 +23,12 @@ from numbers import Real
 from operator import mul
 from typing import (Any, Callable, Generator, Iterable, Iterator, Optional,
                     Tuple, Union)
+try:
+    from typing import Protocol
+except ImportError:
+    # noinspection PyUnresolvedReferences
+    from typing_extensions import Protocol
+
 
 # characters for string representation of terms
 import unicodedata
@@ -37,7 +43,7 @@ _mulSign = _MIDDLEDOT
 _div_sign = '/'
 
 
-class NonNumTermElem(metaclass=ABCMeta):
+class NonNumTermElem(Protocol):
 
     """Abstract base class for non-numeric term elements"""
 
