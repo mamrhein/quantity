@@ -17,12 +17,12 @@
 # Standard library imports
 
 # Third-party imports
+from functools import partial
 from numbers import Integral
 from typing import Any, Dict, Optional, Tuple, Union
 
 # Local imports
-from .qtyreg import register_quantity_cls
-from .term import Term
+from .qtyreg import DefinedItemRegistry, Term
 
 
 class QuantityMeta(type):
@@ -39,7 +39,7 @@ class QuantityMeta(type):
             cls._definition = None
         super().__init__(name, bases, clsdict)
         # register cls
-        cls._reg_id = register_quantity_cls(cls)
+        cls._reg_id = _register_quantity_cls(cls)
 
     @property
     def definition(cls) -> Term:
@@ -106,7 +106,7 @@ class QuantityMeta(type):
     def __str__(cls) -> str:
         return cls.__name__
 
-    # implement abstract method of NonNumTermElem to allow instances of
+    # implement abstract methods of NonNumTermElem to allow instances of
     # QuantityMeta to be elements in terms:
 
     is_base_elem = is_base_quantity
@@ -118,3 +118,10 @@ class QuantityMeta(type):
     def _get_factor(self, other: Any) -> int:
         """Instances of QuantityMeta are not convertable, raise TypeError"""
         raise TypeError
+
+
+# Global registry of Quantities
+_registry = DefinedItemRegistry()
+
+_register_quantity_cls = partial(DefinedItemRegistry.register_item,
+                                 _registry)

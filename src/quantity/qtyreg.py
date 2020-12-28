@@ -11,13 +11,12 @@
 # $Revision$
 
 
-"""Global registry of defined quantities."""
+"""Classes implementing a registry for items holding a term as definition."""
 
 
 # Standard library imports
 from abc import abstractmethod
-from functools import partial
-from typing import Iterator, List, MutableMapping, Optional
+from typing import Iterator, List, MutableMapping
 try:
     from typing import Protocol
 except ImportError:
@@ -99,9 +98,9 @@ class DefinedItemRegistry:
             ValueError: no item registered with definition equivalent to
                 `item_def`
         """
-        norm_qty_def = item_def.normalized()
+        norm_item_def = item_def.normalized()
         try:
-            idx = self._item_def_map[norm_qty_def]
+            idx = self._item_def_map[norm_item_def]
         except KeyError:
             raise ValueError('No item registered with given definition.')
         return self._item_list[idx]
@@ -111,12 +110,3 @@ class DefinedItemRegistry:
 
     def __iter__(self) -> Iterator[SupportsDefinition]:
         return iter(self._item_list)
-
-
-# Global registry of Quantities
-_registry = DefinedItemRegistry()
-
-
-register_quantity_cls = partial(DefinedItemRegistry.register_item,
-                                _registry)
-register_quantity_cls.__doc__ = _registry.register_item.__doc__
