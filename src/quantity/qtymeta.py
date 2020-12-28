@@ -22,7 +22,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 # Local imports
 from .qtyreg import register_quantity_cls
-from .term import NonNumTermElem, Term
+from .term import Term
 
 
 class QuantityMeta(type):
@@ -118,7 +118,3 @@ class QuantityMeta(type):
     def _get_factor(self, other: Any) -> int:
         """Instances of QuantityMeta are not convertable, raise TypeError"""
         raise TypeError
-
-
-# noinspection PyUnresolvedReferences
-NonNumTermElem.register(QuantityMeta)
