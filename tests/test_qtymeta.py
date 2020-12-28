@@ -17,7 +17,6 @@
 
 # Third-party imports
 import pytest
-from decimalfp import Decimal
 
 # Local imports
 from quantity.qtymeta import QuantityMeta, Term
