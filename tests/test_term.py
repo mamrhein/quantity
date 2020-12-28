@@ -17,14 +17,14 @@
 
 # Standard library imports
 from numbers import Real
-from typing import Tuple
+from typing import Any, Tuple
 
 # Third-party imports
 import pytest
 from decimalfp import Decimal
 
 # Local imports
-from quantity.term import (NonNumTermElem, Term, _div_sign, _mulSign,
+from quantity.term import (Term, _div_sign, _mulSign,
                            _powerChars)
 
 
@@ -35,7 +35,7 @@ _parseString = re.compile(_pattern, re.VERBOSE).match
 del re, _pattern
 
 
-class TElem(str, NonNumTermElem):
+class TElem(str):
 
     def _split(self) -> Tuple[Real, 'TElem']:
         num, base = _parseString(self).groups()
@@ -58,11 +58,12 @@ class TElem(str, NonNumTermElem):
         num, base = self._split()
         return ord(base[0])
 
-    def _get_factor(self, other: 'TElem') -> Real:
-        snum, sbase = self._split()
-        onum, obase = other._split()
-        if sbase == obase:
-            return snum / onum
+    def _get_factor(self, other: Any) -> Real:
+        if isinstance(other, TElem):
+            snum, sbase = self._split()
+            onum, obase = other._split()
+            if sbase == obase:
+                return snum / onum
         raise TypeError
 
     def __repr__(self) -> str:
