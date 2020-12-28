@@ -22,7 +22,7 @@ from numbers import Integral
 from typing import Any, Dict, Optional, Tuple, Union
 
 # Local imports
-from .qtyreg import DefinedItemRegistry, Term
+from .registry import DefinedItemRegistry, Term
 
 
 class QuantityMeta(type):
