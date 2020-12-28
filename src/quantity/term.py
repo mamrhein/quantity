@@ -16,7 +16,7 @@
 
 
 # Standard library imports
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 from functools import reduce
 from itertools import chain, groupby
 from numbers import Real
@@ -71,7 +71,7 @@ ItemType = Tuple[ElemType, int]
 ItemListType = Iterable[ItemType]
 
 
-class Term(metaclass=ABCMeta):
+class Term:
     """Holds definitions of multidimensional items in the form of tuples of
     elements and corresponding exponents.
 
