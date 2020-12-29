@@ -19,7 +19,7 @@
 import pytest
 
 # Local imports
-from quantity.qtymeta import ClassWithDefinitionMeta, Term
+from quantity.cwdmeta import ClassWithDefinitionMeta, Term
 
 
 class X(metaclass=ClassWithDefinitionMeta):
