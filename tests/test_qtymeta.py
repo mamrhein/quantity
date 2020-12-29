@@ -19,56 +19,56 @@
 import pytest
 
 # Local imports
-from quantity.qtymeta import QuantityMeta, Term
+from quantity.qtymeta import ClassWithDefinitionMeta, Term
 
 
-class X(metaclass=QuantityMeta):
+class X(metaclass=ClassWithDefinitionMeta):
     """Special class, can not be combined!"""
 
 
-class A(metaclass=QuantityMeta):
+class A(metaclass=ClassWithDefinitionMeta):
     """Base A"""
 
 
-class B(metaclass=QuantityMeta):
+class B(metaclass=ClassWithDefinitionMeta):
     """Base B"""
 
 
-class C(metaclass=QuantityMeta):
+class C(metaclass=ClassWithDefinitionMeta):
     """Derived A * B"""
 
-    definition = A * B
+    define_as = A * B
 
 
-class D(metaclass=QuantityMeta):
+class D(metaclass=ClassWithDefinitionMeta):
     """Derived A ** 2"""
 
-    definition = A ** 2
+    define_as = A ** 2
 
 
-class E(metaclass=QuantityMeta):
+class E(metaclass=ClassWithDefinitionMeta):
     """Derived C / D"""
 
-    definition = C / D
+    define_as = C / D
 
 
-class F(metaclass=QuantityMeta):
+class F(metaclass=ClassWithDefinitionMeta):
     """Derived (B ** 2 / A ** 2) / C"""
 
-    definition = (B ** 2 / A ** 2) / C
+    define_as = (B ** 2 / A ** 2) / C
 
 
-class G(metaclass=QuantityMeta):
+class G(metaclass=ClassWithDefinitionMeta):
     """Derived B * (A ** 2 / E)"""
 
-    definition = B * (A ** 2 / E)
+    define_as = B * (A ** 2 / E)
 
 
 @pytest.mark.parametrize("cls", [A, B], ids=["A", "B"])
-def test_base(cls: QuantityMeta) -> None:
-    assert isinstance(cls, QuantityMeta)
-    assert cls.is_base_quantity()
-    assert not cls.is_derived_quantity()
+def test_base(cls: ClassWithDefinitionMeta) -> None:
+    assert isinstance(cls, ClassWithDefinitionMeta)
+    assert cls.is_base_cls()
+    assert not cls.is_derived_cls()
     assert cls.definition.items[0][0] is cls
     assert cls.definition.items[0][1] == 1
     assert str(cls.definition) == cls.__name__
@@ -82,10 +82,10 @@ def test_base(cls: QuantityMeta) -> None:
                           (F, B ** 2 / (A ** 2 * C)),
                           (G, B * A ** 2 / E)],
                          ids=["C", "D", "E", "F", "G"])
-def test_derived(cls: QuantityMeta, cdef: Term) -> None:
-    assert isinstance(cls, QuantityMeta)
-    assert not cls.is_base_quantity()
-    assert cls.is_derived_quantity()
+def test_derived(cls: ClassWithDefinitionMeta, cdef: Term) -> None:
+    assert isinstance(cls, ClassWithDefinitionMeta)
+    assert not cls.is_base_cls()
+    assert cls.is_derived_cls()
     assert cls.definition == cdef
     assert str(cls.definition) == str(cdef)
 
@@ -97,10 +97,19 @@ def test_derived(cls: QuantityMeta, cdef: Term) -> None:
                           (F, B / A ** 3),
                           (G, A ** 3)],
                          ids=["C", "D", "E", "F", "G"])
-def test_normalized_def(cls: QuantityMeta, cdef: Term) -> None:
+def test_normalized_def(cls: ClassWithDefinitionMeta, cdef: Term) -> None:
     assert cls.normalized_definition == cdef
     assert str(cls.normalized_definition) == str(cdef)
 
 
 def test_str() -> None:
     assert str(A) == "A"
+
+
+@pytest.mark.parametrize("cdef",
+                         ["abc",
+                          Term([(5, 1)]),
+                          Term([(A, 1), (B, 1), (7, 1)])])
+def test_fail_cls_def(cdef: Term) -> None:
+    with pytest.raises(AssertionError):
+        ClassWithDefinitionMeta("Fail", (), {"define_as": cdef})
