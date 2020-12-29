@@ -19,7 +19,6 @@ from collections import namedtuple
 # Third-party imports
 from decimalfp import Decimal
 
-
 SIPrefix = namedtuple('SIPrefix', ['name', 'abbr', 'exp'])
 
 SIPrefix.factor = property(fget=lambda self: Decimal(10) ** self.exp,
@@ -27,7 +26,6 @@ SIPrefix.factor = property(fget=lambda self: Decimal(10) ** self.exp,
 
 SIPrefix.__mul__ = lambda self, other: self.factor * other
 SIPrefix.__rmul__ = SIPrefix.__mul__
-
 
 YOCTO = SIPrefix('Yocto', 'y', -24)
 ZEPTO = SIPrefix('Zepto', 'z', -21)
@@ -49,3 +47,28 @@ PETA = SIPrefix('Peta', 'P', 15)
 EXA = SIPrefix('Exa', 'E', 18)
 ZETTA = SIPrefix('Zetta', 'Z', 21)
 YOTTA = SIPrefix('Yotta', 'Y', 24)
+
+SI_PREFIXES = [
+    YOCTO,
+    ZEPTO,
+    ATTO,
+    FEMTO,
+    PICO,
+    NANO,
+    MICRO,
+    MILLI,
+    CENTI,
+    DECI,
+    DECA,
+    HECTO,
+    KILO,
+    MEGA,
+    GIGA,
+    TERA,
+    PETA,
+    EXA,
+    ZETTA,
+    YOTTA,
+]
+
+SI_PREFIX_MAP = {prefix.factor: prefix for prefix in SI_PREFIXES}
