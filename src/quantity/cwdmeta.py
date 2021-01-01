@@ -29,20 +29,27 @@ class ClassWithDefinitionMeta(type):
 
     """Meta class allowing to construct classes with terms as definitions."""
 
-    def __init__(cls, name: str, bases: Tuple[type, ...],
-                 clsdict: Dict[str, Any]):
-        definition: Optional[Term] = clsdict.pop('define_as', None)
-        super().__init__(name, bases, clsdict)
+    def __new__(mcs, name: str, bases: Tuple[type, ...],
+                clsdict: Dict[str, Any], define_as: Optional[Term] = None) \
+            -> 'ClassWithDefinitionMeta':
+        cls: 'ClassWithDefinitionMeta'
+        # noinspection PyTypeChecker
+        cls = super().__new__(mcs, name, bases, clsdict)
         # check definition
-        if definition is not None:
-            assert isinstance(definition, Term), \
+        if define_as is not None:
+            assert isinstance(define_as, Term), \
                 "Definition given in 'define_as' must be an instance of " \
                 "'Term'"
-            assert all(isinstance(elem, cls.__class__)
-                       for elem, _ in definition), \
+            assert all(isinstance(elem, mcs)
+                       for elem, _ in define_as), \
                 "All elements of definition given in 'define_as' must be " \
-                f"instances of '{cls.__class__.__name__}'."
-        cls._definition = definition
+                f"instances of '{mcs.__name__}'."
+        cls._definition = define_as
+        return cls
+
+    def __init__(cls, name: str, bases: Tuple[type, ...],
+                 clsdict: Dict[str, Any], **kwds: Any):
+        super().__init__(name, bases, clsdict)
         # register cls
         cls._reg_id = _register_cls(cls)
 

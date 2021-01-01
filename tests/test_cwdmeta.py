@@ -34,34 +34,24 @@ class B(metaclass=ClassWithDefinitionMeta):
     """Base B"""
 
 
-class C(metaclass=ClassWithDefinitionMeta):
+class C(metaclass=ClassWithDefinitionMeta, define_as=A * B):
     """Derived A * B"""
 
-    define_as = A * B
 
-
-class D(metaclass=ClassWithDefinitionMeta):
+class D(metaclass=ClassWithDefinitionMeta, define_as=A ** 2):
     """Derived A ** 2"""
 
-    define_as = A ** 2
 
-
-class E(metaclass=ClassWithDefinitionMeta):
+class E(metaclass=ClassWithDefinitionMeta, define_as=C / D):
     """Derived C / D"""
 
-    define_as = C / D
 
-
-class F(metaclass=ClassWithDefinitionMeta):
+class F(metaclass=ClassWithDefinitionMeta, define_as=(B ** 2 / A ** 2) / C):
     """Derived (B ** 2 / A ** 2) / C"""
 
-    define_as = (B ** 2 / A ** 2) / C
 
-
-class G(metaclass=ClassWithDefinitionMeta):
+class G(metaclass=ClassWithDefinitionMeta, define_as=B * (A ** 2 / E)):
     """Derived B * (A ** 2 / E)"""
-
-    define_as = B * (A ** 2 / E)
 
 
 @pytest.mark.parametrize("cls", [A, B], ids=["A", "B"])
@@ -112,4 +102,4 @@ def test_str() -> None:
                           Term([(A, 1), (B, 1), (7, 1)])])
 def test_fail_cls_def(cdef: Term) -> None:
     with pytest.raises(AssertionError):
-        ClassWithDefinitionMeta("Fail", (), {"define_as": cdef})
+        ClassWithDefinitionMeta("Fail", (), {}, define_as=cdef)
