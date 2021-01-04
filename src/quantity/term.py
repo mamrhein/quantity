@@ -21,8 +21,10 @@ from functools import reduce
 from itertools import chain, groupby
 from numbers import Real
 from operator import mul
-from typing import (Any, Callable, Generator, Iterable, Iterator, Optional,
-                    Tuple, Union)
+from typing import (
+    Any, Callable, Generator, Iterable, Iterator, Optional, Sequence, Tuple,
+    Union,
+)
 try:
     from typing import Protocol
 except ImportError:
@@ -248,6 +250,15 @@ class Term:
                 return first_elem
         return None
 
+    def split(self) -> Tuple[Optional[Real], 'Term']:
+        """Return `self`s numeric element (or 1 if None) and non-numeric part.
+        """
+        num = self.num_elem
+        if num is None:
+            return 1, self
+        else:
+            return num, Term(self[1:])
+
     def reciprocal(self) -> 'Term':
         """1 / `self`"""
         return self.__class__(_reciprocal(self), reduce_items=False)
@@ -260,7 +271,8 @@ class Term:
         """Return number of items in `self`."""
         return len(self._items)
 
-    def __getitem__(self, idx: int) -> ItemType:
+    def __getitem__(self, idx: Union[int, slice]) \
+            -> Union[ItemType, Sequence[ItemType]]:
         """Return the item in `self` at index `idx`."""
         return self._items[idx]
 

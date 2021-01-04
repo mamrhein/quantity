@@ -121,6 +121,22 @@ def test_normalization(term, normalized):
 
 
 # noinspection PyMissingTypeHints
+@pytest.mark.parametrize(
+    ("term", "splitted"),
+    (
+        (Term(), ()),
+        (Term([(x, 1), (y, 2)]), ()),
+        (Term([(5, 1)]), (5, Term())),
+        (Term([(5, 1), (y, 2), (z, -1)]), (5, Term([(y, 2), (z, -1)]))),
+    )
+)
+def test_split(term, splitted):
+    if not splitted:
+        splitted = (1, term)
+    assert term.split() == splitted
+
+
+# noinspection PyMissingTypeHints
 def test_hash():
     t = Term([(y, 2), (x, 1), (z, 0), (y, -1)])
     assert hash(t) == hash(t.normalized())
