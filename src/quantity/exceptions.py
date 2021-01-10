@@ -18,7 +18,7 @@
 """Quantity specific exceptions."""
 
 import operator
-from typing import Any
+from typing import Any, Callable
 
 
 class QuantityError(TypeError):
@@ -50,7 +50,8 @@ class UndefinedResultError(QuantityError):
              operator.pow: '**'
              }
 
-    def __init__(self, op: type(operator.mul), operand1: Any, operand2: Any):
+    def __init__(self, op: Callable[[Any, Any], Any],
+                 operand1: Any, operand2: Any):
         if not isinstance(operand1, type):
             operand1 = operand1.__class__.__name__
         if not isinstance(operand2, type):

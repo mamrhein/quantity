@@ -16,7 +16,6 @@
 
 
 # Standard library imports
-from numbers import Real
 from typing import Any, Tuple
 
 # Third-party imports
@@ -37,12 +36,13 @@ del re, _pattern
 
 class TElem(str):
 
-    def _split(self) -> Tuple[Real, 'TElem']:
-        num, base = _parseString(self).groups()
-        if num:
-            return Decimal(num), TElem(base)
-        else:
-            return 1, TElem(base)
+    def _split(self) -> Tuple[Decimal, 'TElem']:
+        match = _parseString(self)
+        if match:
+            num, base = match.groups()
+            if num:
+                return Decimal(num), TElem(base)
+        return Decimal(1), self
 
     def is_base_elem(self) -> bool:
         """True if self is a base element; i.e. can not be decomposed."""
@@ -50,15 +50,21 @@ class TElem(str):
         return num == 1
 
     @property
-    def normalized_definition(self) -> Term:
+    def definition(self) -> Term['TElem']:
+        return TElemTerm([(self, 1)])
+
+    @property
+    def normalized_definition(self) -> Term['TElem']:
         num, base = self._split()
-        return Term([(num, 1), (base, 1)])
+        if num == 1:
+            return TElemTerm([(self, 1)])
+        return TElemTerm([(num, 1), (base, 1)])
 
     def norm_sort_key(self) -> int:
         num, base = self._split()
         return ord(base[0])
 
-    def _get_factor(self, other: Any) -> Real:
+    def _get_factor(self, other: Any) -> Decimal:
         if isinstance(other, TElem):
             snum, sbase = self._split()
             onum, obase = other._split()
@@ -72,30 +78,33 @@ class TElem(str):
 
 x, y, z = TElem('x'), TElem('y'), TElem('z')
 
+TElemTerm = Term[TElem]
+
 
 # noinspection PyMissingTypeHints
 @pytest.mark.parametrize(
-    ('term', 'items'),
+    ('term_params', 'items'),
     (
-        (Term([(x, 1)]), ((x, 1),)),
-        (Term([(x, 1)]), ((x, 1),)),
-        (Term([(y, 2), (x, 1)]), ((y, 2), (x, 1))),
-        (Term([(x, 2), (x, 1)]), ((x, 3),)),
-        (Term([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1), (x, -1)]), ((y, 4), (z, -1))),
-        (Term(((y, 1), (x, 1), (x, 1), (5, 1), (y, -1))), ((5, 1), (x, 2))),
-        (Term(((y, 0), (1, 1))), ()),
-        (Term([(x, 1)]), ((x, 1),)),
-        (Term(((TElem('100x'), 1), (TElem('10x'), -1))), ((10, 1),)),
-        (Term(((TElem('10x'), 1), (x, 1))), ((Decimal('0.1'), 1), ('10x', 2))),
-        (Term(((TElem('10x'), 1), (TElem('10x'), 1))), (('10x', 2),)),
-        (Term(((x, 1), (TElem('10x'), 1))), ((10.0, 1), (x, 2))),
-        (Term(((x, 1), (TElem('10x'), 1), (TElem('10x'), 1))), ((100, 1), (x, 3))),
-        (Term(((5, 1), (TElem('10x'), 1), (2, 2))), ((20, 1), (TElem('10x'), 1))),
-        (Term(((25, 1), (Decimal(5), -2))), ()),
-        (Term(((10, 3), (Decimal(5), -2))), ((40, 1),)),
+        ([(x, 1)], ((x, 1),)),
+        ([(x, 1)], ((x, 1),)),
+        ([(y, 2), (x, 1)], ((y, 2), (x, 1))),
+        ([(x, 2), (x, 1)], ((x, 3),)),
+        ([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1), (x, -1)], ((y, 4), (z, -1))),
+        (((y, 1), (x, 1), (x, 1), (5, 1), (y, -1)), ((5, 1), (x, 2))),
+        (((y, 0), (1, 1)), ()),
+        ([(x, 1)], ((x, 1),)),
+        (((TElem('100x'), 1), (TElem('10x'), -1)), ((10, 1),)),
+        (((TElem('10x'), 1), (x, 1)), ((Decimal('0.1'), 1), ('10x', 2))),
+        (((TElem('10x'), 1), (TElem('10x'), 1)), (('10x', 2),)),
+        (((x, 1), (TElem('10x'), 1)), ((10.0, 1), (x, 2))),
+        (((x, 1), (TElem('10x'), 1), (TElem('10x'), 1)), ((100, 1), (x, 3))),
+        (((5, 1), (TElem('10x'), 1), (2, 2)), ((20, 1), (TElem('10x'), 1))),
+        (((25, 1), (Decimal(5), -2)), ()),
+        (((10, 3), (Decimal(5), -2)), ((40, 1),)),
     )
 )
-def test_constructor(term, items):
+def test_constructor(term_params, items):
+    term = TElemTerm(term_params)
     assert term._items == items
 
 
@@ -103,13 +112,13 @@ def test_constructor(term, items):
 @pytest.mark.parametrize(
     ("term", "normalized"),
     (
-        (Term([(x, 1), (y, 2)]), None),
-        (Term([(x, 1)]), None),
-        (Term([(TElem('10x'), 1)]), Term(((10, 1), (x, 1)))),
-        (Term([(Decimal(10), -1), (TElem('10x'), 1)]), Term([(x, 1)])),
-        (Term([(TElem('10x'), 1), (TElem('1000000z'), 1),
-               (TElem('1000y'), -1)]),
-         Term(((10000, 1), (x, 1), (y, -1), (z, 1)))),
+        (TElemTerm([(x, 1), (y, 2)]), None),
+        (TElemTerm([(x, 1)]), None),
+        (TElemTerm([(TElem('10x'), 1)]), TElemTerm(((10, 1), (x, 1)))),
+        (TElemTerm([(Decimal(10), -1), (TElem('10x'), 1)]), TElemTerm([(x, 1)])),
+        (TElemTerm([(TElem('10x'), 1), (TElem('1000000z'), 1),
+                    (TElem('1000y'), -1)]),
+         TElemTerm(((10000, 1), (x, 1), (y, -1), (z, 1)))),
     ),
 )
 def test_normalization(term, normalized):
@@ -124,10 +133,10 @@ def test_normalization(term, normalized):
 @pytest.mark.parametrize(
     ("term", "splitted"),
     (
-        (Term(), ()),
-        (Term([(x, 1), (y, 2)]), ()),
-        (Term([(5, 1)]), (5, Term())),
-        (Term([(5, 1), (y, 2), (z, -1)]), (5, Term([(y, 2), (z, -1)]))),
+        (TElemTerm(), ()),
+        (TElemTerm([(x, 1), (y, 2)]), ()),
+        (TElemTerm([(5, 1)]), (5, TElemTerm())),
+        (TElemTerm([(5, 1), (y, 2), (z, -1)]), (5, TElemTerm([(y, 2), (z, -1)]))),
     )
 )
 def test_split(term, splitted):
@@ -138,34 +147,34 @@ def test_split(term, splitted):
 
 # noinspection PyMissingTypeHints
 def test_hash():
-    t = Term([(y, 2), (x, 1), (z, 0), (y, -1)])
+    t = TElemTerm([(y, 2), (x, 1), (z, 0), (y, -1)])
     assert hash(t) == hash(t.normalized())
 
 
 # noinspection PyMissingTypeHints
 def test_comparision():
-    t1 = Term([(y, 2), (x, 1)])
-    t2 = Term([(x, 2), (y, 1)])
-    t3 = Term([(y, 1), (x, 2)])
+    t1 = TElemTerm([(y, 2), (x, 1)])
+    t2 = TElemTerm([(x, 2), (y, 1)])
+    t3 = TElemTerm([(y, 1), (x, 2)])
     assert t1 != t2
     assert t1 != t3
     assert t2 == t3
-    xt = Term([(x, 1)])
-    dxt = Term([(TElem('10x'), 1)])
+    xt = TElemTerm([(x, 1)])
+    dxt = TElemTerm([(TElem('10x'), 1)])
     assert xt != dxt
-    assert Term(((10, 1), (x, 1))) == dxt
-    assert Term(((Decimal(10), -1), (TElem('10x'), 1))) == xt
+    assert TElemTerm(((10, 1), (x, 1))) == dxt
+    assert TElemTerm(((Decimal(10), -1), (TElem('10x'), 1))) == xt
 
 
 # noinspection PyMissingTypeHints
 @pytest.mark.parametrize(
     ("t1", "t2", "res"),
     (
-        (Term([(y, 2), (x, 1)]), Term([(x, -2), (z, 1), (y, 1)]),
-         Term(((x, -1), (y, 3), (z, 1)))),
-        (Term([(y, 2), (x, 1)]), 5, Term(((5, 1), (x, 1), (y, 2)))),
-        (Term([(x, 1)]), 3, Term(((3, 1), (x, 1)))),
-        (10, Term([(x, 1)]), Term([(TElem('10x'), 1)])),
+        (TElemTerm([(y, 2), (x, 1)]), TElemTerm([(x, -2), (z, 1), (y, 1)]),
+         TElemTerm(((x, -1), (y, 3), (z, 1)))),
+        (TElemTerm([(y, 2), (x, 1)]), 5, TElemTerm(((5, 1), (x, 1), (y, 2)))),
+        (TElemTerm([(x, 1)]), 3, TElemTerm(((3, 1), (x, 1)))),
+        (10, TElemTerm([(x, 1)]), TElemTerm([(TElem('10x'), 1)])),
     )
 )
 def test_multiplication(t1, t2, res):
@@ -177,12 +186,12 @@ def test_multiplication(t1, t2, res):
 @pytest.mark.parametrize(
     ("t1", "t2", "res"),
     (
-        (Term([(y, 2), (x, 1)]), Term([(x, -2), (z, 1), (y, 1)]),
-         Term(((x, 3), (y, 1), (z, -1)))),
-        (Term([(y, 2), (x, 1)]), 0.5, Term(((2, 1), (x, 1), (y, 2)))),
-        (5, Term([(x, 1)]), Term(((5, 1), (x, -1)))),
-        (Term([(x, 1)]), Term([(x, 1)]), Term()),
-        (Term([(TElem('10x'), 1)]), Decimal(10), Term([(x, 1)])),
+        (TElemTerm([(y, 2), (x, 1)]), TElemTerm([(x, -2), (z, 1), (y, 1)]),
+         TElemTerm(((x, 3), (y, 1), (z, -1)))),
+        (TElemTerm([(y, 2), (x, 1)]), 0.5, TElemTerm(((2, 1), (x, 1), (y, 2)))),
+        (5, TElemTerm([(x, 1)]), TElemTerm(((5, 1), (x, -1)))),
+        (TElemTerm([(x, 1)]), TElemTerm([(x, 1)]), TElemTerm()),
+        (TElemTerm([(TElem('10x'), 1)]), Decimal(10), TElemTerm([(x, 1)])),
     )
 )
 def test_division(t1, t2, res):
@@ -193,7 +202,7 @@ def test_division(t1, t2, res):
 
 # noinspection PyMissingTypeHints
 def test_mul_div_raises():
-    t = Term([(x, 1)])
+    t = TElemTerm([(x, 1)])
     with pytest.raises(TypeError):
         t * 'a'
     with pytest.raises(TypeError):
@@ -206,20 +215,20 @@ def test_mul_div_raises():
 
 # noinspection PyMissingTypeHints
 def test_power():
-    t = Term([(y, 2), (x, 1), (z, -3)])
-    assert t ** 5 == Term(((x, 5), (y, 10), (z, -15)))
+    t = TElemTerm([(y, 2), (x, 1), (z, -3)])
+    assert t ** 5 == TElemTerm(((x, 5), (y, 10), (z, -15)))
 
 
 # noinspection PyMissingTypeHints
 def test_str():
-    t1 = Term([(y, 1), (x, 2)])
+    t1 = TElemTerm([(y, 1), (x, 2)])
     assert str(t1) == 'y%sx%s' % (_mulSign, _powerChars[2])
-    t2 = Term([(y, 2), (x, -1), (z, 3)])
+    t2 = TElemTerm([(y, 2), (x, -1), (z, 3)])
     assert str(t2) == 'y%s%sz%s%sx' % (_powerChars[2], _mulSign,
                                        _powerChars[3], _div_sign)
 
 
 # noinspection PyMissingTypeHints
 def test_repr():
-    t1 = Term([(y, 2), (x, 1)])
+    t1 = TElemTerm([(y, 2), (x, 1)])
     assert t1, eval(repr(t1))

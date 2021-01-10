@@ -19,22 +19,27 @@
 # Third-party imports
 from functools import partial
 from numbers import Integral
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, cast, Dict, Optional, Tuple, Union
 
 # Local imports
-from .registry import DefinedItemRegistry, Term
+from .term import T, Term
+
+ClassDefTerm = Term['ClassWithDefinitionMeta']
 
 
 class ClassWithDefinitionMeta(type):
 
     """Meta class allowing to construct classes with terms as definitions."""
 
+    # TODO: remove this class variable after mypy issue #1021 got fixed:
+    _definition: Optional[ClassDefTerm]
+
     def __new__(mcs, name: str, bases: Tuple[type, ...],
-                clsdict: Dict[str, Any], define_as: Optional[Term] = None) \
+                clsdict: Dict[str, Any],
+                define_as: Optional[ClassDefTerm] = None) \
             -> 'ClassWithDefinitionMeta':
-        cls: 'ClassWithDefinitionMeta'
-        # noinspection PyTypeChecker
-        cls = super().__new__(mcs, name, bases, clsdict)
+        cls = cast('ClassWithDefinitionMeta',
+                   super().__new__(mcs, name, bases, clsdict))
         # check definition
         if define_as is not None:
             assert isinstance(define_as, Term), \
@@ -47,17 +52,11 @@ class ClassWithDefinitionMeta(type):
         cls._definition = define_as
         return cls
 
-    def __init__(cls, name: str, bases: Tuple[type, ...],
-                 clsdict: Dict[str, Any], **kwds: Any):
-        super().__init__(name, bases, clsdict)
-        # register cls
-        cls._reg_id = _register_cls(cls)
-
     @property
-    def definition(cls) -> Term:
+    def definition(cls) -> ClassDefTerm:
         """Definition of `cls`."""
         if cls._definition is None:
-            return Term(((cls, 1),))
+            return ClassDefTerm(((cls, 1),))
         return cls._definition
 
     def is_base_cls(cls) -> bool:
@@ -66,53 +65,58 @@ class ClassWithDefinitionMeta(type):
         return cls._definition is None or len(cls._definition) == 0
 
     @property
-    def normalized_definition(cls) -> Term:
+    def normalized_definition(cls) -> ClassDefTerm:
         """Normalized definition of `cls`."""
-        try:
+        if cls._definition is None:
+            return ClassDefTerm(((cls, 1),))
+        else:
             return cls._definition.normalized()
-        except AttributeError:
-            return cls.definition
 
     def is_derived_cls(cls) -> bool:
         """Return True if `cls` is derived from other class(es)."""
         return not cls.is_base_cls()
 
-    def __mul__(cls, other: Union['ClassWithDefinitionMeta', Term]) -> Term:
+    def __mul__(cls, other: Union['ClassWithDefinitionMeta', ClassDefTerm]) \
+            -> ClassDefTerm:
         """Return class definition: `cls` * `other`."""
         if isinstance(other, ClassWithDefinitionMeta):
-            return Term(((cls, 1), (other, 1)))
+            return ClassDefTerm(((cls, 1), (other, 1)))
         if isinstance(other, Term):
-            if all((isinstance(elem, ClassWithDefinitionMeta) for (elem, exp) in other)):
-                return Term(((cls, 1),)) * other
+            if all((isinstance(elem, ClassWithDefinitionMeta)
+                    for (elem, exp) in other)):
+                return ClassDefTerm(((cls, 1),)) * other
         return NotImplemented
 
-    def __rmul__(cls, other: Term) -> Term:
+    def __rmul__(cls, other: ClassDefTerm) -> ClassDefTerm:
         """Return class definition: `other` * `cls`."""
         if isinstance(other, Term):
-            if all((isinstance(elem, ClassWithDefinitionMeta) for (elem, exp) in other)):
-                return other * Term(((cls, 1),))
+            if all((isinstance(elem, ClassWithDefinitionMeta)
+                    for (elem, exp) in other)):
+                return other * ClassDefTerm(((cls, 1),))
         return NotImplemented
 
-    def __truediv__(cls, other: Union['ClassWithDefinitionMeta', Term]) -> Term:
+    def __truediv__(cls, other: Union['ClassWithDefinitionMeta',
+                                      ClassDefTerm]) -> ClassDefTerm:
         """Return class definition: `cls` / `other`."""
         if isinstance(other, ClassWithDefinitionMeta):
-            return Term(((cls, 1), (other, -1)))
+            return ClassDefTerm(((cls, 1), (other, -1)))
         if isinstance(other, Term):
             if all((isinstance(elem, ClassWithDefinitionMeta) for (elem, exp) in other)):
-                return Term(((cls, 1),)) * other.reciprocal()
+                return ClassDefTerm(((cls, 1),)) * other.reciprocal()
         return NotImplemented
 
-    def __rtruediv__(cls, other: Term) -> Term:
+    def __rtruediv__(cls, other: ClassDefTerm) -> ClassDefTerm:
         """Return class definition: `other` / `cls`."""
         if isinstance(other, Term):
-            if all((isinstance(elem, ClassWithDefinitionMeta) for (elem, exp) in other)):
-                return other * Term(((cls, -1),))
+            if all((isinstance(elem, ClassWithDefinitionMeta)
+                    for (elem, exp) in other)):
+                return other * ClassDefTerm(((cls, -1),))
         return NotImplemented
 
-    def __pow__(cls, exp: int) -> Term:
+    def __pow__(cls, exp: int) -> ClassDefTerm:
         """Return class definition: `cls` ** `exp`."""
         if isinstance(exp, Integral):
-            return Term(((cls, exp),))
+            return ClassDefTerm(((cls, exp),))
         return NotImplemented
 
     def __str__(cls) -> str:
@@ -125,15 +129,8 @@ class ClassWithDefinitionMeta(type):
 
     def norm_sort_key(cls) -> int:
         """Return sort key for `cls` used for normalization of terms."""
-        return cls._reg_id
+        return hash(cls)
 
     def _get_factor(cls, other: Any) -> int:
         """Instances are not convertable, raise TypeError."""
         raise TypeError
-
-
-# Global registry of Quantities
-_registry = DefinedItemRegistry()
-
-_register_cls = partial(DefinedItemRegistry.register_item,
-                        _registry)

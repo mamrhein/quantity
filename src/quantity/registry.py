@@ -11,54 +11,37 @@
 # $Revision$
 
 
-"""Classes implementing a registry for items holding a term as definition."""
+"""Class implementing a registry for items holding a term as definition."""
 
 
 # Standard library imports
-from abc import abstractmethod
-from typing import Iterator, List, MutableMapping
-try:
-    from typing import Protocol
-except ImportError:
-    # noinspection PyUnresolvedReferences
-    from typing_extensions import Protocol
+import sys
+from typing import Generic, List, MutableMapping
+if sys.version_info >= (3, 8):
+    from typing import Final
+else:
+    from typing_extensions import Final
 
 # Third-party imports
 
 # Local imports
-from .term import Term
+from .term import T, Term
 
 
-class SupportsDefinition(Protocol):
-
-    """Abstract base class for items holding a term as definition."""
-
-    @property
-    @abstractmethod
-    def definition(self) -> Term:
-        """Definition of `self`."""
-
-    @property
-    @abstractmethod
-    def normalized_definition(self) -> Term:
-        """Normalized definition of `self`.
-
-        Must be the normalized form of `self.definition`."""
-
-
-class DefinedItemRegistry:
+class DefinedItemRegistry(Generic[T]):
 
     """Registers items by definition."""
 
-    def __init__(self) -> None:
-        self._item_def_map: MutableMapping[Term, int] = {}
-        self._item_list: List[SupportsDefinition] = []
+    def __init__(self, unique_items: bool = True) -> None:
+        self._unique_items: Final = unique_items
+        self._item_def_map: MutableMapping[Term[T], int] = {}
+        self._item_list: List[List[T]] = []
 
-    def register_item(self, item: SupportsDefinition) -> int:
+    def register_item(self, item: T) -> int:
         """Register `item` by its normalized definition.
 
         Args:
-            item (SupportsDefinition): defined item to be registered
+            item (T): defined item to be registered
 
         Returns:
             int: index of registered item
@@ -72,26 +55,29 @@ class DefinedItemRegistry:
             idx = self._item_def_map[item_norm_def]
         except KeyError:
             item_list = self._item_list
-            item_list.append(item)
-            idx = len(item_list) - 1
+            idx = len(item_list)
+            item_list.append([item])
             self._item_def_map[item_norm_def] = idx
             return idx
         else:
-            reg_item = self._item_list[idx]
+            reg_item = self._item_list[idx][0]
             if reg_item == item:
                 return idx
-            else:
+            elif self._unique_items:
                 raise ValueError("Item with same or equivalent definition "
                                  f"already registered: '{reg_item}'.")
+            else:
+                self._item_list[idx].append(item)
+                return idx
 
-    def __getitem__(self, item_def: Term) -> SupportsDefinition:
+    def __getitem__(self, item_def: Term[T]) -> T:
         """Get item by definition.
 
         Args:
-            item_def (Term): definition of item to be looked-up
+            item_def (Term[T]): definition of item to be looked-up
 
         Returns:
-            SupportsDefinition: item registered with a definition equivalent
+            T: item registered with a definition equivalent
                 to `item_def`
 
         Raises:
@@ -103,10 +89,7 @@ class DefinedItemRegistry:
             idx = self._item_def_map[norm_item_def]
         except KeyError:
             raise ValueError('No item registered with given definition.')
-        return self._item_list[idx]
+        return self._item_list[idx][0]
 
     def __len__(self) -> int:
         return len(self._item_list)
-
-    def __iter__(self) -> Iterator[SupportsDefinition]:
-        return iter(self._item_list)

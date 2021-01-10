@@ -14,23 +14,23 @@
 
 """Terms of tuples of elements and corresponding exponents."""
 
-
 # Standard library imports
+import sys
 from abc import abstractmethod
 from functools import reduce
 from itertools import chain, groupby
-from numbers import Real
 from operator import mul
 from typing import (
-    Any, Callable, Generator, Iterable, Iterator, Optional, Sequence, Tuple,
-    Union,
+    Any, Callable, cast, Generator, Iterable, Iterator, List, Optional, overload, Sequence,
+    Sized, Tuple, TypeVar, Union,
 )
-try:
+if sys.version_info >= (3, 8):
     from typing import Protocol
-except ImportError:
-    # noinspection PyUnresolvedReferences
+else:
     from typing_extensions import Protocol
 
+# Local imports
+from .rational import ONE, Rational
 
 # characters for string representation of terms
 import unicodedata
@@ -46,7 +46,6 @@ _div_sign = '/'
 
 
 class NonNumTermElem(Protocol):
-
     """Abstract base class for non-numeric term elements"""
 
     @abstractmethod
@@ -55,7 +54,12 @@ class NonNumTermElem(Protocol):
 
     @property
     @abstractmethod
-    def normalized_definition(self) -> 'ItemListType':
+    def definition(self) -> 'Term':
+        """Definition of `self`."""
+
+    @property
+    @abstractmethod
+    def normalized_definition(self) -> 'Term':
         """Return the decomposition of `self`."""
 
     @abstractmethod
@@ -63,17 +67,20 @@ class NonNumTermElem(Protocol):
         """Return sort key for `self` used for normalization of terms."""
 
     @abstractmethod
-    def _get_factor(self, other: 'NonNumTermElem') \
-            -> Union['NonNumTermElem', Real]:
+    def _get_factor(self, other: 'NonNumTermElem') -> Rational:
         """Return factor f so that f * `other` == `self`."""
 
 
-ElemType = Union[NonNumTermElem, Real]
-ItemType = Tuple[ElemType, int]
-ItemListType = Iterable[ItemType]
+T = TypeVar("T", bound=NonNumTermElem)
+ElemT = Union[T, Rational]
+ItemT = Tuple[ElemT[T], int]
+ItemIterableT = Iterable[ItemT[T]]
+ItemSequenceT = Sequence[ItemT[T]]
+ItemTupleT = Tuple[ItemT[T], ...]
+ItemListT = List[ItemT[T]]
 
 
-class Term:
+class Term(ItemSequenceT[T]):
     """Holds definitions of multidimensional items in the form of tuples of
     elements and corresponding exponents.
 
@@ -82,27 +89,29 @@ class Term:
     __slots__ = ['_items', '_normalized', '_hash']
 
     @staticmethod
-    def normalize_elem(elem: ElemType) -> ItemListType:
+    def normalize_elem(elem: ElemT[T]) -> ItemIterableT[T]:
         """Return the decomposition of elem (list of items)."""
-        if isinstance(elem, Real) or elem.is_base_elem():
+        if isinstance(elem, Rational):
             return [(elem, 1)]
-        return elem.normalized_definition
+        elif elem.is_base_elem():
+            return [(elem, 1)]
+        else:
+            return elem.normalized_definition
 
     @staticmethod
-    def norm_sort_key(elem: ElemType) -> int:
+    def norm_sort_key(elem: ElemT[T]) -> int:
         """Return sort key for `elem` used for normalized form of term."""
-        if isinstance(elem, Real):
+        if isinstance(elem, Rational):
             return -1
         return elem.norm_sort_key()
 
-    def __init__(self, items: ItemListType = (),
+    def __init__(self, items: ItemIterableT[T] = (),
                  reduce_items: bool = True):
-        _items: Tuple[ItemType, ...]
+        _items: ItemTupleT[T]
         n_items: Optional[int]
-        try:
-            # noinspection PyTypeChecker
+        if isinstance(items, Sized):
             n_items = len(items)
-        except TypeError:
+        else:
             n_items = None
         if items and reduce_items:
             _items = self._reduce_items(items, n_items=n_items)
@@ -112,24 +121,23 @@ class Term:
         # optimize a common case:
         if len(_items) == 1:
             (elem, exp) = _items[0]
-            if isinstance(elem, Real) or elem.is_base_elem():
+            if isinstance(elem, Rational) or elem.is_base_elem():
                 self._normalized = self
 
-    def _reduce_items(self, items: ItemListType,
+    def _reduce_items(self, items: ItemIterableT[T],
                       n_items: Optional[int] = None,
-                      keep_item_order: bool = True) \
-            -> Tuple[ItemType, ...]:
+                      keep_item_order: bool = True) -> ItemTupleT[T]:
         if n_items == 1:  # already reduced
             return tuple(_filter_items(items))
         if n_items == 2:
+            elem1: ElemT
+            elem2: ElemT
             (elem1, exp1), (elem2, exp2) = items
-            elem1_is_num = isinstance(elem1, Real)
-            elem2_is_num = isinstance(elem2, Real)
             # most relevant case: numeric + non-numeric element
-            if elem1_is_num and not elem2_is_num:
+            if isinstance(elem1, Rational) and not isinstance(elem2, Rational):
                 return tuple(_filter_items(((elem1, exp1), (elem2, exp2))))
             # second most relevant case: 2 non-numeric elements
-            if not elem1_is_num and not elem2_is_num:
+            if not isinstance(elem1, Rational) and not isinstance(elem2, Rational):
                 # same elements?
                 if elem1 is elem2:
                     exp = exp1 + exp2
@@ -152,14 +160,14 @@ class Term:
                 else:
                     items = sorted(((elem1, exp1), (elem2, exp2)),
                                    key=lambda item:
-                                       self.norm_sort_key(item[0]))
+                                   self.norm_sort_key(item[0]))
                     return tuple(_filter_items(items))
             # third most relevant case: non-numeric + numeric element
-            if elem2_is_num and not elem1_is_num:
+            if isinstance(elem2, Rational) and not isinstance(elem1, Rational):
                 return tuple(_filter_items(((elem2, exp2), (elem1, exp1))))
             # least relevant case: 2 numeric elements
-            if elem1_is_num and elem2_is_num:
-                num = elem1 ** exp1 * elem2 ** exp2
+            if isinstance(elem1, Rational) and isinstance(elem2, Rational):
+                num: Rational = elem1 ** exp1 * elem2 ** exp2
                 if num != 1:
                     return (num, 1),
         # more than 2 items or number of items unknown:
@@ -169,50 +177,55 @@ class Term:
             key2_first_idx_map = {-1: -1, 0: 0}
             map_iter = ((key2_first_idx_map.setdefault(norm_sort_key(item[0]),
                                                        idx + 1),
-                        item)
+                         item)
                         for idx, item in enumerate(items))
         else:
             map_iter = ((norm_sort_key(item[0]), item) for item in items)
         items_sorted = sorted(map_iter, key=sort_key)
-        res_items = []
-        num_elem = 1
+        res_items: ItemListT[T] = []
+        num_elem: Rational = ONE
+        key: int
+        group_it: Iterator[Tuple[int, ItemT[T]]]
         for key, group_it in groupby(items_sorted, key=sort_key):
             if key > 0:  # non-numerical elements
+                group_it = cast(Iterator[Tuple[int, Tuple[T, int]]], group_it)
                 _, item = next(group_it)
                 accum_items = [item]
                 for _, item in group_it:
                     done = False
                     for idx, otherItem in enumerate(accum_items):
-                        (elem1, exp1), (elem2, exp2) = otherItem, item
+                        elem_t1, exp1 = otherItem
+                        elem_t2, exp2 = item
                         # same elements?
-                        if elem1 is elem2:
-                            accum_items[idx] = (elem1, exp1 + exp2)
+                        if elem_t1 is elem_t2:
+                            accum_items[idx] = (elem_t1, exp1 + exp2)
                             done = True
                             break
                         # elements convertible?
                         try:
                             # noinspection PyProtectedMember
-                            conv = elem2._get_factor(elem1)
+                            conv = elem_t2._get_factor(elem_t1)
                         except (NotImplementedError, TypeError):
                             pass
                         else:
                             num_elem *= conv ** exp2
-                            accum_items[idx] = (elem1, exp1 + exp2)
+                            accum_items[idx] = (elem_t1, exp1 + exp2)
                             done = True
                             break
                     if not done:
                         accum_items.append(item)
-                res_items += (item for item in accum_items if item[1] != 0)
+                accum_items = [item for item in accum_items if item[1] != 0]
+                res_items.extend(accum_items)
             else:  # numerical elements
-                num_elem = reduce(mul, (elem ** exp
+                num_elem = reduce(mul, (cast(Rational, elem) ** exp
                                         for _, (elem, exp) in group_it),
                                   num_elem)
-        if num_elem == 1:
-            return tuple(res_items)
-        else:
-            return tuple([(num_elem, 1)] + res_items)
+        if num_elem != 1:
+            num_item: ItemT = (num_elem, 1)
+            return tuple(chain((num_item,), res_items))
+        return tuple(res_items)
 
-    def normalized(self) -> 'Term':
+    def normalized(self) -> 'Term[T]':
         """Return normalized term equivalent to `self`."""
         try:
             return self._normalized
@@ -234,36 +247,36 @@ class Term:
         return self.normalized() is self
 
     @property
-    def items(self) -> Tuple[ItemType, ...]:
-        """Return iterable of items in `self`."""
+    def items(self) -> Tuple[ItemT[T], ...]:
+        """Return items in `self` as tuple."""
         return self._items
 
     @property
-    def num_elem(self) -> Optional[Real]:
+    def num_elem(self) -> Optional[Rational]:
         """Return the numerical element of `self` (if there is any)."""
         try:
             first_elem = self[0][0]
         except IndexError:
             pass
         else:
-            if isinstance(first_elem, Real):
+            if isinstance(first_elem, Rational):
                 return first_elem
         return None
 
-    def split(self) -> Tuple[Optional[Real], 'Term']:
-        """Return `self`s numeric element (or 1 if None) and non-numeric part.
-        """
+    def split(self, dflt_num = cast(Rational, 1)) -> Tuple[Rational, 'Term[T]']:
+        """Return `self`s numeric element (or `dflt_num` if None) and
+        `self`s non-numeric part."""
         num = self.num_elem
         if num is None:
-            return 1, self
+            return dflt_num, self
         else:
             return num, Term(self[1:])
 
-    def reciprocal(self) -> 'Term':
+    def reciprocal(self) -> 'Term[T]':
         """1 / `self`"""
         return self.__class__(_reciprocal(self), reduce_items=False)
 
-    def __iter__(self) -> Iterator[ItemType]:
+    def __iter__(self) -> Iterator[ItemT]:
         """Return iterator over items in `self`."""
         return iter(self._items)
 
@@ -271,36 +284,46 @@ class Term:
         """Return number of items in `self`."""
         return len(self._items)
 
-    def __getitem__(self, idx: Union[int, slice]) \
-            -> Union[ItemType, Sequence[ItemType]]:
+    @overload
+    def __getitem__(self, idx: int) -> ItemT[T]:
         """Return the item in `self` at index `idx`."""
+
+    @overload
+    def __getitem__(self, idx: slice) -> ItemSequenceT[T]:
+        """Return the items in `self` at slice `idx`."""
+
+    def __getitem__(self, idx: Union[int, slice]) \
+            -> Union[ItemT[T], ItemSequenceT[T]]:
+        """Return the item(s) in `self` at index or slice `idx`."""
         return self._items[idx]
 
     def __hash__(self) -> int:
         """hash(self)"""
+        hash_val: int
         try:
-            return self._hash
+            hash_val = self._hash   # type: ignore
         except AttributeError:
-            pass
-        if self.is_normalized:
-            self._hash = hash_val = hash(self._items)
-        else:
-            self._hash = hash_val = hash(self.normalized())
+            if self.is_normalized:
+                self._hash = hash_val = hash(self._items)
+            else:
+                self._hash = hash_val = hash(self.normalized())
         return hash_val
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """self == other"""
-        return (self is other.normalized()
-                or self.normalized() is other
-                or self.normalized().items == other.normalized().items)
+        if isinstance(other, Term):
+            return (self is other.normalized()
+                    or self.normalized() is other
+                    or self.normalized().items == other.normalized().items)
+        return NotImplemented
 
-    def __mul__(self, other) -> 'Term':
+    def __mul__(self, other: Union['Term[T]', Rational]) -> 'Term[T]':
         """self * other"""
         cls = self.__class__
         if isinstance(other, cls):
             n_items = len(self) + len(other)
             items = self._reduce_items(chain(self, other), n_items=n_items)
-        elif isinstance(other, Real):
+        elif isinstance(other, Rational):
             n_items = len(self) + 1
             items = self._reduce_items(chain(((other, 1),), self),
                                        n_items=n_items)
@@ -310,14 +333,14 @@ class Term:
 
     __rmul__ = __mul__
 
-    def __truediv__(self, other) -> 'Term':
+    def __truediv__(self, other: Union['Term[T]', Rational]) -> 'Term[T]':
         """self / other"""
         cls = self.__class__
         if isinstance(other, cls):
             n_items = len(self) + len(other)
             items = self._reduce_items(chain(self, _reciprocal(other)),
                                        n_items=n_items)
-        elif isinstance(other, Real):
+        elif isinstance(other, Rational):
             n_items = len(self) + 1
             items = self._reduce_items(chain(((other, -1),), self),
                                        n_items=n_items)
@@ -325,9 +348,9 @@ class Term:
             return NotImplemented
         return cls(items, reduce_items=False)
 
-    def __rtruediv__(self, other) -> 'Term':
+    def __rtruediv__(self, other: Rational) -> 'Term[T]':
         """other / self"""
-        if isinstance(other, Real):
+        if isinstance(other, Rational):
             n_items = len(self) + 1
             items = self._reduce_items(chain(((other, 1),),
                                              _reciprocal(self)),
@@ -335,7 +358,7 @@ class Term:
             return self.__class__(items, reduce_items=False)
         return NotImplemented
 
-    def __pow__(self, exp: int) -> 'Term':
+    def __pow__(self, exp: int) -> 'Term[T]':
         """self ** exp"""
         return self.__class__(((ielem, exp * iexp) for (ielem, iexp) in self),
                               reduce_items=False)
@@ -373,23 +396,24 @@ class Term:
 
 # helper functions
 
-def _filter_items(items: ItemListType) \
-        -> Generator[ItemType, None, None]:
+def _filter_items(items: ItemIterableT[T]) \
+        -> Generator[ItemT[T], None, None]:
     return ((elem, exp) for (elem, exp) in items
             # eliminate items equivalent to 1:
             if exp != 0 and elem != 1)
 
 
-def _reciprocal(items: ItemListType) \
-        -> Generator[ItemType, None, None]:
+def _reciprocal(items: ItemIterableT[T]) \
+        -> Generator[ItemT[T], None, None]:
     return ((elem, -exp) for (elem, exp) in items)
 
 
-def _iter_normalized(term: ItemListType,
-                     normalize_elem: Callable[[ElemType], ItemListType]) \
-        -> Generator[ItemType, None, None]:
+def _iter_normalized(term: ItemIterableT[T],
+                     normalize_elem: Callable[[ElemT[T]],
+                                              ItemIterableT[T]]) \
+        -> Generator[ItemT[T], None, None]:
     for (elem, exp) in term:
-        if isinstance(elem, Real) or elem.is_base_elem():
+        if isinstance(elem, Rational) or elem.is_base_elem():
             yield elem, exp
         else:
             for item in _iter_normalized(((nElem, nExp * exp)

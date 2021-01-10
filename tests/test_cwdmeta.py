@@ -66,7 +66,7 @@ def test_base(cls: ClassWithDefinitionMeta) -> None:
 
 
 @pytest.mark.parametrize(("cls", "cdef"),
-                         [(C, A * B),
+                         [(C, C.definition),
                           (D, A ** 2),
                           (E, C / D),
                           (F, B ** 2 / (A ** 2 * C)),
