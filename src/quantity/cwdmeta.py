@@ -17,12 +17,11 @@
 # Standard library imports
 
 # Third-party imports
-from functools import partial
 from numbers import Integral
 from typing import Any, cast, Dict, Optional, Tuple, Union
 
 # Local imports
-from .term import T, Term
+from .term import Term
 
 ClassDefTerm = Term['ClassWithDefinitionMeta']
 
