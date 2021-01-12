@@ -81,14 +81,11 @@ class DefinedItemRegistry(Generic[T]):
                 to `item_def`
 
         Raises:
-            ValueError: no item registered with definition equivalent to
+            KeyError: no item registered with definition equivalent to
                 `item_def`
         """
         norm_item_def = item_def.normalized()
-        try:
-            idx = self._item_def_map[norm_item_def]
-        except KeyError:
-            raise ValueError('No item registered with given definition.')
+        idx = self._item_def_map[norm_item_def]
         return self._item_list[idx][0]
 
     def __len__(self) -> int:
