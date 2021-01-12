@@ -23,7 +23,7 @@ from typing import Any, cast, Dict, Optional, Tuple, Union
 # Local imports
 from .term import Term
 
-ClassDefTerm = Term['ClassWithDefinitionMeta']
+ClassDefT = Term['ClassWithDefinitionMeta']
 
 
 class ClassWithDefinitionMeta(type):
@@ -31,11 +31,11 @@ class ClassWithDefinitionMeta(type):
     """Meta class allowing to construct classes with terms as definitions."""
 
     # TODO: remove this class variable after mypy issue #1021 got fixed:
-    _definition: Optional[ClassDefTerm]
+    _definition: Optional[ClassDefT]
 
     def __new__(mcs, name: str, bases: Tuple[type, ...],
                 clsdict: Dict[str, Any],
-                define_as: Optional[ClassDefTerm] = None) \
+                define_as: Optional[ClassDefT] = None) \
             -> 'ClassWithDefinitionMeta':
         cls = cast('ClassWithDefinitionMeta',
                    super().__new__(mcs, name, bases, clsdict))
@@ -43,7 +43,7 @@ class ClassWithDefinitionMeta(type):
         if define_as is not None:
             assert isinstance(define_as, Term), \
                 "Definition given in 'define_as' must be an instance of " \
-                "'Term'"
+                "'Term'."
             assert all(isinstance(elem, mcs)
                        for elem, _ in define_as), \
                 "All elements of definition given in 'define_as' must be " \
@@ -52,10 +52,10 @@ class ClassWithDefinitionMeta(type):
         return cls
 
     @property
-    def definition(cls) -> ClassDefTerm:
+    def definition(cls) -> ClassDefT:
         """Definition of `cls`."""
         if cls._definition is None:
-            return ClassDefTerm(((cls, 1),))
+            return ClassDefT(((cls, 1),))
         return cls._definition
 
     def is_base_cls(cls) -> bool:
@@ -64,10 +64,10 @@ class ClassWithDefinitionMeta(type):
         return cls._definition is None or len(cls._definition) == 0
 
     @property
-    def normalized_definition(cls) -> ClassDefTerm:
+    def normalized_definition(cls) -> ClassDefT:
         """Normalized definition of `cls`."""
         if cls._definition is None:
-            return ClassDefTerm(((cls, 1),))
+            return ClassDefT(((cls, 1),))
         else:
             return cls._definition.normalized()
 
@@ -75,47 +75,47 @@ class ClassWithDefinitionMeta(type):
         """Return True if `cls` is derived from other class(es)."""
         return not cls.is_base_cls()
 
-    def __mul__(cls, other: Union['ClassWithDefinitionMeta', ClassDefTerm]) \
-            -> ClassDefTerm:
+    def __mul__(cls, other: Union['ClassWithDefinitionMeta', ClassDefT]) \
+            -> ClassDefT:
         """Return class definition: `cls` * `other`."""
         if isinstance(other, ClassWithDefinitionMeta):
-            return ClassDefTerm(((cls, 1), (other, 1)))
+            return ClassDefT(((cls, 1), (other, 1)))
         if isinstance(other, Term):
             if all((isinstance(elem, ClassWithDefinitionMeta)
                     for (elem, exp) in other)):
-                return ClassDefTerm(((cls, 1),)) * other
+                return ClassDefT(((cls, 1),)) * other
         return NotImplemented
 
-    def __rmul__(cls, other: ClassDefTerm) -> ClassDefTerm:
+    def __rmul__(cls, other: ClassDefT) -> ClassDefT:
         """Return class definition: `other` * `cls`."""
         if isinstance(other, Term):
             if all((isinstance(elem, ClassWithDefinitionMeta)
                     for (elem, exp) in other)):
-                return other * ClassDefTerm(((cls, 1),))
+                return other * ClassDefT(((cls, 1),))
         return NotImplemented
 
     def __truediv__(cls, other: Union['ClassWithDefinitionMeta',
-                                      ClassDefTerm]) -> ClassDefTerm:
+                                      ClassDefT]) -> ClassDefT:
         """Return class definition: `cls` / `other`."""
         if isinstance(other, ClassWithDefinitionMeta):
-            return ClassDefTerm(((cls, 1), (other, -1)))
+            return ClassDefT(((cls, 1), (other, -1)))
         if isinstance(other, Term):
             if all((isinstance(elem, ClassWithDefinitionMeta) for (elem, exp) in other)):
-                return ClassDefTerm(((cls, 1),)) * other.reciprocal()
+                return ClassDefT(((cls, 1),)) * other.reciprocal()
         return NotImplemented
 
-    def __rtruediv__(cls, other: ClassDefTerm) -> ClassDefTerm:
+    def __rtruediv__(cls, other: ClassDefT) -> ClassDefT:
         """Return class definition: `other` / `cls`."""
         if isinstance(other, Term):
             if all((isinstance(elem, ClassWithDefinitionMeta)
                     for (elem, exp) in other)):
-                return other * ClassDefTerm(((cls, -1),))
+                return other * ClassDefT(((cls, -1),))
         return NotImplemented
 
-    def __pow__(cls, exp: int) -> ClassDefTerm:
+    def __pow__(cls, exp: int) -> ClassDefT:
         """Return class definition: `cls` ** `exp`."""
         if isinstance(exp, Integral):
-            return ClassDefTerm(((cls, exp),))
+            return ClassDefT(((cls, exp),))
         return NotImplemented
 
     def __str__(cls) -> str:

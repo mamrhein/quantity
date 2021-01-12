@@ -29,12 +29,20 @@ from decimalfp import Decimal
 
 
 @runtime_checkable
-class Rational(Protocol):
+class RationalT(Protocol):
     """Protocol for rational numbers."""
 
     @abstractmethod
     def __abs__(self):
         """abs(self)"""
+
+    @abstractmethod
+    def __add__(self, other):
+        """self + other"""
+
+    @abstractmethod
+    def __sub__(self, other):
+        """self - other"""
 
     @abstractmethod
     def __mul__(self, other):

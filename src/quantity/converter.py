@@ -23,8 +23,10 @@
 # from __future__ import annotations
 
 # Standard library imports
-from numbers import Real
-from typing import Iterable, Mapping, Optional, Tuple, TYPE_CHECKING, Union
+from typing import (
+    Callable, cast, Iterable, Mapping, Optional, Tuple,
+    TYPE_CHECKING, Union,
+)
 
 # Third-party imports
 
@@ -32,7 +34,10 @@ from typing import Iterable, Mapping, Optional, Tuple, TYPE_CHECKING, Union
 from .exceptions import IncompatibleUnitsError, UnitConversionError
 
 if TYPE_CHECKING:
-    from . import Quantity, Unit
+    from . import Quantity, RationalT, Unit
+
+
+ConverterT = Callable[['Quantity', 'Unit'], 'RationalT']
 
 
 class Converter:
@@ -40,7 +45,7 @@ class Converter:
     """A quantity converter can be any callable with a signature like
     conv(qty, to_unit) -> number f so that type(qty)(f, to_unit) == qty."""
 
-    def __call__(self, qty: 'Quantity', to_unit: 'Unit') -> Real:
+    def __call__(self, qty: 'Quantity', to_unit: 'Unit') -> 'RationalT':
         """Convert a quantity's amount to the equivalent amount for another
         unit.
 
@@ -49,7 +54,7 @@ class Converter:
             to_unit (:class:`Unit`): unit for equivalent amount
 
         Returns:
-            Real: factor f so that f * `to_unit` == `qty`
+            RationalT: factor f so that f * `to_unit` == `qty`
 
         Raises:
             IncompatibleUnitsError: qty and to_unit are incompatible
@@ -57,30 +62,26 @@ class Converter:
         """
         if qty.unit is to_unit:          # same unit
             return qty.amount
-        if qty.Quantity is to_unit.Quantity:
-            factor = self._get_factor(qty, to_unit)
-            if factor is None:
+        if qty.__class__ is to_unit.qty_cls:
+            try:
+                factor = self._get_factor(qty, to_unit)
+            except ValueError:
                 raise UnitConversionError("Can't convert '%s' to '%s'.",
-                                          qty.unit, to_unit)
+                                          qty.unit, to_unit) from None
             return factor
         raise IncompatibleUnitsError(
             "Can't convert a '%s' unit to a '%s' unit.",
-            qty.Quantity, to_unit.Quantity)
+            qty.__class__, to_unit.qty_cls)
 
-    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
-        """Return factor f so that f * `to_unit` == `qty`."""
+    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> 'RationalT':
+        """Return factor f so that f * `to_unit` == `qty`.
+
+        Raises ValueError is factor can't be determined."""
         return NotImplemented
 
 
-class RefUnitConverter(Converter):
-
-    """Converter for Quantity classes that have a reference unit."""
-
-    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
-        """Return factor f so that f * `to_unit` == `qty`."""
-        res_def = (qty.unit.normalizedDefinition /
-                   to_unit.normalizedDefinition)
-        return qty.amount * res_def.amount
+ConvMapT = Mapping[Tuple['Unit', 'Unit'], Tuple['RationalT', 'RationalT']]
+ConvSpecIterableT = Iterable[Tuple['Unit', 'Unit', 'RationalT', 'RationalT']]
 
 
 class TableConverter(Converter):
@@ -98,9 +99,9 @@ class TableConverter(Converter):
 
     * to_unit (:class:`Unit`): target unit of the conversion
 
-    * factor (`Real`): factor to be applied to the quantity's amount
+    * factor (`RationalT`): factor to be applied to the quantity's amount
 
-    * offset (`Real`): an amount added after applying the factor
+    * offset (`RationalT`): an amount added after applying the factor
 
     When a `Mapping` is given as `convTable`, each key / value pair must map a
     tuple (from_unit, to_unit) to a tuple (factor, offset).
@@ -132,29 +133,29 @@ class TableConverter(Converter):
     by calling the method :meth:`Unit.register_converter`.
     """
 
-    def __init__(self, conv_table: Union[Mapping[Tuple['Unit', 'Unit'],
-                                                 Tuple[Real, Real]],
-                                         Iterable[Tuple['Unit', 'Unit',
-                                                        Real, Real]]]):
+    def __init__(self, conv_table: Union[ConvMapT, ConvSpecIterableT]):
+        self._unit_map: ConvMapT
         if isinstance(conv_table, Mapping):
-            self._unitMap = conv_table
+            conv_table = cast(ConvMapT, conv_table)
+            self._unit_map = conv_table
         elif isinstance(conv_table, Iterable):
-            self._unitMap = unitMap = {}
+            conv_table = cast(ConvSpecIterableT, conv_table)
+            unit_map = self._unit_map = {}
             for (from_unit, to_unit, factor, offset) in conv_table:
-                unitMap[(from_unit, to_unit)] = (factor, offset)
+                unit_map[(from_unit, to_unit)] = (factor, offset)
         else:
             raise TypeError("A Mapping or list must be given.")
 
-    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> Optional[Real]:
+    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') -> 'RationalT':
         """Return factor f so that f * `to_unit` == `qty`."""
         try:
-            factor, offset = self._unitMap[(qty.unit, to_unit)]
+            factor, offset = self._unit_map[(qty.unit, to_unit)]
         except KeyError:
             # try reverse
             try:
-                factor, offset = self._unitMap[(to_unit, qty.unit)]
+                factor, offset = self._unit_map[(to_unit, qty.unit)]
             except KeyError:
-                return None
+                raise ValueError from None
             else:
                 return (qty.amount - offset) / factor
         else:
