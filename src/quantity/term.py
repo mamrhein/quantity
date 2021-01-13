@@ -255,12 +255,12 @@ class Term(ItemSequenceT[T]):
     def num_elem(self) -> Optional[RationalT]:
         """Return the numerical element of `self` (if there is any)."""
         try:
-            first_elem = self[0][0]
+            elem, exp = self[0]
         except IndexError:
             pass
         else:
-            if isinstance(first_elem, RationalT):
-                return first_elem
+            if isinstance(elem, RationalT):
+                return elem ** exp
         return None
 
     def split(self, dflt_num = cast(RationalT, 1)) -> Tuple[RationalT, 'Term[T]']:
