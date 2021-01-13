@@ -32,10 +32,6 @@ class IncompatibleUnitsError(QuantityError):
     """Exception raised when operands do not have compatible units."""
 
     def __init__(self, msg: str, operand1: Any, operand2: Any):
-        if not isinstance(operand1, type):
-            operand1 = operand1.__class__.__name__
-        if not isinstance(operand2, type):
-            operand2 = operand2.__class__.__name__
         QuantityError.__init__(self, msg % (operand1, operand2))
 
 
@@ -52,12 +48,8 @@ class UndefinedResultError(QuantityError):
 
     def __init__(self, op: Callable[[Any, Any], Any],
                  operand1: Any, operand2: Any):
-        if not isinstance(operand1, type):
-            operand1 = operand1.__class__.__name__
-        if not isinstance(operand2, type):
-            operand2 = operand2.__class__.__name__
-        QuantityError.__init__(self, "Undefined result: %s %s %s" %
-                               (operand1, self.opSym[op], operand2))
+        msg = f"Undefined result: '{operand1}' {self.opSym[op]} '{operand2}'"
+        QuantityError.__init__(self, msg)
 
 
 class UnitConversionError(QuantityError):
