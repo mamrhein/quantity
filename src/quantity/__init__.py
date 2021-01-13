@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Name:        quantity (package)
-# Purpose:     Unit-safe computations with quantities.
-#
 # Author:      Michael Amrhein (michael@adrhinum.de)
 #
 # Copyright:   (c) 2012 ff. Michael Amrhein
@@ -537,36 +534,597 @@ used:
 """
 
 
-from .converter import Converter, TableConverter
+# Standard library imports
+import operator
+from decimal import Decimal as StdLibDecimal
+from fractions import Fraction
+from numbers import Integral, Real
+from typing import (
+    Any, Callable, cast, Dict, Generator, List, MutableMapping, Optional,
+    Tuple, Type, TypeVar, Union,
+)
+
+# Third-party imports
+from decimalfp import Decimal
+
+# Local imports
+from .converter import Converter, ConverterT, TableConverter
+from .cwdmeta import ClassDefT, ClassWithDefinitionMeta, Term
 from .exceptions import (IncompatibleUnitsError, QuantityError,
                          UndefinedResultError, UnitConversionError)
-from .money import Currency, ExchangeRate, Money, registerCurrency
-from .qtybase import Quantity, Unit, generateUnits
-from .qtyreg import get_unit_by_symbol
+from .rational import ONE, RationalT
+from .registry import DefinedItemRegistry
 from .utils import sum
 from .version import version_tuple as __version__
 
 
-# defined here in order to reduce pickle foot-print
-def r(q_repr: str) -> Quantity:
-    """Reconstruct quantity from string representation."""
-    return Quantity(q_repr)
-
-
+# Public interface
 __all__ = [
-    'Quantity',
-    'Unit',
-    'get_unit_by_symbol',
-    'generateUnits',
-    'sum',
-    'QuantityError',
-    'IncompatibleUnitsError',
-    'UndefinedResultError',
     'Converter',
+    'IncompatibleUnitsError',
+    'Quantity',
+    'QuantityError',
     'TableConverter',
+    'UndefinedResultError',
     'UnitConversionError',
-    'Currency',
-    'Money',
-    'ExchangeRate',
-    'registerCurrency',
+    'sum',
 ]
+
+
+# Generic types
+T = TypeVar("T")
+CmpOpT = Callable[[T, T], bool]
+BinOpT = Callable[[T, T], T]
+
+# Parameterized types
+UnitDefT = Term['Unit']
+UnitRegistryT = DefinedItemRegistry['Unit']
+QuantityClsDefT = Term['QuantityMeta']
+
+# Cache for results of operations on unit definitions
+BinOpResT = Union['Quantity', RationalT]
+_UNIT_OP_CACHE: MutableMapping[Tuple[BinOpT, 'Unit', 'Unit'], BinOpResT] = {}
+
+# Global registry of units
+# [symbol -> unit] map, used to ensure that instances of Unit are singletons
+_SYMBOL_UNIT_MAP: MutableMapping[str, 'Unit'] = {}
+# [term -> unit] map
+_TERM_UNIT_MAP = UnitRegistryT(unique_items=False)
+
+
+def _unit_from_term(term: UnitDefT) -> 'Unit':
+    return _TERM_UNIT_MAP[term]
+
+# defined here in order to reduce pickle foot-print
+# def r(q_repr: str) -> Quantity:
+#     """Reconstruct quantity from string representation."""
+#     return Quantity(q_repr)
+
+
+class Unit:
+
+    """Unit of measure"""
+
+    __slots__ = ['_symbol', '_name', '_equiv', '_definition', '_qty_cls']
+
+    # @classmethod
+    # def _unit_from_term(cls, term: Term) -> 'Unit':
+    #     return Unit(symbol=str(term))
+
+    def __init__(self, symbol: str, name: Optional[str] = None,
+                 define_as: Optional[Union['Quantity', UnitDefT]] = None):
+        self._qty_cls: 'QuantityMeta'
+        if isinstance(define_as, Quantity):
+            definition = UnitDefT([(define_as.amount, 1),
+                                   (define_as.unit, 1)])
+            self._definition = definition
+            self._equiv = definition.normalized().num_elem or ONE
+        elif isinstance(define_as, Term):
+            self._definition = define_as
+            self._equiv = ONE
+        assert symbol, "A symbol must be given for the unit."
+        try:
+            _SYMBOL_UNIT_MAP[symbol]
+        except KeyError:
+            _SYMBOL_UNIT_MAP[symbol] = self
+        else:
+            raise ValueError(
+                f"Unit with symbol '{symbol}' already registered.")
+        self._symbol = symbol
+        self._name = name
+        _TERM_UNIT_MAP.register_item(self)
+
+    @property
+    def symbol(self) -> str:
+        """Return `self`s symbol, a unique string representation of the
+        unit."""
+        return self._symbol
+
+    @property
+    def name(self) -> str:
+        """Return `self`s name.
+
+        If the unit was not given a name, its symbol is returned."""
+        return self._name or self._symbol
+
+    # @property
+    # def eqivalent(self) -> Optional[RationalT]:
+    #     """Equivalent in terms of reference unit (if any).
+    #
+    #      Returns None if the corresponding Quantity class has no reference
+    #      unit."""
+    #     return self._equiv
+
+    @property
+    def definition(self) -> UnitDefT:
+        """Definition of `self`."""
+        try:
+            return self._definition
+        except AttributeError:
+            return UnitDefT(((self, 1),))
+
+    @property
+    def normalized_definition(self) -> UnitDefT:
+        """Normalized definition of `self`."""
+        try:
+            return self._definition.normalized()
+        except AttributeError:
+            return UnitDefT(((self, 1),))
+
+    def is_base_unit(self) -> bool:
+        """Return True if `self` is a base unit, i. e. it's not derived
+        from another unit."""
+        try:
+            self._definition
+        except AttributeError:
+            return True
+        else:
+            return False
+
+    def is_derived_unit(self) -> bool:
+        """Return True if `self` is derived from another unit."""
+        return not self.is_base_unit()
+
+    def is_ref_unit(self) -> bool:
+        """Return True if `self` is a reference unit."""
+        try:
+            return self is self._qty_cls.ref_unit
+        except AttributeError:
+            return False
+
+    @property
+    def qty_cls(self) -> Optional['QuantityMeta']:
+        """The related `Quantity` subclass of `self`."""
+        try:
+            return self._qty_cls
+        except AttributeError:
+            return None
+
+    def __hash__(self) -> int:
+        """hash(self)"""
+        return hash(self.symbol)
+
+    def __copy__(self) -> 'Unit':
+        """Return self (:class:`Unit` instances are immutable)."""
+        return self
+
+    def __deepcopy__(self, memo: Any) -> 'Unit':
+        return self.__copy__()
+
+    def __eq__(self, other) -> bool:
+        """self == other"""
+        # Unit instances are singletons!
+        return self is other
+
+    def _compare(self, other: Any, op: CmpOpT) -> bool:
+        """Compare self and other using operator op."""
+        if isinstance(other, Unit):
+            if self.qty_cls is other.qty_cls:
+                return op(self._get_factor(other), 1)
+            msg = "Can't compare a '%s' unit and a '%s' unit."
+            raise IncompatibleUnitsError(msg, self.qty_cls, other.qty_cls)
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        """self < other"""
+        return self._compare(other, operator.lt)
+
+    def __le__(self, other) -> bool:
+        """self <= other"""
+        return self._compare(other, operator.le)
+
+    def __gt__(self, other) -> bool:
+        """self > other"""
+        return self._compare(other, operator.gt)
+
+    def __ge__(self, other) -> bool:
+        """self >= other"""
+        return self._compare(other, operator.ge)
+
+    def __mul__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
+        """self * other"""
+        if isinstance(other, RationalT):
+            return self._qty_cls(other, self)
+        if isinstance(other, Unit):
+            try:    # try cache
+                return _op_cache[(operator.mul, self, other)]
+            except KeyError:
+                pass
+            # no cache hit
+            res_def = UnitDefT(((self, 1), (other, 1)))
+            try:
+                res = _qty_from_term(res_def)
+            except KeyError:
+                raise UndefinedResultError(operator.mul, self, other) \
+                    from None
+            # cache it
+            _op_cache[(operator.mul, self, other)] = res
+            return res
+        if isinstance(other, Quantity):
+            amount, unit = other.amount, other.unit
+            return amount * (self * other.unit)
+        return NotImplemented
+
+    # other * self
+    __rmul__ = __mul__
+
+    def __truediv__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
+        """self / other"""
+        if isinstance(other, RationalT):
+            return self._qty_cls(ONE / other, self)
+        if isinstance(other, Unit):
+            try:    # try cache
+                return _op_cache[(operator.truediv, self, other)]
+            except KeyError:
+                pass
+            # no cache hit
+            res_def = UnitDefT(((self, 1), (other, -1)))
+            try:
+                res = _qty_from_term(res_def)
+            except KeyError:
+                raise UndefinedResultError(operator.truediv, self, other) \
+                    from None
+            # cache it
+            _op_cache[(operator.truediv, self, other)] = res
+            return res
+        if isinstance(other, Quantity):
+            amount, unit = other.amount, other.unit
+            return amount * (self / other.unit)
+        return NotImplemented
+
+    def __rtruediv__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
+        """other / self"""
+        if isinstance(other, RationalT):
+            return other * self ** -1
+        return NotImplemented
+
+    def __pow__(self, exp: Any) -> BinOpResT:
+        """self ** exp"""
+        if isinstance(exp, int):
+            if exp == 1:
+                return self._qty_cls(1, self)
+            res_def = UnitDefT(((self, exp),))
+            try:
+                return _qty_from_term(res_def)
+            except KeyError:
+                raise UndefinedResultError(operator.pow, self, exp) \
+                    from None
+        return NotImplemented
+
+    def __repr__(self) -> str:
+        """repr(self)"""
+        return f"Unit({self.symbol!r})"
+
+    def __str__(self) -> str:
+        """str(self)"""
+        return f"{self.symbol}"
+
+    # implement abstract methods of NonNumTermElem to allow instances of
+    # Unit to be elements in terms:
+
+    is_base_elem = is_base_unit
+
+    def norm_sort_key(self) -> int:
+        """Return sort key for `self` used for normalization of terms."""
+        return self._qty_cls.norm_sort_key()
+
+    def _get_factor(self, other: Any) -> RationalT:
+        """Return scaling factor f so that f * `other` == `self`."""
+        if not isinstance(other, Unit):
+            return NotImplemented
+        if self.qty_cls is not other.qty_cls:
+            msg = "Can't convert a '%s' unit and a '%s' unit."
+            raise IncompatibleUnitsError(msg, self.qty_cls, other.qty_cls)
+        try:
+            # noinspection PyUnresolvedReferences
+            return self._equiv / other._equiv
+        except AttributeError:
+            pass
+        # try registered converters:
+        # for conv in self.registeredConverters():
+        #     try:
+        #         return conv(equiv, self)
+        #     except UnitConversionError:
+        #         pass
+        # # if derived Unit class, try to convert base units:
+        # cls = self.Unit
+        # if cls.isDerivedQuantity():
+        #     resDef = (equiv.unit.normalizedDefinition /
+        #               self.normalizedDefinition)
+        #     if len(resDef) <= 1:
+        #         return equiv.amount * resDef.amount
+        # no success, give up
+        raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                  self, other)
+
+
+class QuantityMeta(ClassWithDefinitionMeta):
+
+    """Meta class allowing to construct Quantity subclasses."""
+
+    # Registry of Quantity classes (by normalized definition)
+    _registry = DefinedItemRegistry['QuantityMeta']()
+
+    # TODO: remove these class variables after mypy issue #1021 got fixed:
+    _definition: Optional[ClassDefT]
+    _ref_unit: Optional[Unit]
+    _quantum: RationalT
+
+    def __new__(mcs, name: str, bases: Tuple[type, ...],
+                clsdict: Dict[str, Any], **kwds: Any) -> 'QuantityMeta':
+        cls: 'QuantityMeta'
+        ref_unit_def: Optional[UnitDefT] = None
+        # optional definition
+        define_as: Optional[QuantityClsDefT] = kwds.pop('define_as', None)
+        # reference unit
+        if define_as is not None:
+            assert define_as, "Given definition is not valid."
+            try:
+                ref_unit_def = UnitDefT(_iter_ref_units(define_as))
+            except TypeError:
+                pass
+        ref_unit_symbol = kwds.pop('ref_unit_symbol', None)
+        if not ref_unit_symbol and ref_unit_def is not None:
+            ref_unit_symbol = str(ref_unit_def)
+        ref_unit_name = kwds.pop('ref_unit_name', None)
+        # quantum
+        quantum: RationalT = kwds.pop('quantum', None)
+        assert len(kwds) == 0, f"Unknown kwd(s): {kwds.keys()}"
+        assert ref_unit_symbol if ref_unit_name else True, \
+            "If `ref_unit_name` is given, `ref_unit_symbol` must also be " \
+            "given."
+        # prevent __dict__ from being built for subclasses of Quantity
+        try:
+            clsdict['__slots__']
+        except KeyError:
+            clsdict['__slots__'] = ()
+        cls = cast('QuantityMeta',
+                   super().__new__(mcs, name, bases, clsdict,
+                                   define_as=cast(ClassDefT, define_as)))
+        if ref_unit_symbol:
+            cls._make_ref_unit(ref_unit_symbol, ref_unit_name, ref_unit_def)
+        else:
+            cls._ref_unit = None
+        cls._quantum = quantum
+        return cls
+
+    def __init__(cls, name: str, bases: Tuple[type, ...],
+                 clsdict: Dict[str, Any], **kwds: Any):
+        super().__init__(name, bases, clsdict)
+        # register cls
+        cls._reg_id = QuantityMeta._registry.register_item(cls)
+        # map of units associated with Quantity class
+        unit = cls._ref_unit
+        if unit is None:
+            cls._unit_map: Dict[str, Unit] = {}
+        else:
+            cls._unit_map = {unit.symbol: unit}
+        # converter registry
+        cls._converters: List[ConverterT] = []
+
+    def _make_ref_unit(cls, symbol: str, name: str,
+                       define_as: Optional[UnitDefT]) -> None:
+        unit = Unit(symbol, name, define_as)
+        unit._qty_cls = cls
+        cls._ref_unit = unit
+
+    @property
+    def ref_unit(cls) -> Optional[Unit]:
+        """The reference unit of the :class:`Quantity` sub-class, if defined.
+        """
+        return cls._ref_unit
+
+    @property
+    def quantum(cls) -> Optional[RationalT]:
+        """The smallest amount (in terms of the reference unit) an instance of
+        this :class:`Quantity` can take (None if quantum not defined)."""
+        return cls._quantum
+
+    def new_unit(cls, symbol: str, name: Optional[str],
+                 define_as: Optional['Quantity'] = None) -> 'Unit':
+        """Create, register and return a new unit for `cls`."""
+        if define_as is None:
+            unit = Unit(symbol, name)
+        else:
+            assert isinstance(define_as, cls)
+            unit = Unit(symbol, name, define_as)
+        unit._qty_cls = cls
+        cls._unit_map[unit.symbol] = unit
+        return unit
+
+    def units(cls) -> Tuple[Unit, ...]:
+        """Return all registered units od `cls` as tuple."""
+        return tuple(cls._unit_map.values())
+
+    def norm_sort_key(cls) -> int:
+        """Return sort key for `cls` used for normalization of terms."""
+        return cls._reg_id
+
+
+class Quantity(metaclass=QuantityMeta):
+
+    """Base class used to define types of quantities."""
+
+    __slots__ = ['_amount', '_unit']
+
+    # default format spec used in __format__
+    dflt_format_spec = '{a} {u}'
+
+    # TODO: remove these class variables after mypy issue #1021 got fixed:
+    _amount: Union[Decimal, Fraction]
+    _unit: Unit
+
+    def __new__(cls, amount: Union[RationalT, StdLibDecimal, str, bytes],
+                unit: Optional[Unit] = None) -> 'Quantity':
+        if isinstance(amount, (Decimal, Fraction)):
+            amnt = amount
+        elif isinstance(amount, (Integral, StdLibDecimal)):
+            amnt = Decimal(amount)      # convert to decimalfp.Decimal
+        elif isinstance(amount, float):
+            try:
+                amnt = Decimal(amount)
+            except ValueError:
+                amnt = Fraction(amount)
+        # elif isinstance(amount, str):
+        #     if isinstance(amount, bytes):
+        #         try:
+        #             q_repr = amount.decode()
+        #         except UnicodeError:
+        #             raise QuantityError("Can't decode given bytes using "
+        #                                 "default encoding.")
+        #     else:
+        #         q_repr = amount
+        #     parts = q_repr.lstrip().split(' ', 1)
+        #     s_amount = parts[0]
+        #     try:
+        #         amnt = Decimal(s_amount)
+        #     except (TypeError, ValueError):
+        #         try:
+        #             amnt = Fraction(s_amount)
+        #         except (TypeError, ValueError):
+        #             raise QuantityError(f"Can't convert '{s_amount}' to a "
+        #                                 "number.")
+        #     if len(parts) > 1:
+        #         s_sym = parts[1].strip()
+        #         unit_from_sym = get_unit_by_symbol(s_sym)
+        #         if unit_from_sym:
+        #             if unit is None:
+        #                 unit = unit_from_sym
+        #             else:
+        #                 amount *= unit(unit_from_sym)
+        #         else:
+        #             raise QuantityError(f"Unknown symbol '{s_sym}'.")
+        else:
+            raise TypeError("Given amount must be a number or a string "
+                            "that can be converted to a number.")
+        if unit is None:
+            unit = cls.ref_unit
+            if unit is None:
+                raise QuantityError("A unit must be given.")
+        elif not isinstance(unit, Unit):
+            raise TypeError("Instance of 'Unit' expected as 'unit', got: "
+                            f"{unit!r}.")
+        if cls is Quantity:
+            cls = cast(Type[Quantity], unit.qty_cls)
+            if cls is None:
+                raise TypeError(f"'{unit}' is nor a registered unit.")
+        elif cls is not unit.qty_cls:
+            raise QuantityError(f"Given unit '{unit}' is not a "
+                                f"'{cls.__name__}' unit.")
+        # make raw instance
+        qty = super().__new__(cls)
+        # check whether it should be quantized
+        # quantum = cls.getQuantum(unit)
+        # if quantum:
+        #     amnt = cls._quantize(amount / quantum, unit) * quantum
+        # finally set amount and unit
+        qty._amount = amnt
+        qty._unit = unit
+        return qty
+
+    @property
+    def amount(self) -> RationalT:
+        """The quantity's amount, i.e. the numerical part of the quantity."""
+        return self._amount
+
+    @property
+    def unit(self) -> Unit:
+        """The quantity's unit."""
+        return self._unit
+
+    def __mul__(self, other: Any) -> BinOpResT:
+        """self * other"""
+        if isinstance(other, RationalT):
+            return self.__class__(self.amount * other, self.unit)
+        if isinstance(other, Quantity):
+            return (self.amount * other.amount) * (self.unit * other.unit)
+        if isinstance(other, Unit):
+            return self.amount * (self.unit * other)
+        return NotImplemented
+
+    # other * self
+    __rmul__ = __mul__
+
+    def __truediv__(self, other: Any) -> BinOpResT:
+        """self / other"""
+        if isinstance(other, RationalT):
+            return self.__class__(self.amount / other, self.unit)
+        if isinstance(other, Quantity):
+            return (self.amount / other.amount) * (self.unit / other.unit)
+        if isinstance(other, Unit):
+            return self.amount * (self.unit / other)
+        return NotImplemented
+
+    def __rtruediv__(self, other: Any) -> BinOpResT:
+        """other / self"""
+        if isinstance(other, RationalT):
+            return (other / self.amount) * self.unit ** -1
+        return NotImplemented
+
+    def __pow__(self, exp: Any) -> BinOpResT:
+        """self ** exp"""
+        if not isinstance(exp, int):
+            return NotImplemented
+        return self.amount ** exp * self.unit ** exp
+
+    def __repr__(self) -> str:
+        """repr(self)"""
+        cls = self.__class__
+        if self.unit is cls.ref_unit:
+            return f"{cls.__name__}({self.amount!r})"
+        else:
+            return f"{cls.__name__}({self.amount!r}, {self.unit!r})"
+
+    def __str__(self) -> str:
+        """str(self)"""
+        return f"{self.amount} {self.unit}"
+
+
+# helper functions
+
+def _iter_ref_units(cls_def: QuantityClsDefT) \
+        -> Generator[Tuple[Unit, int], None, None]:
+    for qty_cls, exp in cls_def:
+        if isinstance(qty_cls, QuantityMeta):
+            ref_unit = qty_cls.ref_unit
+            if ref_unit is not None:
+                yield ref_unit, exp
+            else:
+                raise TypeError
+
+
+def _qty_from_term(term: UnitDefT) -> BinOpResT:
+    num: RationalT = ONE
+    try:
+        res_unit = _unit_from_term(term)
+    except KeyError:
+        num, res_def = term.normalized().split()
+        if not res_def:     # empty term
+            return num
+        elif res_def != term:
+            res_unit = _unit_from_term(res_def)
+        else:
+            raise
+    qty_cls = res_unit.qty_cls
+    assert qty_cls is not None
+    return qty_cls(num, res_unit)

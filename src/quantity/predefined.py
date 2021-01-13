@@ -15,7 +15,7 @@
 # $Revision$
 
 
-r"""The module `quantity.predefined` provides definitions of commonly used
+"""The module `quantity.predefined` provides definitions of commonly used
 quantities and units.
 
 Length
@@ -291,258 +291,282 @@ Kelvin     [°C] = [K] - 273.15         [°F] = [K] * 9/5 - 459.67   -
 ========== =========================== =========================== ===========================
 """
 
+# Standard library imports
 from fractions import Fraction
 
+# Third-party imports
 from decimalfp import Decimal
 
+# Local imports
 from . import Quantity, TableConverter
 
 
-class Mass(Quantity):
-    refUnitName = 'Kilogram'
-    refUnitSymbol = 'kg'
+class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):
+    """Mass: measure of a physical body's resistance to acceleration"""
 
-KILOGRAM = Mass.refUnit
 
-GRAM = Mass.Unit('g', 'Gram', Decimal('0.001') * KILOGRAM)
-MILLIGRAM = Mass.Unit('mg', 'Milligram', Decimal('0.000001') * KILOGRAM)
-TONNE = Mass.Unit('t', 'Tonne', Decimal(1000) * KILOGRAM)
+KILOGRAM = Mass.ref_unit
+
+GRAM = Mass.new_unit('g', 'Gram', Decimal('0.001') * KILOGRAM)
+MILLIGRAM = Mass.new_unit('mg', 'Milligram', Decimal('0.000001') * KILOGRAM)
+TONNE = Mass.new_unit('t', 'Tonne', Decimal(1000) * KILOGRAM)
 
 # some imperial units
-POUND = Mass.Unit('lb', 'Pound', Decimal('0.45359237') * KILOGRAM)
-STONE = Mass.Unit('st', 'Stone', Decimal(14) * POUND)
-OUNCE = Mass.Unit('oz', 'Ounce', Decimal('0.0625') * POUND)
+POUND = Mass.new_unit('lb', 'Pound', Decimal('0.45359237') * KILOGRAM)
+STONE = Mass.new_unit('st', 'Stone', Decimal(14) * POUND)
+OUNCE = Mass.new_unit('oz', 'Ounce', Decimal('0.0625') * POUND)
 
 # others
-CARAT = Mass.Unit('ct', 'Carat', Decimal('0.2') * GRAM)
+CARAT = Mass.new_unit('ct', 'Carat', Decimal('0.2') * GRAM)
 
 
-class Length(Quantity):
-    refUnitName = 'Metre'
-    refUnitSymbol = 'm'
-
-METRE = Length.refUnit
-
-MICROMETRE = Length.Unit('µm', 'Micrometre', Decimal('0.000001') * METRE)
-MILLIMETRE = Length.Unit('mm', 'Millimetre', Decimal('0.001') * METRE)
-CENTIMETRE = Length.Unit('cm', 'Centimetre', Decimal('0.01') * METRE)
-DECIMETRE = Length.Unit('dm', 'Decimetre', Decimal('0.1') * METRE)
-KILOMETRE = Length.Unit('km', 'Kilometre', Decimal(1000) * METRE)
-
-# some imperial units
-INCH = Length.Unit('in', 'Inch', Decimal('2.54') * CENTIMETRE)
-FOOT = Length.Unit('ft', 'Foot', Decimal(12) * INCH)
-YARD = Length.Unit('yd', 'Yard', Decimal(3) * FOOT)
-CHAIN = Length.Unit('ch', 'Chain', Decimal(22) * YARD)
-FURLONG = Length.Unit('fur', 'Furlog', Decimal(10) * CHAIN)
-MILE = Length.Unit('mi', 'Mile', Decimal(8) * FURLONG)
+class Length(Quantity,
+             ref_unit_name='Metre',
+             ref_unit_symbol='m'):
+    """Length: measure of distance"""
 
 
-class Duration(Quantity):
-    refUnitName = 'Second'
-    refUnitSymbol = 's'
+METRE = Length.ref_unit
 
-SECOND = Duration.refUnit
-
-MINUTE = Duration.Unit('min', 'Minute', Decimal(60) * SECOND)
-HOUR = Duration.Unit('h', 'Hour', Decimal(60) * MINUTE)
-DAY = Duration.Unit('d', 'Day', Decimal(24) * HOUR)
-
-
-class Area(Quantity):
-    defineAs = Length ** 2
-    refUnitName = 'Square Metre'
-
-SQUARE_METRE = Area.refUnit
-
-SQUARE_MILLIMETRE = Area.Unit('mm²', 'Square Millimetre', MILLIMETRE ** 2)
-SQUARE_CENTIMETRE = Area.Unit('cm²', 'Square Centimetre', CENTIMETRE ** 2)
-SQUARE_DECIMETRE = Area.Unit('dm²', 'Square Decimetre', DECIMETRE ** 2)
-SQUARE_KILOMETRE = Area.Unit('km²', 'Square Kilometre', KILOMETRE ** 2)
-ARE = Area.Unit('a', 'Are', Decimal(100) * SQUARE_METRE)
-HECTARE = Area.Unit('ha', 'Hectare', Decimal(100) * ARE)
-
+MICROMETRE = Length.new_unit('µm', 'Micrometre', Decimal('0.000001') * METRE)
+MILLIMETRE = Length.new_unit('mm', 'Millimetre', Decimal('0.001') * METRE)
+CENTIMETRE = Length.new_unit('cm', 'Centimetre', Decimal('0.01') * METRE)
+DECIMETRE = Length.new_unit('dm', 'Decimetre', Decimal('0.1') * METRE)
+KILOMETRE = Length.new_unit('km', 'Kilometre', Decimal(1000) * METRE)
 
 # some imperial units
-SQUARE_INCH = Area.Unit('in²', 'Square Inch', INCH ** 2)
-SQUARE_FOOT = Area.Unit('ft²', 'Square Foot', FOOT ** 2)
-SQUARE_YARD = Area.Unit('yd²', 'Square Yard', YARD ** 2)
-SQUARE_MILE = Area.Unit('mi²', 'Square Mile', MILE ** 2)
-ACRE = Area.Unit('ac', 'Acre', Decimal(4840) * SQUARE_YARD)
+INCH = Length.new_unit('in', 'Inch', Decimal('2.54') * CENTIMETRE)
+FOOT = Length.new_unit('ft', 'Foot', Decimal(12) * INCH)
+YARD = Length.new_unit('yd', 'Yard', Decimal(3) * FOOT)
+CHAIN = Length.new_unit('ch', 'Chain', Decimal(22) * YARD)
+FURLONG = Length.new_unit('fur', 'Furlog', Decimal(10) * CHAIN)
+MILE = Length.new_unit('mi', 'Mile', Decimal(8) * FURLONG)
 
 
-class Volume(Quantity):
-    defineAs = Length ** 3
-    refUnitName = 'Cubic Metre'
+class Duration(Quantity,
+               ref_unit_name='Second',
+               ref_unit_symbol='s'):
+    """Duration: 'what a clock reads'"""
 
-CUBIC_METRE = Volume.refUnit
 
-CUBIC_MILLIMETRE = Volume.Unit('mm³', 'Cubic Millimetre', MILLIMETRE ** 3)
-CUBIC_CENTIMETRE = Volume.Unit('cm³', 'Cubic Centimetre', CENTIMETRE ** 3)
-CUBIC_DECIMETRE = Volume.Unit('dm³', 'Cubic Decimetre', DECIMETRE ** 3)
-CUBIC_KILOMETRE = Volume.Unit('km³', 'Cubic Kilometre', KILOMETRE ** 3)
+SECOND = Duration.ref_unit
+
+MINUTE = Duration.new_unit('min', 'Minute', Decimal(60) * SECOND)
+HOUR = Duration.new_unit('h', 'Hour', Decimal(60) * MINUTE)
+DAY = Duration.new_unit('d', 'Day', Decimal(24) * HOUR)
+
+
+class Area(Quantity,
+           define_as=Length ** 2,
+           ref_unit_name='Square Metre'):
+    """Area = Length ** 2"""
+
+
+SQUARE_METRE = Area.ref_unit
+
+SQUARE_MILLIMETRE = Area.new_unit('mm²', 'Square Millimetre', MILLIMETRE ** 2)
+SQUARE_CENTIMETRE = Area.new_unit('cm²', 'Square Centimetre', CENTIMETRE ** 2)
+SQUARE_DECIMETRE = Area.new_unit('dm²', 'Square Decimetre', DECIMETRE ** 2)
+SQUARE_KILOMETRE = Area.new_unit('km²', 'Square Kilometre', KILOMETRE ** 2)
+ARE = Area.new_unit('a', 'Are', Decimal(100) * SQUARE_METRE)
+HECTARE = Area.new_unit('ha', 'Hectare', Decimal(100) * ARE)
+
+# some imperial units
+SQUARE_INCH = Area.new_unit('in²', 'Square Inch', INCH ** 2)
+SQUARE_FOOT = Area.new_unit('ft²', 'Square Foot', FOOT ** 2)
+SQUARE_YARD = Area.new_unit('yd²', 'Square Yard', YARD ** 2)
+SQUARE_MILE = Area.new_unit('mi²', 'Square Mile', MILE ** 2)
+ACRE = Area.new_unit('ac', 'Acre', Decimal(4840) * SQUARE_YARD)
+
+
+class Volume(Quantity,
+             define_as=Length ** 3,
+             ref_unit_name='Cubic Metre'):
+    """Volume = Length ** 3"""
+
+
+CUBIC_METRE = Volume.ref_unit
+
+CUBIC_MILLIMETRE = Volume.new_unit('mm³', 'Cubic Millimetre', MILLIMETRE ** 3)
+CUBIC_CENTIMETRE = Volume.new_unit('cm³', 'Cubic Centimetre', CENTIMETRE ** 3)
+CUBIC_DECIMETRE = Volume.new_unit('dm³', 'Cubic Decimetre', DECIMETRE ** 3)
+CUBIC_KILOMETRE = Volume.new_unit('km³', 'Cubic Kilometre', KILOMETRE ** 3)
 
 # litre
-LITRE = Volume.Unit('l', 'Litre', Decimal('0.1') ** 3 * CUBIC_METRE)
-MILLILITRE = Volume.Unit('ml', 'Millilitre', Decimal('0.001') * LITRE)
-CENTILITRE = Volume.Unit('cl', 'Centilitre', Decimal('0.01') * LITRE)
-DECILITRE = Volume.Unit('dl', 'Decilitre', Decimal('0.1') * LITRE)
+LITRE = Volume.new_unit('l', 'Litre', Decimal('0.1') ** 3 * CUBIC_METRE)
+MILLILITRE = Volume.new_unit('ml', 'Millilitre', Decimal('0.001') * LITRE)
+CENTILITRE = Volume.new_unit('cl', 'Centilitre', Decimal('0.01') * LITRE)
+DECILITRE = Volume.new_unit('dl', 'Decilitre', Decimal('0.1') * LITRE)
 
 # some imperial units
-CUBIC_INCH = Volume.Unit('in³', 'Cubic Inch', INCH ** 3)
-CUBIC_FOOT = Volume.Unit('ft³', 'Cubic Foot', FOOT ** 3)
-CUBIC_YARD = Volume.Unit('yd³', 'Cubic Yard', YARD ** 3)
+CUBIC_INCH = Volume.new_unit('in³', 'Cubic Inch', INCH ** 3)
+CUBIC_FOOT = Volume.new_unit('ft³', 'Cubic Foot', FOOT ** 3)
+CUBIC_YARD = Volume.new_unit('yd³', 'Cubic Yard', YARD ** 3)
 
 
-class Velocity(Quantity):
-    defineAs = Length / Duration
-    refUnitName = 'Metre per Second'
-
-METRE_PER_SECOND = Velocity.refUnit
-KILOMETRE_PER_HOUR = Velocity.Unit('km/h', 'Kilometre per hour',
-                                   KILOMETRE / HOUR)
-
-# some imperial units
-FOOT_PER_SECOND = Velocity.Unit('ft/s', 'Foot per Second', FOOT / SECOND)
-MILE_PER_HOUR = Velocity.Unit('mph', 'Mile per Hour', MILE / HOUR)
+class Velocity(Quantity,
+               define_as=Length / Duration,
+               ref_unit_name='Metre per Second'):
+    """Velocity = Length / Duration"""
 
 
-class Acceleration(Quantity):
-    defineAs = Length / Duration ** 2
-    refUnitName = 'Metre per Second squared'
-
-METRE_PER_SECOND_SQUARED = Acceleration.refUnit
+METRE_PER_SECOND = Velocity.ref_unit
+KILOMETRE_PER_HOUR = Velocity.new_unit('km/h', 'Kilometre per hour',
+                                       KILOMETRE / HOUR)
 
 # some imperial units
-MILE_PER_SECOND_SQUARED = Acceleration.Unit('mps²',
-                                            'Mile per Second squared',
-                                            MILE / SECOND ** 2)
+FOOT_PER_SECOND = Velocity.new_unit('ft/s', 'Foot per Second', FOOT / SECOND)
+MILE_PER_HOUR = Velocity.new_unit('mph', 'Mile per Hour', MILE / HOUR)
 
 
-class Force(Quantity):
-    defineAs = Mass * Acceleration
-    refUnitName = 'Newton'
-    refUnitSymbol = 'N'
-
-NEWTON = Force.refUnit
+class Acceleration(Quantity,
+                   define_as=Velocity / Duration,
+                   ref_unit_name='Metre per Second squared'):
+    """Acceleration = Velocity / Duration"""
 
 
-class Energy(Quantity):
-    defineAs = Force * Length
-    refUnitName = 'Joule'
-    refUnitSymbol = 'J'
+METRE_PER_SECOND_SQUARED = Acceleration.ref_unit
 
-JOULE = Energy.refUnit
+# some imperial units
+MILE_PER_SECOND_SQUARED = Acceleration.new_unit('mps²',
+                                                'Mile per Second squared',
+                                                (MILE / SECOND) / SECOND)
 
 
-class Power(Quantity):
-    defineAs = Energy / Duration
-    refUnitName = 'Watt'
-    refUnitSymbol = 'W'
+class Force(Quantity,
+            define_as=Mass * Acceleration,
+            ref_unit_name='Newton',
+            ref_unit_symbol='N'):
+    """Force = Mass * Acceleration"""
 
-WATT = Power.refUnit
 
-MILLIWATT = Power.Unit('mW', 'Milliwatt', Decimal('0.001') * WATT)
-KILOWATT = Power.Unit('kW', 'Kilowatt', Decimal(1000) * WATT)
-MEGAWATT = Power.Unit('MW', 'Megawatt', Decimal(1000000) * WATT)
-GIGAWATT = Power.Unit('GW', 'Gigawatt', Decimal(1000000000) * WATT)
-TERAWATT = Power.Unit('TW', 'Terawatt', Decimal(1000000000000) * WATT)
+NEWTON = Force.ref_unit
 
+
+class Energy(Quantity,
+             define_as=Force * Length,
+             ref_unit_name='Joule',
+             ref_unit_symbol='J'):
+    """Energy = Force * Length"""
+
+
+JOULE = Energy.ref_unit
+
+
+class Power(Quantity,
+            define_as=Energy / Duration,
+            ref_unit_name='Watt',
+            ref_unit_symbol='W'):
+    """Power = Energy / Duration"""
+
+
+WATT = Power.ref_unit
+
+MILLIWATT = Power.new_unit('mW', 'Milliwatt', Decimal('0.001') * WATT)
+KILOWATT = Power.new_unit('kW', 'Kilowatt', Decimal(1000) * WATT)
+MEGAWATT = Power.new_unit('MW', 'Megawatt', Decimal(1000000) * WATT)
+GIGAWATT = Power.new_unit('GW', 'Gigawatt', Decimal(1000000000) * WATT)
+TERAWATT = Power.new_unit('TW', 'Terawatt', Decimal(1000000000000) * WATT)
 
 # some more unit definitions based on other than the reference units
 
 # Force
-JOULE_PER_METRE = Force.Unit('J/m', 'Joule per Metre', JOULE / METRE)
+JOULE_PER_METRE = Force.new_unit('J/m', 'Joule per Metre', JOULE / METRE)
 
 # Energy
-WATT_SECOND = Energy.Unit('Ws', 'Watt Second', WATT * SECOND)
-KILOWATT_HOUR = Energy.Unit('kWh', 'Kilowatt Hour', KILOWATT * HOUR)
+WATT_SECOND = Energy.new_unit('Ws', 'Watt Second', WATT * SECOND)
+KILOWATT_HOUR = Energy.new_unit('kWh', 'Kilowatt Hour', KILOWATT * HOUR)
 
 
-class DataVolume(Quantity):
-    """According to IEEE 1541-2002"""
-    refUnitName = 'Byte'
-    refUnitSymbol = 'B'
-    quantum = Fraction(1, 8)
-
-BYTE = DataVolume.refUnit
-
-KILOBYTE = DataVolume.Unit('kB', 'Kilobyte', Decimal(10) ** 3 * BYTE)
-MEGABYTE = DataVolume.Unit('MB', 'Megabyte', Decimal(10) ** 6 * BYTE)
-GIGABYTE = DataVolume.Unit('GB', 'Gigabyte', Decimal(10) ** 9 * BYTE)
-TERABYTE = DataVolume.Unit('TB', 'Terabyte', Decimal(10) ** 12 * BYTE)
-KIBIBYTE = DataVolume.Unit('KiB', 'Kibibyte', Decimal(2) ** 10 * BYTE)
-MEBIBYTE = DataVolume.Unit('MiB', 'Mebibyte', Decimal(2) ** 20 * BYTE)
-GIBIBYTE = DataVolume.Unit('GiB', 'Gibibyte', Decimal(2) ** 30 * BYTE)
-TEBIBYTE = DataVolume.Unit('TiB', 'Tebibyte', Decimal(2) ** 40 * BYTE)
-
-BIT = DataVolume.Unit('b', 'Bit', Fraction(1, 8) * BYTE)
-KILOBIT = DataVolume.Unit('kb', 'Kilobit', Decimal(10) ** 3 * BIT)
-MEGABIT = DataVolume.Unit('Mb', 'Megabit', Decimal(10) ** 6 * BIT)
-GIGABIT = DataVolume.Unit('Gb', 'Gigabit', Decimal(10) ** 9 * BIT)
-TERABIT = DataVolume.Unit('Tb', 'Terabit', Decimal(10) ** 12 * BIT)
-KIBIBIT = DataVolume.Unit('Kib', 'Kibibit', Decimal(2) ** 10 * BIT)
-MEBIBIT = DataVolume.Unit('Mib', 'Mebibit', Decimal(2) ** 20 * BIT)
-GIBIBIT = DataVolume.Unit('Gib', 'Gibibit', Decimal(2) ** 30 * BIT)
-TEBIBIT = DataVolume.Unit('Tib', 'Tebibit', Decimal(2) ** 40 * BIT)
+class DataVolume(Quantity,
+                 ref_unit_name='Byte',
+                 ref_unit_symbol='B',
+                 quantum=Fraction(1, 8)):
+    """DataVolume according to IEEE 1541-2002"""
 
 
-class DataThroughput(Quantity):
-    defineAs = DataVolume / Duration
-    refUnitName = 'Byte per Second'
+BYTE = DataVolume.ref_unit
 
-BYTE_PER_SECOND = DataThroughput.refUnit
+KILOBYTE = DataVolume.new_unit('kB', 'Kilobyte', Decimal(10) ** 3 * BYTE)
+MEGABYTE = DataVolume.new_unit('MB', 'Megabyte', Decimal(10) ** 6 * BYTE)
+GIGABYTE = DataVolume.new_unit('GB', 'Gigabyte', Decimal(10) ** 9 * BYTE)
+TERABYTE = DataVolume.new_unit('TB', 'Terabyte', Decimal(10) ** 12 * BYTE)
+KIBIBYTE = DataVolume.new_unit('KiB', 'Kibibyte', Decimal(2) ** 10 * BYTE)
+MEBIBYTE = DataVolume.new_unit('MiB', 'Mebibyte', Decimal(2) ** 20 * BYTE)
+GIBIBYTE = DataVolume.new_unit('GiB', 'Gibibyte', Decimal(2) ** 30 * BYTE)
+TEBIBYTE = DataVolume.new_unit('TiB', 'Tebibyte', Decimal(2) ** 40 * BYTE)
 
-KILOBYTE_PER_SECOND = DataThroughput.Unit('kB/s', 'Kilobyte per Second',
-                                          Decimal(10) ** 3 * BYTE_PER_SECOND)
-MEGABYTE_PER_SECOND = DataThroughput.Unit('MB/s', 'Megabyte per Second',
-                                          Decimal(10) ** 6 * BYTE_PER_SECOND)
-GIGABYTE_PER_SECOND = DataThroughput.Unit('GB/s', 'Gigabyte per Second',
-                                          Decimal(10) ** 9 * BYTE_PER_SECOND)
-TERABYTE_PER_SECOND = DataThroughput.Unit('TB/s', 'Terabyte per Second',
-                                          Decimal(10) ** 12 * BYTE_PER_SECOND)
-KIBIBYTE_PER_SECOND = DataThroughput.Unit('KiB/s', 'Kibibyte per Second',
-                                          Decimal(2) ** 10 * BYTE_PER_SECOND)
-MEBIBYTE_PER_SECOND = DataThroughput.Unit('MiB/s', 'Mebibyte per Second',
-                                          Decimal(2) ** 20 * BYTE_PER_SECOND)
-GIBIBYTE_PER_SECOND = DataThroughput.Unit('GiB/s', 'Gibibyte per Second',
-                                          Decimal(2) ** 30 * BYTE_PER_SECOND)
-TEBIBYTE_PER_SECOND = DataThroughput.Unit('TiB/s', 'Tebibyte per Second',
-                                          Decimal(2) ** 40 * BYTE_PER_SECOND)
+BIT = DataVolume.new_unit('b', 'Bit', Fraction(1, 8) * BYTE)
+KILOBIT = DataVolume.new_unit('kb', 'Kilobit', Decimal(10) ** 3 * BIT)
+MEGABIT = DataVolume.new_unit('Mb', 'Megabit', Decimal(10) ** 6 * BIT)
+GIGABIT = DataVolume.new_unit('Gb', 'Gigabit', Decimal(10) ** 9 * BIT)
+TERABIT = DataVolume.new_unit('Tb', 'Terabit', Decimal(10) ** 12 * BIT)
+KIBIBIT = DataVolume.new_unit('Kib', 'Kibibit', Decimal(2) ** 10 * BIT)
+MEBIBIT = DataVolume.new_unit('Mib', 'Mebibit', Decimal(2) ** 20 * BIT)
+GIBIBIT = DataVolume.new_unit('Gib', 'Gibibit', Decimal(2) ** 30 * BIT)
+TEBIBIT = DataVolume.new_unit('Tib', 'Tebibit', Decimal(2) ** 40 * BIT)
 
-BIT_PER_SECOND = DataThroughput.Unit('b/s', 'Bit per Second', BIT / SECOND)
-KILOBIT_PER_SECOND = DataThroughput.Unit('kb/s', 'Kilobit per Second',
-                                         Decimal(10) ** 3 * BIT_PER_SECOND)
-MEGABIT_PER_SECOND = DataThroughput.Unit('Mb/s', 'Megabit per Second',
-                                         Decimal(10) ** 6 * BIT_PER_SECOND)
-GIGABIT_PER_SECOND = DataThroughput.Unit('Gb/s', 'Gigabit per Second',
-                                         Decimal(10) ** 9 * BIT_PER_SECOND)
-TERABIT_PER_SECOND = DataThroughput.Unit('Tb/s', 'Terabit per Second',
-                                         Decimal(10) ** 12 * BIT_PER_SECOND)
-KIBIBIT_PER_SECOND = DataThroughput.Unit('Kib/s', 'Kibibit per Second',
-                                         Decimal(2) ** 10 * BIT_PER_SECOND)
-MEBIBIT_PER_SECOND = DataThroughput.Unit('Mib/s', 'Mebibit per Second',
-                                         Decimal(2) ** 20 * BIT_PER_SECOND)
-GIBIBIT_PER_SECOND = DataThroughput.Unit('Gib/s', 'Gibibit per Second',
-                                         Decimal(2) ** 30 * BIT_PER_SECOND)
-TEBIBIT_PER_SECOND = DataThroughput.Unit('Tib/s', 'Tebibit per Second',
-                                         Decimal(2) ** 40 * BIT_PER_SECOND)
+
+class DataThroughput(Quantity,
+                     define_as=DataVolume / Duration,
+                     ref_unit_name='Byte per Second'):
+    """DataThroughput = DataVolume / Duration"""
+
+
+BYTE_PER_SECOND = DataThroughput.ref_unit
+
+KILOBYTE_PER_SECOND = DataThroughput.new_unit('kB/s', 'Kilobyte per Second',
+                                              Decimal(10) ** 3 * BYTE_PER_SECOND)
+MEGABYTE_PER_SECOND = DataThroughput.new_unit('MB/s', 'Megabyte per Second',
+                                              Decimal(10) ** 6 * BYTE_PER_SECOND)
+GIGABYTE_PER_SECOND = DataThroughput.new_unit('GB/s', 'Gigabyte per Second',
+                                              Decimal(10) ** 9 * BYTE_PER_SECOND)
+TERABYTE_PER_SECOND = DataThroughput.new_unit('TB/s', 'Terabyte per Second',
+                                              Decimal(10) ** 12 * BYTE_PER_SECOND)
+KIBIBYTE_PER_SECOND = DataThroughput.new_unit('KiB/s', 'Kibibyte per Second',
+                                              Decimal(2) ** 10 * BYTE_PER_SECOND)
+MEBIBYTE_PER_SECOND = DataThroughput.new_unit('MiB/s', 'Mebibyte per Second',
+                                              Decimal(2) ** 20 * BYTE_PER_SECOND)
+GIBIBYTE_PER_SECOND = DataThroughput.new_unit('GiB/s', 'Gibibyte per Second',
+                                              Decimal(2) ** 30 * BYTE_PER_SECOND)
+TEBIBYTE_PER_SECOND = DataThroughput.new_unit('TiB/s', 'Tebibyte per Second',
+                                              Decimal(2) ** 40 * BYTE_PER_SECOND)
+
+BIT_PER_SECOND = DataThroughput.new_unit('b/s', 'Bit per Second', BIT / SECOND)
+KILOBIT_PER_SECOND = DataThroughput.new_unit('kb/s', 'Kilobit per Second',
+                                             Decimal(10) ** 3 * BIT_PER_SECOND)
+MEGABIT_PER_SECOND = DataThroughput.new_unit('Mb/s', 'Megabit per Second',
+                                             Decimal(10) ** 6 * BIT_PER_SECOND)
+GIGABIT_PER_SECOND = DataThroughput.new_unit('Gb/s', 'Gigabit per Second',
+                                             Decimal(10) ** 9 * BIT_PER_SECOND)
+TERABIT_PER_SECOND = DataThroughput.new_unit('Tb/s', 'Terabit per Second',
+                                             Decimal(10) ** 12 * BIT_PER_SECOND)
+KIBIBIT_PER_SECOND = DataThroughput.new_unit('Kib/s', 'Kibibit per Second',
+                                             Decimal(2) ** 10 * BIT_PER_SECOND)
+MEBIBIT_PER_SECOND = DataThroughput.new_unit('Mib/s', 'Mebibit per Second',
+                                             Decimal(2) ** 20 * BIT_PER_SECOND)
+GIBIBIT_PER_SECOND = DataThroughput.new_unit('Gib/s', 'Gibibit per Second',
+                                             Decimal(2) ** 30 * BIT_PER_SECOND)
+TEBIBIT_PER_SECOND = DataThroughput.new_unit('Tib/s', 'Tebibit per Second',
+                                             Decimal(2) ** 40 * BIT_PER_SECOND)
 
 
 class Temperature(Quantity):
-    pass
+    """Temperature: measure of thermal energy"""
 
-CELSIUS = Temperature.Unit('°C', 'Degree Celsius')
-FAHRENHEIT = Temperature.Unit('°F', 'Degree Fahrenheit')
-KELVIN = Temperature.Unit('K', 'Kelvin')
 
-# Temperature converter
-_tempConv = [
-    (CELSIUS, FAHRENHEIT, Fraction(9, 5), Decimal(32)),
-    (FAHRENHEIT, CELSIUS, Fraction(5, 9), Fraction(-160, 9)),
-    (CELSIUS, KELVIN, Decimal(1), Decimal('273.15')),
-    (KELVIN, CELSIUS, Decimal(1), Decimal('-273.15')),
-    (FAHRENHEIT, KELVIN, Fraction(5, 9), Fraction(45967, 180)),
-    (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
-]
-Temperature.Unit.registerConverter(TableConverter(_tempConv))
+CELSIUS = Temperature.new_unit('°C', 'Degree Celsius')
+FAHRENHEIT = Temperature.new_unit('°F', 'Degree Fahrenheit')
+KELVIN = Temperature.new_unit('K', 'Kelvin')
+
+# # Temperature converter
+# _tempConv = [
+#     (CELSIUS, FAHRENHEIT, Fraction(9, 5), Decimal(32)),
+#     (FAHRENHEIT, CELSIUS, Fraction(5, 9), Fraction(-160, 9)),
+#     (CELSIUS, KELVIN, Decimal(1), Decimal('273.15')),
+#     (KELVIN, CELSIUS, Decimal(1), Decimal('-273.15')),
+#     (FAHRENHEIT, KELVIN, Fraction(5, 9), Fraction(45967, 180)),
+#     (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
+# ]
+#
+# # TODO: Temperature.register_converter(TableConverter(_tempConv))
