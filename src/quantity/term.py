@@ -21,8 +21,8 @@ from functools import reduce
 from itertools import chain, groupby
 from operator import mul
 from typing import (
-    Any, Callable, cast, Generator, Iterable, Iterator, List, Optional, overload, Sequence,
-    Sized, Tuple, TypeVar, Union,
+    Any, Callable, cast, Generator, Iterable, Iterator, List, Optional,
+    overload, Sequence, Sized, Tuple, TypeVar, Union,
 )
 if sys.version_info >= (3, 8):
     from typing import Protocol
@@ -134,10 +134,12 @@ class Term(ItemSequenceT[T]):
             elem2: ElemT
             (elem1, exp1), (elem2, exp2) = items
             # most relevant case: numeric + non-numeric element
-            if isinstance(elem1, RationalT) and not isinstance(elem2, RationalT):
+            if isinstance(elem1, RationalT) and \
+                    not isinstance(elem2, RationalT):
                 return tuple(_filter_items(((elem1, exp1), (elem2, exp2))))
             # second most relevant case: 2 non-numeric elements
-            if not isinstance(elem1, RationalT) and not isinstance(elem2, RationalT):
+            if not isinstance(elem1, RationalT) and \
+                    not isinstance(elem2, RationalT):
                 # same elements?
                 if elem1 is elem2:
                     exp = exp1 + exp2
@@ -163,7 +165,8 @@ class Term(ItemSequenceT[T]):
                                    self.norm_sort_key(item[0]))
                     return tuple(_filter_items(items))
             # third most relevant case: non-numeric + numeric element
-            if isinstance(elem2, RationalT) and not isinstance(elem1, RationalT):
+            if isinstance(elem2, RationalT) and \
+                    not isinstance(elem1, RationalT):
                 return tuple(_filter_items(((elem2, exp2), (elem1, exp1))))
             # least relevant case: 2 numeric elements
             if isinstance(elem1, RationalT) and isinstance(elem2, RationalT):
@@ -263,7 +266,8 @@ class Term(ItemSequenceT[T]):
                 return elem ** exp
         return None
 
-    def split(self, dflt_num = cast(RationalT, 1)) -> Tuple[RationalT, 'Term[T]']:
+    def split(self, dflt_num = cast(RationalT, ONE)) \
+            -> Tuple[RationalT, 'Term[T]']:
         """Return `self`s numeric element (or `dflt_num` if None) and
         `self`s non-numeric part."""
         num = self.num_elem
