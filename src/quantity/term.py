@@ -361,7 +361,7 @@ class Term(ItemSequenceT[T]):
     def __pow__(self, exp: int) -> 'Term[T]':
         """self ** exp"""
         return self.__class__(((ielem, exp * iexp) for (ielem, iexp) in self),
-                              reduce_items=False)
+                              reduce_items=True)
 
     def __repr__(self) -> str:
         """repr(self)"""
