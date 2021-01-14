@@ -14,18 +14,25 @@
 """SI metric prefixes."""
 
 # Standard library imports
-from collections import namedtuple
 
 # Third-party imports
 from decimalfp import Decimal
 
-SIPrefix = namedtuple('SIPrefix', ['name', 'abbr', 'exp'])
 
-SIPrefix.factor = property(fget=lambda self: Decimal(10) ** self.exp,
-                           doc="Scale factor")
+class SIPrefix:
 
-SIPrefix.__mul__ = lambda self, other: self.factor * other
-SIPrefix.__rmul__ = SIPrefix.__mul__
+    """Prefix used to scale SI units."""
+
+    def __init__(self, name: str, abbr: str, exp: int):
+        self.name = name
+        self.abbr = abbr
+        self.exp = exp
+
+    @property
+    def factor(self) -> Decimal:
+        """Scale factor"""
+        return Decimal(10) ** self.exp  # type: ignore
+
 
 YOCTO = SIPrefix('Yocto', 'y', -24)
 ZEPTO = SIPrefix('Zepto', 'z', -21)
