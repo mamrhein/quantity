@@ -117,6 +117,16 @@ def test_cmplx_derived_qty(qty_name_n_def) -> None:
     assert unit.symbol == unit.name == str(ref_unit_def)
 
 
+# noinspection PyPep8Naming
+def test_cls_already_registered(qties_bcd) -> None:
+    B, C, D = qties_bcd
+    with pytest.raises(ValueError):
+        X = QuantityMeta("X", (Quantity,), {}, define_as=B.definition)
+    Q = QuantityMeta("B2_DC", (Quantity,), {}, define_as=B ** 2 / (D * C))
+    with pytest.raises(ValueError):
+        X = QuantityMeta("X", (Quantity,), {}, define_as=B ** 2 / (C * D))
+
+
 @pytest.mark.parametrize(("symbol", "name"),
                          [
                              ("sqa", "sqa_name"),
@@ -132,8 +142,11 @@ def test_simple_qty_units(qty_simple, symbol, name) -> None:
     assert unit.qty_cls is Q
     assert unit in Q.units()
     assert not hasattr(unit, '_definition')
+    assert unit.definition == UnitDefT(((unit, 1),))
     assert unit.symbol == symbol
     assert unit.name == name
+    with pytest.raises(ValueError):
+        unit = Q.new_unit(symbol, name)
 
 
 @pytest.mark.parametrize("prefix",
@@ -155,3 +168,17 @@ def test_scaled_units(qty_a, prefix: SIPrefix) -> None:
     assert unit.symbol == symbol
     assert unit.name == name
     assert unit._equiv == factor
+    assert not unit.is_ref_unit()
+    assert not unit.is_base_unit()
+    assert unit.is_derived_unit()
+
+
+# noinspection PyPep8Naming
+def test_unit_already_registered(qties_bcd) -> None:
+    B, C, D = qties_bcd
+    with pytest.raises(ValueError):
+        B.new_unit(B.ref_unit.symbol, B.ref_unit.name)
+    Q = QuantityMeta("BDC", (Quantity,), {}, define_as=B * D * C)
+    Q.new_unit("kbdc", "kbdc", define_as=1000 * Q.ref_unit)
+    with pytest.raises(ValueError):
+        Q.new_unit("kbdc", "kbdc")

@@ -632,6 +632,7 @@ class Unit:
                 f"Unit with symbol '{symbol}' already registered.")
         self._symbol = symbol
         self._name = name
+        # ???: can this raise an exception? -> symbol map inconsistent!
         _TERM_UNIT_MAP.register_item(self)
 
     @property
