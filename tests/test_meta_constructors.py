@@ -77,6 +77,7 @@ def test_base_qty_with_ref_unit(qty_a) -> None:
     with pytest.raises(AttributeError):
         _ = A.ref_unit_name
         _ = A.ref_unit_symbol
+    assert A.quantum is None
     unit = A.ref_unit
     assert unit.symbol == symbol
     assert unit.name == name
@@ -89,11 +90,13 @@ def test_base_qty_with_ref_unit(qty_a) -> None:
 # noinspection PyPep8Naming
 def test_simple_derived_qty(qty_a) -> None:
     symbol, name, A = qty_a
-    R = QuantityMeta("R", (Quantity,), {}, define_as=A ** 2)
+    R = QuantityMeta("R", (Quantity,), {},
+                     define_as=A ** 2, quantum=1)
     assert R.definition == QuantityClsDefT([(R, 1)])
     assert R.normalized_definition == QuantityClsDefT([(A, 2)])
     assert not R.is_base_cls()
     assert R.is_derived_cls()
+    assert R.quantum == 1
     unit = R.ref_unit
     assert isinstance(unit, Unit)
     assert unit.symbol == unit.name == A.ref_unit.symbol + "²"
@@ -109,6 +112,7 @@ def test_cmplx_derived_qty(qty_name_n_def) -> None:
     assert Q.normalized_definition == norm_qty_def
     assert not Q.is_base_cls()
     assert Q.is_derived_cls()
+    assert Q.quantum is None
     unit = Q.ref_unit
     ref_unit_def = UnitDefT(((elem.ref_unit, exp)
                              for (elem, exp) in norm_qty_def))
@@ -125,6 +129,11 @@ def test_cls_already_registered(qties_bcd) -> None:
     Q = QuantityMeta("B2_DC", (Quantity,), {}, define_as=B ** 2 / (D * C))
     with pytest.raises(ValueError):
         X = QuantityMeta("X", (Quantity,), {}, define_as=B ** 2 / (C * D))
+
+
+def test_unknown_keyword() -> None:
+    with pytest.raises(AssertionError):
+        _ = QuantityMeta("X", (Quantity,), {}, definition="foo")
 
 
 @pytest.mark.parametrize(("symbol", "name"),
