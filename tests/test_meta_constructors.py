@@ -142,7 +142,7 @@ def test_unknown_keyword() -> None:
                              ("sqb", "sqb_name"),
                              ("sqc", "sqc_name"),
                          ],
-                         ids=lambda t: t[0])
+                         ids=("sqa", "sqb", "sqc"))
 def test_simple_qty_units(qty_simple, symbol, name) -> None:
     # noinspection PyPep8Naming
     Q = qty_simple
