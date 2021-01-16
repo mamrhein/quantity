@@ -538,10 +538,10 @@ used:
 import operator
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
-from numbers import Integral, Real
+from numbers import Integral
 from typing import (
-    Any, Callable, cast, Dict, Generator, List, MutableMapping, Optional,
-    Tuple, Type, TypeVar, Union,
+    Any, AnyStr, Callable, cast, Dict, Generator, List, MutableMapping,
+    Optional, Tuple, Type, TypeVar, Union,
 )
 
 # Third-party imports
@@ -592,6 +592,10 @@ _SYMBOL_UNIT_MAP: MutableMapping[str, 'Unit'] = {}
 _TERM_UNIT_MAP = UnitRegistryT(unique_items=False)
 
 
+def _unit_from_symbol(symbol: str) -> 'Unit':
+    return _SYMBOL_UNIT_MAP[symbol]
+
+
 def _unit_from_term(term: UnitDefT) -> 'Unit':
     return _TERM_UNIT_MAP[term]
 
@@ -632,7 +636,8 @@ class Unit:
                 f"Unit with symbol '{symbol}' already registered.")
         self._symbol = symbol
         self._name = name
-        # ???: can this raise an exception? -> symbol map inconsistent!
+        # UnitRegistryT has unique_items=False, so this will not raise an
+        # exception!
         _TERM_UNIT_MAP.register_item(self)
 
     @property
@@ -975,7 +980,7 @@ class Quantity(metaclass=QuantityMeta):
     _amount: Union[Decimal, Fraction]
     _unit: Unit
 
-    def __new__(cls, amount: Union[RationalT, StdLibDecimal, str, bytes],
+    def __new__(cls, amount: Union[RationalT, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> 'Quantity':
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
@@ -986,35 +991,39 @@ class Quantity(metaclass=QuantityMeta):
                 amnt = Decimal(amount)
             except ValueError:
                 amnt = Fraction(amount)
-        # elif isinstance(amount, str):
-        #     if isinstance(amount, bytes):
-        #         try:
-        #             q_repr = amount.decode()
-        #         except UnicodeError:
-        #             raise QuantityError("Can't decode given bytes using "
-        #                                 "default encoding.")
-        #     else:
-        #         q_repr = amount
-        #     parts = q_repr.lstrip().split(' ', 1)
-        #     s_amount = parts[0]
-        #     try:
-        #         amnt = Decimal(s_amount)
-        #     except (TypeError, ValueError):
-        #         try:
-        #             amnt = Fraction(s_amount)
-        #         except (TypeError, ValueError):
-        #             raise QuantityError(f"Can't convert '{s_amount}' to a "
-        #                                 "number.")
-        #     if len(parts) > 1:
-        #         s_sym = parts[1].strip()
-        #         unit_from_sym = get_unit_by_symbol(s_sym)
-        #         if unit_from_sym:
-        #             if unit is None:
-        #                 unit = unit_from_sym
-        #             else:
-        #                 amount *= unit(unit_from_sym)
-        #         else:
-        #             raise QuantityError(f"Unknown symbol '{s_sym}'.")
+        elif isinstance(amount, (str, bytes)):
+            if isinstance(amount, bytes):
+                try:
+                    q_repr = amount.decode()
+                except UnicodeError:
+                    raise QuantityError("Can't decode given bytes using "
+                                        "default encoding.")
+            else:
+                q_repr = amount
+            parts = q_repr.lstrip().split(' ', 1)
+            s_amount = parts[0]
+            try:
+                amnt = Decimal(s_amount)
+            except (TypeError, ValueError):
+                try:
+                    amnt = Fraction(s_amount)
+                except (TypeError, ValueError):
+                    raise QuantityError(f"Can't convert '{s_amount}' to a "
+                                        "rational number.")
+            if len(parts) > 1:
+                s_sym = parts[1].strip()
+                try:
+                    unit_from_sym = _unit_from_symbol(s_sym)
+                except KeyError:
+                    raise QuantityError(f"Unknown symbol '{s_sym}'.") \
+                        from None
+                else:
+                    if unit is None:
+                        unit = unit_from_sym
+                    elif unit is unit_from_sym:
+                        pass
+                    # else:
+                    #     amount *= unit(unit_from_sym)
         else:
             raise TypeError("Given amount must be a number or a string "
                             "that can be converted to a number.")
