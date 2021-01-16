@@ -72,7 +72,6 @@ def test_wrong_amnt_type(amnt: Any) -> None:
         _ = Length(amnt, METRE)
 
 
-# noinspection PyPep8Naming
 @pytest.mark.parametrize(("num_str", "amnt", "unit"),
                          [("17 m", 17, METRE),
                           ("2/7 kW", Fraction(2, 7), KILOWATT),
@@ -86,10 +85,22 @@ def test_qty_from_str_with_unit(num_str: str, amnt: RationalT, unit: Unit) \
     assert qty.__class__ is unit.qty_cls
 
 
-# noinspection PyPep8Naming
 @pytest.mark.parametrize("num_str",
                          ["28.5 ", "17 m"],
                          ids=lambda p: p)
 def test_missing_or_unknown_symbol(num_str: str) -> None:
     with pytest.raises(QuantityError):
         _ = Temperature(num_str)
+
+
+@pytest.mark.parametrize(("amnt", "unit"),
+                         [(319, METRE),
+                          (Fraction(2, 100), MEGAWATT),
+                          (Decimal("-15"), CELSIUS)],
+                         ids=lambda p: str(p))
+def test_qty_from_amnt_mul_unit(amnt: RationalT, unit: Unit) \
+        -> None:
+    qty = amnt * unit
+    assert qty.amount == amnt
+    assert qty.unit is unit
+    assert qty.__class__ is unit.qty_cls
