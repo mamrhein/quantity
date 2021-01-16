@@ -29,9 +29,9 @@ def qty_simple() -> QuantityMeta:
     return QuantityMeta("SimpleQty", (Quantity,), {})
 
 
-@pytest.fixture(scope="session", params=[("a", "1a")])
-def qty_a(request) -> Tuple[str, str, QuantityMeta]:
-    symbol, name = request.param
+@pytest.fixture(scope="module")
+def qty_a() -> Tuple[str, str, QuantityMeta]:
+    symbol, name = "#a", "1a"
     return symbol, name, QuantityMeta(symbol.upper(), (Quantity,), {},
                                       ref_unit_symbol=symbol,
                                       ref_unit_name=name)
@@ -40,7 +40,7 @@ def qty_a(request) -> Tuple[str, str, QuantityMeta]:
 @pytest.fixture(scope="session")
 def qties_bcd() -> Tuple[QuantityMeta, ...]:
     return tuple(QuantityMeta(name, (Quantity,), {},
-                              ref_unit_symbol=name.lower())
+                              ref_unit_symbol=f"#{name.lower()}")
                  for name in ("B", "C", "D"))
 
 
@@ -138,9 +138,9 @@ def test_unknown_keyword() -> None:
 
 @pytest.mark.parametrize(("symbol", "name"),
                          [
-                             ("sqa", "sqa_name"),
-                             ("sqb", "sqb_name"),
-                             ("sqc", "sqc_name"),
+                             ("@sqa", "sqa_name"),
+                             ("@sqb", "sqb_name"),
+                             ("@sqc", "sqc_name"),
                          ],
                          ids=("sqa", "sqb", "sqc"))
 def test_simple_qty_units(qty_simple, symbol, name) -> None:
@@ -188,6 +188,7 @@ def test_unit_already_registered(qties_bcd) -> None:
     with pytest.raises(ValueError):
         B.new_unit(B.ref_unit.symbol, B.ref_unit.name)
     Q = QuantityMeta("BDC", (Quantity,), {}, define_as=B * D * C)
+    assert Q.ref_unit is not None
     Q.new_unit("kbdc", "kbdc", define_as=1000 * Q.ref_unit)
     with pytest.raises(ValueError):
         Q.new_unit("kbdc", "kbdc")
