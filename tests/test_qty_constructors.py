@@ -20,7 +20,7 @@ from decimal import Decimal as StdLibDecimal
 from typing import Any
 
 import pytest
-from quantity import QuantityError, QuantityMeta, RationalT, Unit
+from quantity import QuantityError, QuantityMeta, Rational
 from quantity.predefined import *
 
 
@@ -30,7 +30,7 @@ from quantity.predefined import *
                          [17, Fraction(2, 7), StdLibDecimal("29.82"),
                           Decimal("9283.10006"), 3.5, "0.004", b"2.99"],
                          ids=lambda p: str(p))
-def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: RationalT) \
+def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
         -> None:
     qty = Qty(amnt)
     if isinstance(amnt, str):
@@ -47,7 +47,7 @@ def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: RationalT) \
                          [17, Fraction(2, 7), Decimal("9283.10006")],
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("unit", [MILLIGRAM, GIGAWATT], ids=("mg", "GW"))
-def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: RationalT, unit: Unit)\
+def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit)\
         -> None:
     if Qty is unit.qty_cls:
         qty = Qty(amnt, unit)
@@ -61,7 +61,7 @@ def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: RationalT, unit: Unit)\
 @pytest.mark.parametrize("unit", [5, 'a'], ids=("5", "'a'"))
 def test_wrong_unit_type(unit: Any) -> None:
     with pytest.raises(TypeError):
-        _ = Length(1, unit)
+        _ = Length(1, unit)                     # type: ignore
 
 
 @pytest.mark.parametrize("amnt",
@@ -77,7 +77,7 @@ def test_wrong_amnt_type(amnt: Any) -> None:
                           ("2/7 kW", Fraction(2, 7), KILOWATT),
                           ("713.1 °C", Decimal("713.1"), CELSIUS)],
                          ids=lambda p: p if isinstance(p, str) else "")
-def test_qty_from_str_with_unit(num_str: str, amnt: RationalT, unit: Unit) \
+def test_qty_from_str_with_unit(num_str: str, amnt: Rational, unit: Unit) \
         -> None:
     qty = Quantity(num_str)
     assert qty.amount == amnt
@@ -98,7 +98,7 @@ def test_missing_or_unknown_symbol(num_str: str) -> None:
                           (Fraction(2, 100), MEGAWATT),
                           (Decimal("-15"), CELSIUS)],
                          ids=lambda p: str(p))
-def test_qty_from_amnt_mul_unit(amnt: RationalT, unit: Unit) \
+def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) \
         -> None:
     qty = amnt * unit
     assert qty.amount == amnt

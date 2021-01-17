@@ -17,9 +17,10 @@
 
 # Third-party imports
 import pytest
+from decimalfp import Decimal
 
 # Local imports
-from quantity.cwdmeta import ClassWithDefinitionMeta, Term
+from quantity.cwdmeta import ClassDefT, ClassWithDefinitionMeta
 
 
 class X(metaclass=ClassWithDefinitionMeta):
@@ -72,7 +73,7 @@ def test_base(cls: ClassWithDefinitionMeta) -> None:
                           (F, B ** 2 / (A ** 2 * C)),
                           (G, B * A ** 2 / E)],
                          ids=["C", "D", "E", "F", "G"])
-def test_derived(cls: ClassWithDefinitionMeta, cdef: Term) -> None:
+def test_derived(cls: ClassWithDefinitionMeta, cdef: ClassDefT) -> None:
     assert isinstance(cls, ClassWithDefinitionMeta)
     assert not cls.is_base_cls()
     assert cls.is_derived_cls()
@@ -87,7 +88,8 @@ def test_derived(cls: ClassWithDefinitionMeta, cdef: Term) -> None:
                           (F, B / A ** 3),
                           (G, A ** 3)],
                          ids=["C", "D", "E", "F", "G"])
-def test_normalized_def(cls: ClassWithDefinitionMeta, cdef: Term) -> None:
+def test_normalized_def(cls: ClassWithDefinitionMeta, cdef: ClassDefT) \
+        -> None:
     assert cls.normalized_definition == cdef
     assert str(cls.normalized_definition) == str(cdef)
 
@@ -98,8 +100,8 @@ def test_str() -> None:
 
 @pytest.mark.parametrize("cdef",
                          ["abc",
-                          Term([(5, 1)]),
-                          Term([(A, 1), (B, 1), (7, 1)])])
-def test_fail_cls_def(cdef: Term) -> None:
+                          ClassDefT([(Decimal(5), 1)]),
+                          ClassDefT([(A, 1), (B, 1), (Decimal(7), 1)])])
+def test_fail_cls_def(cdef: ClassDefT) -> None:
     with pytest.raises(AssertionError):
         ClassWithDefinitionMeta("Fail", (), {}, define_as=cdef)

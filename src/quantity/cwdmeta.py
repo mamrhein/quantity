@@ -17,11 +17,11 @@
 # Standard library imports
 
 # Third-party imports
-from numbers import Integral
+from numbers import Integral, Rational
 from typing import Any, cast, Dict, Optional, Tuple, Union
 
 # Local imports
-from .term import Term
+from .term import NonNumTermElem, Term
 
 ClassDefT = Term['ClassWithDefinitionMeta']
 
@@ -130,6 +130,6 @@ class ClassWithDefinitionMeta(type):
         """Return sort key for `cls` used for normalization of terms."""
         return hash(cls)
 
-    def _get_factor(cls, other: Any) -> int:
+    def _get_factor(cls, other: NonNumTermElem) -> Rational:
         """Instances are not convertable, raise TypeError."""
         raise TypeError

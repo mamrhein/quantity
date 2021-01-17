@@ -298,13 +298,14 @@ from fractions import Fraction
 from decimalfp import Decimal
 
 # Local imports
-from . import Quantity, TableConverter
+from . import Quantity, TableConverter, Unit
 
 
 class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):
     """Mass: measure of a physical body's resistance to acceleration"""
 
 
+assert Mass.ref_unit is not None
 KILOGRAM = Mass.ref_unit
 
 GRAM = Mass.new_unit('g', 'Gram', Decimal('0.001') * KILOGRAM)
@@ -326,6 +327,7 @@ class Length(Quantity,
     """Length: measure of distance"""
 
 
+assert Length.ref_unit is not None
 METRE = Length.ref_unit
 
 MICROMETRE = Length.new_unit('µm', 'Micrometre', Decimal('0.000001') * METRE)
@@ -349,6 +351,7 @@ class Duration(Quantity,
     """Duration: 'what a clock reads'"""
 
 
+assert Duration.ref_unit is not None
 SECOND = Duration.ref_unit
 
 MINUTE = Duration.new_unit('min', 'Minute', Decimal(60) * SECOND)
@@ -362,6 +365,7 @@ class Area(Quantity,
     """Area = Length ** 2"""
 
 
+assert Area.ref_unit is not None
 SQUARE_METRE = Area.ref_unit
 
 SQUARE_MILLIMETRE = Area.new_unit('mm²', 'Square Millimetre', MILLIMETRE ** 2)
@@ -385,6 +389,7 @@ class Volume(Quantity,
     """Volume = Length ** 3"""
 
 
+assert Volume.ref_unit is not None
 CUBIC_METRE = Volume.ref_unit
 
 CUBIC_MILLIMETRE = Volume.new_unit('mm³', 'Cubic Millimetre', MILLIMETRE ** 3)
@@ -410,13 +415,16 @@ class Velocity(Quantity,
     """Velocity = Length / Duration"""
 
 
+assert Velocity.ref_unit is not None
 METRE_PER_SECOND = Velocity.ref_unit
 KILOMETRE_PER_HOUR = Velocity.new_unit('km/h', 'Kilometre per hour',
-                                       KILOMETRE / HOUR)
+                                       KILOMETRE / HOUR)    # type: ignore
 
 # some imperial units
-FOOT_PER_SECOND = Velocity.new_unit('ft/s', 'Foot per Second', FOOT / SECOND)
-MILE_PER_HOUR = Velocity.new_unit('mph', 'Mile per Hour', MILE / HOUR)
+FOOT_PER_SECOND = Velocity.new_unit('ft/s', 'Foot per Second',
+                                    FOOT / SECOND)          # type: ignore
+MILE_PER_HOUR = Velocity.new_unit('mph', 'Mile per Hour',
+                                  MILE / HOUR)              # type: ignore
 
 
 class Acceleration(Quantity,
@@ -425,12 +433,13 @@ class Acceleration(Quantity,
     """Acceleration = Velocity / Duration"""
 
 
+assert Acceleration.ref_unit is not None
 METRE_PER_SECOND_SQUARED = Acceleration.ref_unit
 
 # some imperial units
-MILE_PER_SECOND_SQUARED = Acceleration.new_unit('mps²',
-                                                'Mile per Second squared',
-                                                (MILE / SECOND) / SECOND)
+MILE_PER_SECOND_SQUARED = Acceleration.new_unit(
+    'mps²', 'Mile per Second squared',
+    (MILE / SECOND) / SECOND)                               # type: ignore
 
 
 class Force(Quantity,
@@ -440,6 +449,7 @@ class Force(Quantity,
     """Force = Mass * Acceleration"""
 
 
+assert Force.ref_unit is not None
 NEWTON = Force.ref_unit
 
 
@@ -450,6 +460,7 @@ class Energy(Quantity,
     """Energy = Force * Length"""
 
 
+assert Energy.ref_unit is not None
 JOULE = Energy.ref_unit
 
 
@@ -460,6 +471,7 @@ class Power(Quantity,
     """Power = Energy / Duration"""
 
 
+assert Power.ref_unit is not None
 WATT = Power.ref_unit
 
 MILLIWATT = Power.new_unit('mW', 'Milliwatt', Decimal('0.001') * WATT)
@@ -471,11 +483,14 @@ TERAWATT = Power.new_unit('TW', 'Terawatt', Decimal(1000000000000) * WATT)
 # some more unit definitions based on other than the reference units
 
 # Force
-JOULE_PER_METRE = Force.new_unit('J/m', 'Joule per Metre', JOULE / METRE)
+JOULE_PER_METRE = Force.new_unit('J/m', 'Joule per Metre',
+                                 JOULE / METRE)             # type: ignore
 
 # Energy
-WATT_SECOND = Energy.new_unit('Ws', 'Watt Second', WATT * SECOND)
-KILOWATT_HOUR = Energy.new_unit('kWh', 'Kilowatt Hour', KILOWATT * HOUR)
+WATT_SECOND = Energy.new_unit('Ws', 'Watt Second',
+                              WATT * SECOND)                # type: ignore
+KILOWATT_HOUR = Energy.new_unit('kWh', 'Kilowatt Hour',
+                                KILOWATT * HOUR)            # type: ignore
 
 
 class DataVolume(Quantity,
@@ -485,6 +500,7 @@ class DataVolume(Quantity,
     """DataVolume according to IEEE 1541-2002"""
 
 
+assert DataVolume.ref_unit is not None
 BYTE = DataVolume.ref_unit
 
 KILOBYTE = DataVolume.new_unit('kB', 'Kilobyte', Decimal(10) ** 3 * BYTE)
@@ -513,42 +529,44 @@ class DataThroughput(Quantity,
     """DataThroughput = DataVolume / Duration"""
 
 
+assert DataThroughput.ref_unit is not None
 BYTE_PER_SECOND = DataThroughput.ref_unit
 
-KILOBYTE_PER_SECOND = DataThroughput.new_unit('kB/s', 'Kilobyte per Second',
-                                              Decimal(10) ** 3 * BYTE_PER_SECOND)
-MEGABYTE_PER_SECOND = DataThroughput.new_unit('MB/s', 'Megabyte per Second',
-                                              Decimal(10) ** 6 * BYTE_PER_SECOND)
-GIGABYTE_PER_SECOND = DataThroughput.new_unit('GB/s', 'Gigabyte per Second',
-                                              Decimal(10) ** 9 * BYTE_PER_SECOND)
-TERABYTE_PER_SECOND = DataThroughput.new_unit('TB/s', 'Terabyte per Second',
-                                              Decimal(10) ** 12 * BYTE_PER_SECOND)
-KIBIBYTE_PER_SECOND = DataThroughput.new_unit('KiB/s', 'Kibibyte per Second',
-                                              Decimal(2) ** 10 * BYTE_PER_SECOND)
-MEBIBYTE_PER_SECOND = DataThroughput.new_unit('MiB/s', 'Mebibyte per Second',
-                                              Decimal(2) ** 20 * BYTE_PER_SECOND)
-GIBIBYTE_PER_SECOND = DataThroughput.new_unit('GiB/s', 'Gibibyte per Second',
-                                              Decimal(2) ** 30 * BYTE_PER_SECOND)
-TEBIBYTE_PER_SECOND = DataThroughput.new_unit('TiB/s', 'Tebibyte per Second',
-                                              Decimal(2) ** 40 * BYTE_PER_SECOND)
+KILOBYTE_PER_SECOND = DataThroughput.new_unit(
+    'kB/s', 'Kilobyte per Second',  Decimal(10) ** 3 * BYTE_PER_SECOND)
+MEGABYTE_PER_SECOND = DataThroughput.new_unit(
+    'MB/s', 'Megabyte per Second',  Decimal(10) ** 6 * BYTE_PER_SECOND)
+GIGABYTE_PER_SECOND = DataThroughput.new_unit(
+    'GB/s', 'Gigabyte per Second',  Decimal(10) ** 9 * BYTE_PER_SECOND)
+TERABYTE_PER_SECOND = DataThroughput.new_unit(
+    'TB/s', 'Terabyte per Second',  Decimal(10) ** 12 * BYTE_PER_SECOND)
+KIBIBYTE_PER_SECOND = DataThroughput.new_unit(
+    'KiB/s', 'Kibibyte per Second',  Decimal(2) ** 10 * BYTE_PER_SECOND)
+MEBIBYTE_PER_SECOND = DataThroughput.new_unit(
+    'MiB/s', 'Mebibyte per Second',  Decimal(2) ** 20 * BYTE_PER_SECOND)
+GIBIBYTE_PER_SECOND = DataThroughput.new_unit(
+    'GiB/s', 'Gibibyte per Second',  Decimal(2) ** 30 * BYTE_PER_SECOND)
+TEBIBYTE_PER_SECOND = DataThroughput.new_unit(
+    'TiB/s', 'Tebibyte per Second',  Decimal(2) ** 40 * BYTE_PER_SECOND)
 
-BIT_PER_SECOND = DataThroughput.new_unit('b/s', 'Bit per Second', BIT / SECOND)
-KILOBIT_PER_SECOND = DataThroughput.new_unit('kb/s', 'Kilobit per Second',
-                                             Decimal(10) ** 3 * BIT_PER_SECOND)
-MEGABIT_PER_SECOND = DataThroughput.new_unit('Mb/s', 'Megabit per Second',
-                                             Decimal(10) ** 6 * BIT_PER_SECOND)
-GIGABIT_PER_SECOND = DataThroughput.new_unit('Gb/s', 'Gigabit per Second',
-                                             Decimal(10) ** 9 * BIT_PER_SECOND)
-TERABIT_PER_SECOND = DataThroughput.new_unit('Tb/s', 'Terabit per Second',
-                                             Decimal(10) ** 12 * BIT_PER_SECOND)
-KIBIBIT_PER_SECOND = DataThroughput.new_unit('Kib/s', 'Kibibit per Second',
-                                             Decimal(2) ** 10 * BIT_PER_SECOND)
-MEBIBIT_PER_SECOND = DataThroughput.new_unit('Mib/s', 'Mebibit per Second',
-                                             Decimal(2) ** 20 * BIT_PER_SECOND)
-GIBIBIT_PER_SECOND = DataThroughput.new_unit('Gib/s', 'Gibibit per Second',
-                                             Decimal(2) ** 30 * BIT_PER_SECOND)
-TEBIBIT_PER_SECOND = DataThroughput.new_unit('Tib/s', 'Tebibit per Second',
-                                             Decimal(2) ** 40 * BIT_PER_SECOND)
+BIT_PER_SECOND = DataThroughput.new_unit(
+    'b/s', 'Bit per Second', BIT / SECOND)                  # type: ignore
+KILOBIT_PER_SECOND = DataThroughput.new_unit(
+    'kb/s', 'Kilobit per Second', Decimal(10) ** 3 * BIT_PER_SECOND)
+MEGABIT_PER_SECOND = DataThroughput.new_unit(
+    'Mb/s', 'Megabit per Second', Decimal(10) ** 6 * BIT_PER_SECOND)
+GIGABIT_PER_SECOND = DataThroughput.new_unit(
+    'Gb/s', 'Gigabit per Second', Decimal(10) ** 9 * BIT_PER_SECOND)
+TERABIT_PER_SECOND = DataThroughput.new_unit(
+    'Tb/s', 'Terabit per Second', Decimal(10) ** 12 * BIT_PER_SECOND)
+KIBIBIT_PER_SECOND = DataThroughput.new_unit(
+    'Kib/s', 'Kibibit per Second', Decimal(2) ** 10 * BIT_PER_SECOND)
+MEBIBIT_PER_SECOND = DataThroughput.new_unit(
+    'Mib/s', 'Mebibit per Second', Decimal(2) ** 20 * BIT_PER_SECOND)
+GIBIBIT_PER_SECOND = DataThroughput.new_unit(
+    'Gib/s', 'Gibibit per Second', Decimal(2) ** 30 * BIT_PER_SECOND)
+TEBIBIT_PER_SECOND = DataThroughput.new_unit(
+    'Tib/s', 'Tebibit per Second', Decimal(2) ** 40 * BIT_PER_SECOND)
 
 
 class Temperature(Quantity):
@@ -559,14 +577,14 @@ CELSIUS = Temperature.new_unit('°C', 'Degree Celsius')
 FAHRENHEIT = Temperature.new_unit('°F', 'Degree Fahrenheit')
 KELVIN = Temperature.new_unit('K', 'Kelvin')
 
-# # Temperature converter
-# _tempConv = [
-#     (CELSIUS, FAHRENHEIT, Fraction(9, 5), Decimal(32)),
-#     (FAHRENHEIT, CELSIUS, Fraction(5, 9), Fraction(-160, 9)),
-#     (CELSIUS, KELVIN, Decimal(1), Decimal('273.15')),
-#     (KELVIN, CELSIUS, Decimal(1), Decimal('-273.15')),
-#     (FAHRENHEIT, KELVIN, Fraction(5, 9), Fraction(45967, 180)),
-#     (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
-# ]
-#
-# # TODO: Temperature.register_converter(TableConverter(_tempConv))
+# Temperature converter
+_tempConv = [
+    (CELSIUS, FAHRENHEIT, Fraction(9, 5), Decimal(32)),
+    (FAHRENHEIT, CELSIUS, Fraction(5, 9), Fraction(-160, 9)),
+    (CELSIUS, KELVIN, Decimal(1), Decimal('273.15')),
+    (KELVIN, CELSIUS, Decimal(1), Decimal('-273.15')),
+    (FAHRENHEIT, KELVIN, Fraction(5, 9), Fraction(45967, 180)),
+    (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
+]
+
+# TODO: Temperature.register_converter(TableConverter(_tempConv))
