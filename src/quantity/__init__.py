@@ -538,10 +538,10 @@ used:
 import operator
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
-from numbers import Integral
+from numbers import Integral, Rational
 from typing import (
     Any, AnyStr, Callable, cast, Dict, Generator, List, MutableMapping,
-    Optional, Tuple, Type, TypeVar, Union,
+    Optional, overload, Tuple, Type, TypeVar, Union,
 )
 
 # Third-party imports
@@ -549,7 +549,7 @@ from decimalfp import Decimal
 
 # Local imports
 from .converter import Converter, ConverterT, TableConverter
-from .cwdmeta import ClassDefT, ClassWithDefinitionMeta, Term
+from .cwdmeta import ClassDefT, ClassWithDefinitionMeta, NonNumTermElem, Term
 from .exceptions import (IncompatibleUnitsError, QuantityError,
                          UndefinedResultError, UnitConversionError)
 from .rational import ONE, RationalT
@@ -582,7 +582,7 @@ UnitRegistryT = DefinedItemRegistry['Unit']
 QuantityClsDefT = Term['QuantityMeta']
 
 # Cache for results of operations on unit definitions
-BinOpResT = Union['Quantity', RationalT]
+BinOpResT = Union['Quantity', Rational]
 _UNIT_OP_CACHE: MutableMapping[Tuple[BinOpT, 'Unit', 'Unit'], BinOpResT] = {}
 
 # Global registry of units
@@ -618,6 +618,7 @@ class Unit:
     def __init__(self, symbol: str, name: Optional[str] = None,
                  define_as: Optional[Union['Quantity', UnitDefT]] = None):
         self._qty_cls: 'QuantityMeta'
+        self._equiv: Rational
         if isinstance(define_as, Quantity):
             definition = UnitDefT([(define_as.amount, 1),
                                    (define_as.unit, 1)])
@@ -654,7 +655,7 @@ class Unit:
         return self._name or self._symbol
 
     # @property
-    # def eqivalent(self) -> Optional[RationalT]:
+    # def eqivalent(self) -> Optional[Rational]:
     #     """Equivalent in terms of reference unit (if any).
     #
     #      Returns None if the corresponding Quantity class has no reference
@@ -717,7 +718,7 @@ class Unit:
     def __deepcopy__(self, memo: Any) -> 'Unit':
         return self.__copy__()
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: Any) -> bool:
         """self == other"""
         # Unit instances are singletons!
         return self is other
@@ -731,25 +732,34 @@ class Unit:
             raise IncompatibleUnitsError(msg, self.qty_cls, other.qty_cls)
         return NotImplemented
 
-    def __lt__(self, other) -> bool:
+    def __lt__(self, other: Any) -> bool:
         """self < other"""
         return self._compare(other, operator.lt)
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: Any) -> bool:
         """self <= other"""
         return self._compare(other, operator.le)
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: Any) -> bool:
         """self > other"""
         return self._compare(other, operator.gt)
 
-    def __ge__(self, other) -> bool:
+    def __ge__(self, other: Any) -> bool:
         """self >= other"""
         return self._compare(other, operator.ge)
 
+    @overload
+    def __mul__(self, other: Rational) -> 'Quantity': ...
+
+    @overload
+    def __mul__(self, other: 'Unit') -> BinOpResT: ...
+
+    @overload
+    def __mul__(self, other: 'Quantity') -> BinOpResT: ...
+
     def __mul__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
         """self * other"""
-        if isinstance(other, RationalT):
+        if isinstance(other, Rational):
             return self._qty_cls(other, self)
         if isinstance(other, Unit):
             try:    # try cache
@@ -774,9 +784,18 @@ class Unit:
     # other * self
     __rmul__ = __mul__
 
+    @overload
+    def __truediv__(self, other: Rational) -> 'Quantity': ...
+
+    @overload
+    def __truediv__(self, other: 'Unit') -> BinOpResT: ...
+
+    @overload
+    def __truediv__(self, other: 'Quantity') -> BinOpResT: ...
+
     def __truediv__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
         """self / other"""
-        if isinstance(other, RationalT):
+        if isinstance(other, Rational):
             return self._qty_cls(ONE / other, self)
         if isinstance(other, Unit):
             try:    # try cache
@@ -798,20 +817,20 @@ class Unit:
             return amount * (self / other.unit)
         return NotImplemented
 
-    def __rtruediv__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
+    def __rtruediv__(self, other: Any) -> 'Quantity':
         """other / self"""
-        if isinstance(other, RationalT):
+        if isinstance(other, Rational):
             return other * self ** -1
         return NotImplemented
 
-    def __pow__(self, exp: Any) -> BinOpResT:
+    def __pow__(self, exp: Any) -> 'Quantity':
         """self ** exp"""
         if isinstance(exp, int):
             if exp == 1:
                 return self._qty_cls(1, self)
             res_def = UnitDefT(((self, exp),))
             try:
-                return _qty_from_term(res_def)
+                return _qty_from_term(res_def)  # type: ignore
             except KeyError:
                 raise UndefinedResultError(operator.pow, self, exp) \
                     from None
@@ -834,7 +853,7 @@ class Unit:
         """Return sort key for `self` used for normalization of terms."""
         return self._qty_cls.norm_sort_key()
 
-    def _get_factor(self, other: Any) -> RationalT:
+    def _get_factor(self, other: NonNumTermElem) -> Rational:
         """Return scaling factor f so that f * `other` == `self`."""
         if not isinstance(other, Unit):
             return NotImplemented
@@ -874,7 +893,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
     # TODO: remove these class variables after mypy issue #1021 got fixed:
     _definition: Optional[ClassDefT]
     _ref_unit: Optional[Unit]
-    _quantum: RationalT
+    _quantum: Rational
 
     def __new__(mcs, name: str, bases: Tuple[type, ...],
                 clsdict: Dict[str, Any], **kwds: Any) -> 'QuantityMeta':
@@ -894,7 +913,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
             ref_unit_symbol = str(ref_unit_def)
         ref_unit_name = kwds.pop('ref_unit_name', None)
         # quantum
-        quantum: RationalT = kwds.pop('quantum', None)
+        quantum: Rational = kwds.pop('quantum', None)
         assert len(kwds) == 0, f"Unknown kwd(s): {kwds.keys()}"
         assert ref_unit_symbol if ref_unit_name else True, \
             "If `ref_unit_name` is given, `ref_unit_symbol` must also be " \
@@ -941,7 +960,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         return cls._ref_unit
 
     @property
-    def quantum(cls) -> Optional[RationalT]:
+    def quantum(cls) -> Optional[Rational]:
         """The smallest amount (in terms of the reference unit) an instance of
         this :class:`Quantity` can take (None if quantum not defined)."""
         return cls._quantum
@@ -980,7 +999,7 @@ class Quantity(metaclass=QuantityMeta):
     _amount: Union[Decimal, Fraction]
     _unit: Unit
 
-    def __new__(cls, amount: Union[RationalT, StdLibDecimal, AnyStr],
+    def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> 'Quantity':
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
@@ -1053,7 +1072,7 @@ class Quantity(metaclass=QuantityMeta):
         return qty
 
     @property
-    def amount(self) -> RationalT:
+    def amount(self) -> Rational:
         """The quantity's amount, i.e. the numerical part of the quantity."""
         return self._amount
 
@@ -1064,7 +1083,7 @@ class Quantity(metaclass=QuantityMeta):
 
     def __mul__(self, other: Any) -> BinOpResT:
         """self * other"""
-        if isinstance(other, RationalT):
+        if isinstance(other, Rational):
             return self.__class__(self.amount * other, self.unit)
         if isinstance(other, Quantity):
             return (self.amount * other.amount) * (self.unit * other.unit)
@@ -1077,7 +1096,7 @@ class Quantity(metaclass=QuantityMeta):
 
     def __truediv__(self, other: Any) -> BinOpResT:
         """self / other"""
-        if isinstance(other, RationalT):
+        if isinstance(other, Rational):
             return self.__class__(self.amount / other, self.unit)
         if isinstance(other, Quantity):
             return (self.amount / other.amount) * (self.unit / other.unit)
@@ -1087,7 +1106,7 @@ class Quantity(metaclass=QuantityMeta):
 
     def __rtruediv__(self, other: Any) -> BinOpResT:
         """other / self"""
-        if isinstance(other, RationalT):
+        if isinstance(other, Rational):
             return (other / self.amount) * self.unit ** -1
         return NotImplemented
 
@@ -1124,7 +1143,7 @@ def _iter_ref_units(cls_def: QuantityClsDefT) \
 
 
 def _qty_from_term(term: UnitDefT) -> BinOpResT:
-    num: RationalT = ONE
+    num: Rational = ONE
     try:
         res_unit = _unit_from_term(term)
     except KeyError:

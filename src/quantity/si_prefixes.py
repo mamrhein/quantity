@@ -14,6 +14,7 @@
 """SI metric prefixes."""
 
 # Standard library imports
+from numbers import Rational
 
 # Third-party imports
 from decimalfp import Decimal
@@ -29,9 +30,9 @@ class SIPrefix:
         self.exp = exp
 
     @property
-    def factor(self) -> Decimal:
+    def factor(self) -> Rational:
         """Scale factor"""
-        return Decimal(10) ** self.exp  # type: ignore
+        return Decimal(10) ** self.exp
 
 
 YOCTO = SIPrefix('Yocto', 'y', -24)

@@ -18,6 +18,7 @@ from typing import Tuple
 
 # Third-party imports
 import pytest
+from decimalfp import Decimal
 
 # Local imports
 from quantity import Quantity, QuantityClsDefT, QuantityMeta, Unit, UnitDefT
@@ -125,10 +126,10 @@ def test_cmplx_derived_qty(qty_name_n_def) -> None:
 def test_cls_already_registered(qties_bcd) -> None:
     B, C, D = qties_bcd
     with pytest.raises(ValueError):
-        X = QuantityMeta("X", (Quantity,), {}, define_as=B.definition)
-    Q = QuantityMeta("B2_DC", (Quantity,), {}, define_as=B ** 2 / (D * C))
+        _ = QuantityMeta("_", (Quantity,), {}, define_as=B.definition)
+    _ = QuantityMeta("B2_DC", (Quantity,), {}, define_as=B ** 2 / (D * C))
     with pytest.raises(ValueError):
-        X = QuantityMeta("X", (Quantity,), {}, define_as=B ** 2 / (C * D))
+        _ = QuantityMeta("_", (Quantity,), {}, define_as=B ** 2 / (C * D))
 
 
 def test_unknown_keyword() -> None:
@@ -155,7 +156,7 @@ def test_simple_qty_units(qty_simple, symbol, name) -> None:
     assert unit.symbol == symbol
     assert unit.name == name
     with pytest.raises(ValueError):
-        unit = Q.new_unit(symbol, name)
+        _ = Q.new_unit(symbol, name)
 
 
 @pytest.mark.parametrize("prefix",
@@ -189,6 +190,6 @@ def test_unit_already_registered(qties_bcd) -> None:
         B.new_unit(B.ref_unit.symbol, B.ref_unit.name)
     Q = QuantityMeta("BDC", (Quantity,), {}, define_as=B * D * C)
     assert Q.ref_unit is not None
-    Q.new_unit("kbdc", "kbdc", define_as=1000 * Q.ref_unit)
+    Q.new_unit("kbdc", "kbdc", define_as=Decimal(1000) * Q.ref_unit)
     with pytest.raises(ValueError):
         Q.new_unit("kbdc", "kbdc")
