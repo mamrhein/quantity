@@ -298,7 +298,8 @@ from fractions import Fraction
 from decimalfp import Decimal
 
 # Local imports
-from . import Quantity, TableConverter, Unit
+from . import Quantity
+from .si_prefixes import (MICRO, MILLI, CENTI, DECI, KILO, MEGA, GIGA, TERA,)
 
 
 class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):
@@ -308,9 +309,9 @@ class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):
 assert Mass.ref_unit is not None
 KILOGRAM = Mass.ref_unit
 
-GRAM = Mass.new_unit('g', 'Gram', Decimal('0.001') * KILOGRAM)
-MILLIGRAM = Mass.new_unit('mg', 'Milligram', Decimal('0.000001') * KILOGRAM)
-TONNE = Mass.new_unit('t', 'Tonne', Decimal(1000) * KILOGRAM)
+GRAM = Mass.new_unit('g', 'Gram', MILLI * KILOGRAM)
+MILLIGRAM = Mass.new_unit('mg', 'Milligram', MILLI * GRAM)
+TONNE = Mass.new_unit('t', 'Tonne', MEGA * GRAM)
 
 # some imperial units
 POUND = Mass.new_unit('lb', 'Pound', Decimal('0.45359237') * KILOGRAM)
@@ -330,11 +331,11 @@ class Length(Quantity,
 assert Length.ref_unit is not None
 METRE = Length.ref_unit
 
-MICROMETRE = Length.new_unit('µm', 'Micrometre', Decimal('0.000001') * METRE)
-MILLIMETRE = Length.new_unit('mm', 'Millimetre', Decimal('0.001') * METRE)
-CENTIMETRE = Length.new_unit('cm', 'Centimetre', Decimal('0.01') * METRE)
-DECIMETRE = Length.new_unit('dm', 'Decimetre', Decimal('0.1') * METRE)
-KILOMETRE = Length.new_unit('km', 'Kilometre', Decimal(1000) * METRE)
+MICROMETRE = Length.new_unit('µm', 'Micrometre', MICRO * METRE)
+MILLIMETRE = Length.new_unit('mm', 'Millimetre', MILLI * METRE)
+CENTIMETRE = Length.new_unit('cm', 'Centimetre', CENTI * METRE)
+DECIMETRE = Length.new_unit('dm', 'Decimetre', DECI * METRE)
+KILOMETRE = Length.new_unit('km', 'Kilometre', KILO * METRE)
 
 # some imperial units
 INCH = Length.new_unit('in', 'Inch', Decimal('2.54') * CENTIMETRE)
@@ -398,10 +399,10 @@ CUBIC_DECIMETRE = Volume.new_unit('dm³', 'Cubic Decimetre', DECIMETRE ** 3)
 CUBIC_KILOMETRE = Volume.new_unit('km³', 'Cubic Kilometre', KILOMETRE ** 3)
 
 # litre
-LITRE = Volume.new_unit('l', 'Litre', Decimal('0.1') ** 3 * CUBIC_METRE)
-MILLILITRE = Volume.new_unit('ml', 'Millilitre', Decimal('0.001') * LITRE)
-CENTILITRE = Volume.new_unit('cl', 'Centilitre', Decimal('0.01') * LITRE)
-DECILITRE = Volume.new_unit('dl', 'Decilitre', Decimal('0.1') * LITRE)
+LITRE = Volume.new_unit('l', 'Litre', MILLI * CUBIC_METRE)
+MILLILITRE = Volume.new_unit('ml', 'Millilitre', MILLI * LITRE)
+CENTILITRE = Volume.new_unit('cl', 'Centilitre', CENTI * LITRE)
+DECILITRE = Volume.new_unit('dl', 'Decilitre', DECI * LITRE)
 
 # some imperial units
 CUBIC_INCH = Volume.new_unit('in³', 'Cubic Inch', INCH ** 3)
@@ -474,13 +475,13 @@ class Power(Quantity,
 assert Power.ref_unit is not None
 WATT = Power.ref_unit
 
-MILLIWATT = Power.new_unit('mW', 'Milliwatt', Decimal('0.001') * WATT)
-KILOWATT = Power.new_unit('kW', 'Kilowatt', Decimal(1000) * WATT)
-MEGAWATT = Power.new_unit('MW', 'Megawatt', Decimal(1000000) * WATT)
-GIGAWATT = Power.new_unit('GW', 'Gigawatt', Decimal(1000000000) * WATT)
-TERAWATT = Power.new_unit('TW', 'Terawatt', Decimal(1000000000000) * WATT)
+MILLIWATT = Power.new_unit('mW', 'Milliwatt', MILLI * WATT)
+KILOWATT = Power.new_unit('kW', 'Kilowatt', KILO * WATT)
+MEGAWATT = Power.new_unit('MW', 'Megawatt', MEGA * WATT)
+GIGAWATT = Power.new_unit('GW', 'Gigawatt', GIGA * WATT)
+TERAWATT = Power.new_unit('TW', 'Terawatt', TERA * WATT)
 
-# some more unit definitions based on other than the reference units
+# some more unit definitions based on others than the reference units
 
 # Force
 JOULE_PER_METRE = Force.new_unit('J/m', 'Joule per Metre',
@@ -503,20 +504,20 @@ class DataVolume(Quantity,
 assert DataVolume.ref_unit is not None
 BYTE = DataVolume.ref_unit
 
-KILOBYTE = DataVolume.new_unit('kB', 'Kilobyte', Decimal(10) ** 3 * BYTE)
-MEGABYTE = DataVolume.new_unit('MB', 'Megabyte', Decimal(10) ** 6 * BYTE)
-GIGABYTE = DataVolume.new_unit('GB', 'Gigabyte', Decimal(10) ** 9 * BYTE)
-TERABYTE = DataVolume.new_unit('TB', 'Terabyte', Decimal(10) ** 12 * BYTE)
+KILOBYTE = DataVolume.new_unit('kB', 'Kilobyte', KILO * BYTE)
+MEGABYTE = DataVolume.new_unit('MB', 'Megabyte', MEGA * BYTE)
+GIGABYTE = DataVolume.new_unit('GB', 'Gigabyte', GIGA * BYTE)
+TERABYTE = DataVolume.new_unit('TB', 'Terabyte', TERA * BYTE)
 KIBIBYTE = DataVolume.new_unit('KiB', 'Kibibyte', Decimal(2) ** 10 * BYTE)
 MEBIBYTE = DataVolume.new_unit('MiB', 'Mebibyte', Decimal(2) ** 20 * BYTE)
 GIBIBYTE = DataVolume.new_unit('GiB', 'Gibibyte', Decimal(2) ** 30 * BYTE)
 TEBIBYTE = DataVolume.new_unit('TiB', 'Tebibyte', Decimal(2) ** 40 * BYTE)
 
 BIT = DataVolume.new_unit('b', 'Bit', Fraction(1, 8) * BYTE)
-KILOBIT = DataVolume.new_unit('kb', 'Kilobit', Decimal(10) ** 3 * BIT)
-MEGABIT = DataVolume.new_unit('Mb', 'Megabit', Decimal(10) ** 6 * BIT)
-GIGABIT = DataVolume.new_unit('Gb', 'Gigabit', Decimal(10) ** 9 * BIT)
-TERABIT = DataVolume.new_unit('Tb', 'Terabit', Decimal(10) ** 12 * BIT)
+KILOBIT = DataVolume.new_unit('kb', 'Kilobit', KILO * BIT)
+MEGABIT = DataVolume.new_unit('Mb', 'Megabit', MEGA * BIT)
+GIGABIT = DataVolume.new_unit('Gb', 'Gigabit', GIGA * BIT)
+TERABIT = DataVolume.new_unit('Tb', 'Terabit', TERA * BIT)
 KIBIBIT = DataVolume.new_unit('Kib', 'Kibibit', Decimal(2) ** 10 * BIT)
 MEBIBIT = DataVolume.new_unit('Mib', 'Mebibit', Decimal(2) ** 20 * BIT)
 GIBIBIT = DataVolume.new_unit('Gib', 'Gibibit', Decimal(2) ** 30 * BIT)
@@ -533,13 +534,13 @@ assert DataThroughput.ref_unit is not None
 BYTE_PER_SECOND = DataThroughput.ref_unit
 
 KILOBYTE_PER_SECOND = DataThroughput.new_unit(
-    'kB/s', 'Kilobyte per Second',  Decimal(10) ** 3 * BYTE_PER_SECOND)
+    'kB/s', 'Kilobyte per Second',  KILO * BYTE_PER_SECOND)
 MEGABYTE_PER_SECOND = DataThroughput.new_unit(
-    'MB/s', 'Megabyte per Second',  Decimal(10) ** 6 * BYTE_PER_SECOND)
+    'MB/s', 'Megabyte per Second',  MEGA * BYTE_PER_SECOND)
 GIGABYTE_PER_SECOND = DataThroughput.new_unit(
-    'GB/s', 'Gigabyte per Second',  Decimal(10) ** 9 * BYTE_PER_SECOND)
+    'GB/s', 'Gigabyte per Second',  GIGA * BYTE_PER_SECOND)
 TERABYTE_PER_SECOND = DataThroughput.new_unit(
-    'TB/s', 'Terabyte per Second',  Decimal(10) ** 12 * BYTE_PER_SECOND)
+    'TB/s', 'Terabyte per Second',  TERA * BYTE_PER_SECOND)
 KIBIBYTE_PER_SECOND = DataThroughput.new_unit(
     'KiB/s', 'Kibibyte per Second',  Decimal(2) ** 10 * BYTE_PER_SECOND)
 MEBIBYTE_PER_SECOND = DataThroughput.new_unit(
@@ -552,13 +553,13 @@ TEBIBYTE_PER_SECOND = DataThroughput.new_unit(
 BIT_PER_SECOND = DataThroughput.new_unit(
     'b/s', 'Bit per Second', BIT / SECOND)                  # type: ignore
 KILOBIT_PER_SECOND = DataThroughput.new_unit(
-    'kb/s', 'Kilobit per Second', Decimal(10) ** 3 * BIT_PER_SECOND)
+    'kb/s', 'Kilobit per Second', KILO * BIT_PER_SECOND)
 MEGABIT_PER_SECOND = DataThroughput.new_unit(
-    'Mb/s', 'Megabit per Second', Decimal(10) ** 6 * BIT_PER_SECOND)
+    'Mb/s', 'Megabit per Second', MEGA * BIT_PER_SECOND)
 GIGABIT_PER_SECOND = DataThroughput.new_unit(
-    'Gb/s', 'Gigabit per Second', Decimal(10) ** 9 * BIT_PER_SECOND)
+    'Gb/s', 'Gigabit per Second', GIGA * BIT_PER_SECOND)
 TERABIT_PER_SECOND = DataThroughput.new_unit(
-    'Tb/s', 'Terabit per Second', Decimal(10) ** 12 * BIT_PER_SECOND)
+    'Tb/s', 'Terabit per Second', TERA * BIT_PER_SECOND)
 KIBIBIT_PER_SECOND = DataThroughput.new_unit(
     'Kib/s', 'Kibibit per Second', Decimal(2) ** 10 * BIT_PER_SECOND)
 MEBIBIT_PER_SECOND = DataThroughput.new_unit(

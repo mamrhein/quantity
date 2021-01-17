@@ -554,6 +554,7 @@ from .exceptions import (IncompatibleUnitsError, QuantityError,
                          UndefinedResultError, UnitConversionError)
 from .rational import ONE, RationalT
 from .registry import DefinedItemRegistry
+from .si_prefixes import SIPrefix
 from .utils import sum
 from .version import version_tuple as __version__
 
@@ -752,6 +753,9 @@ class Unit:
     def __mul__(self, other: Rational) -> 'Quantity': ...
 
     @overload
+    def __mul__(self, other: SIPrefix) -> 'Quantity': ...
+
+    @overload
     def __mul__(self, other: 'Unit') -> BinOpResT: ...
 
     @overload
@@ -761,6 +765,8 @@ class Unit:
         """self * other"""
         if isinstance(other, Rational):
             return self._qty_cls(other, self)
+        if isinstance(other, SIPrefix):
+            return self._qty_cls(other.factor, self)
         if isinstance(other, Unit):
             try:    # try cache
                 return _op_cache[(operator.mul, self, other)]

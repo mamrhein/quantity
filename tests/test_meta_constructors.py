@@ -169,8 +169,7 @@ def test_scaled_units(qty_a, prefix: SIPrefix) -> None:
     symbol = f"{prefix.abbr}{ref_unit.symbol}"
     name = f"{prefix.name} {ref_unit.name}"
     factor = prefix.factor
-    unit_def = factor * ref_unit
-    unit = Q.new_unit(symbol, name, define_as=unit_def)
+    unit = Q.new_unit(symbol, name, define_as=prefix * ref_unit)
     assert isinstance(unit, Unit)
     assert unit.qty_cls is Q
     assert unit in Q.units()
