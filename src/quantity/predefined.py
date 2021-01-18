@@ -15,6 +15,7 @@
 # $Revision$
 
 
+# @formatter:off
 """The module `quantity.predefined` provides definitions of commonly used
 quantities and units.
 
@@ -290,6 +291,7 @@ Fahrenheit [°C] = ([°F] - 32) * 5/9    -                           [K] = ([°F
 Kelvin     [°C] = [K] - 273.15         [°F] = [K] * 9/5 - 459.67   -
 ========== =========================== =========================== ===========================
 """
+# @formatter:on
 
 # Standard library imports
 from fractions import Fraction
@@ -299,7 +301,9 @@ from decimalfp import Decimal
 
 # Local imports
 from . import Quantity, TableConverter
-from .si_prefixes import (MICRO, MILLI, CENTI, DECI, KILO, MEGA, GIGA, TERA,)
+from .si_prefixes import (
+    MICRO, MILLI, CENTI, DECI, KILO, MEGA, GIGA, NANO, TERA,
+    )
 
 
 class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):
@@ -331,6 +335,7 @@ class Length(Quantity,
 assert Length.ref_unit is not None
 METRE = Length.ref_unit
 
+NANOMETRE = Length.new_unit('nm', 'Nanometre', NANO * METRE)
 MICROMETRE = Length.new_unit('µm', 'Micrometre', MICRO * METRE)
 MILLIMETRE = Length.new_unit('mm', 'Millimetre', MILLI * METRE)
 CENTIMETRE = Length.new_unit('cm', 'Centimetre', CENTI * METRE)
@@ -355,6 +360,9 @@ class Duration(Quantity,
 assert Duration.ref_unit is not None
 SECOND = Duration.ref_unit
 
+NANOSECOND = Duration.new_unit('ns', 'Nanosecond', NANO * SECOND)
+MICROSECOND = Duration.new_unit('µs', 'Microsecond', MICRO * SECOND)
+MILLISECOND = Duration.new_unit('ms', 'Millisecond', MILLI * SECOND)
 MINUTE = Duration.new_unit('min', 'Minute', Decimal(60) * SECOND)
 HOUR = Duration.new_unit('h', 'Hour', Decimal(60) * MINUTE)
 DAY = Duration.new_unit('d', 'Day', Decimal(24) * HOUR)
@@ -419,13 +427,13 @@ class Velocity(Quantity,
 assert Velocity.ref_unit is not None
 METRE_PER_SECOND = Velocity.ref_unit
 KILOMETRE_PER_HOUR = Velocity.new_unit('km/h', 'Kilometre per hour',
-                                       KILOMETRE / HOUR)    # type: ignore
+                                       KILOMETRE / HOUR)  # type: ignore
 
 # some imperial units
 FOOT_PER_SECOND = Velocity.new_unit('ft/s', 'Foot per Second',
-                                    FOOT / SECOND)          # type: ignore
+                                    FOOT / SECOND)  # type: ignore
 MILE_PER_HOUR = Velocity.new_unit('mph', 'Mile per Hour',
-                                  MILE / HOUR)              # type: ignore
+                                  MILE / HOUR)  # type: ignore
 
 
 class Acceleration(Quantity,
@@ -440,7 +448,7 @@ METRE_PER_SECOND_SQUARED = Acceleration.ref_unit
 # some imperial units
 MILE_PER_SECOND_SQUARED = Acceleration.new_unit(
     'mps²', 'Mile per Second squared',
-    (MILE / SECOND) / SECOND)                               # type: ignore
+    (MILE / SECOND) / SECOND)  # type: ignore
 
 
 class Force(Quantity,
@@ -500,13 +508,13 @@ GIGAHERTZ = Frequency.new_unit('GHz', 'Gigahertz', GIGA * HERTZ)
 
 # Force
 JOULE_PER_METRE = Force.new_unit('J/m', 'Joule per Metre',
-                                 JOULE / METRE)             # type: ignore
+                                 JOULE / METRE)  # type: ignore
 
 # Energy
 WATT_SECOND = Energy.new_unit('Ws', 'Watt Second',
-                              WATT * SECOND)                # type: ignore
+                              WATT * SECOND)  # type: ignore
 KILOWATT_HOUR = Energy.new_unit('kWh', 'Kilowatt Hour',
-                                KILOWATT * HOUR)            # type: ignore
+                                KILOWATT * HOUR)  # type: ignore
 
 
 class DataVolume(Quantity,
@@ -549,24 +557,24 @@ assert DataThroughput.ref_unit is not None
 BYTE_PER_SECOND = DataThroughput.ref_unit
 
 KILOBYTE_PER_SECOND = DataThroughput.new_unit(
-    'kB/s', 'Kilobyte per Second',  KILO * BYTE_PER_SECOND)
+    'kB/s', 'Kilobyte per Second', KILO * BYTE_PER_SECOND)
 MEGABYTE_PER_SECOND = DataThroughput.new_unit(
-    'MB/s', 'Megabyte per Second',  MEGA * BYTE_PER_SECOND)
+    'MB/s', 'Megabyte per Second', MEGA * BYTE_PER_SECOND)
 GIGABYTE_PER_SECOND = DataThroughput.new_unit(
-    'GB/s', 'Gigabyte per Second',  GIGA * BYTE_PER_SECOND)
+    'GB/s', 'Gigabyte per Second', GIGA * BYTE_PER_SECOND)
 TERABYTE_PER_SECOND = DataThroughput.new_unit(
-    'TB/s', 'Terabyte per Second',  TERA * BYTE_PER_SECOND)
+    'TB/s', 'Terabyte per Second', TERA * BYTE_PER_SECOND)
 KIBIBYTE_PER_SECOND = DataThroughput.new_unit(
-    'KiB/s', 'Kibibyte per Second',  Decimal(2) ** 10 * BYTE_PER_SECOND)
+    'KiB/s', 'Kibibyte per Second', Decimal(2) ** 10 * BYTE_PER_SECOND)
 MEBIBYTE_PER_SECOND = DataThroughput.new_unit(
-    'MiB/s', 'Mebibyte per Second',  Decimal(2) ** 20 * BYTE_PER_SECOND)
+    'MiB/s', 'Mebibyte per Second', Decimal(2) ** 20 * BYTE_PER_SECOND)
 GIBIBYTE_PER_SECOND = DataThroughput.new_unit(
-    'GiB/s', 'Gibibyte per Second',  Decimal(2) ** 30 * BYTE_PER_SECOND)
+    'GiB/s', 'Gibibyte per Second', Decimal(2) ** 30 * BYTE_PER_SECOND)
 TEBIBYTE_PER_SECOND = DataThroughput.new_unit(
-    'TiB/s', 'Tebibyte per Second',  Decimal(2) ** 40 * BYTE_PER_SECOND)
+    'TiB/s', 'Tebibyte per Second', Decimal(2) ** 40 * BYTE_PER_SECOND)
 
 BIT_PER_SECOND = DataThroughput.new_unit(
-    'b/s', 'Bit per Second', BIT / SECOND)                  # type: ignore
+    'b/s', 'Bit per Second', BIT / SECOND)  # type: ignore
 KILOBIT_PER_SECOND = DataThroughput.new_unit(
     'kb/s', 'Kilobit per Second', KILO * BIT_PER_SECOND)
 MEGABIT_PER_SECOND = DataThroughput.new_unit(
@@ -601,6 +609,6 @@ _tempConv = [
     (KELVIN, CELSIUS, Decimal(1), Decimal('-273.15')),
     (FAHRENHEIT, KELVIN, Fraction(5, 9), Fraction(45967, 180)),
     (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
-]
+    ]
 
 Temperature.register_converter(TableConverter(_tempConv))
