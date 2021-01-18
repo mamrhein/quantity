@@ -298,7 +298,7 @@ from fractions import Fraction
 from decimalfp import Decimal
 
 # Local imports
-from . import Quantity
+from . import Quantity, TableConverter
 from .si_prefixes import (MICRO, MILLI, CENTI, DECI, KILO, MEGA, GIGA, TERA,)
 
 
@@ -588,4 +588,4 @@ _tempConv = [
     (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
 ]
 
-# TODO: Temperature.register_converter(TableConverter(_tempConv))
+Temperature.register_converter(TableConverter(_tempConv))
