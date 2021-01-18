@@ -152,7 +152,7 @@ class Term(ItemSequenceT[T]):
                 try:
                     # noinspection PyProtectedMember
                     conv = elem2._get_factor(elem1)
-                except (NotImplementedError, TypeError):
+                except (NotImplementedError, TypeError, ValueError):
                     pass
                 else:
                     return tuple(_filter_items(((conv ** exp2, 1),

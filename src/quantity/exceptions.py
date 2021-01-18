@@ -21,7 +21,7 @@ import operator
 from typing import Any, Callable
 
 
-class QuantityError(TypeError):
+class QuantityError(ValueError):
 
     """Exception raised when a quantity can not not be instanciated with the
     given parameters."""

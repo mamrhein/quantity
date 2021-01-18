@@ -66,10 +66,18 @@ def test_wrong_unit_type(unit: Any) -> None:
 
 
 @pytest.mark.parametrize("amnt",
-                         [int, (2, 7), "~3.1 m"],
+                         [int, (2, 7), [24, "m"]],
                          ids=lambda p: str(p))
 def test_wrong_amnt_type(amnt: Any) -> None:
     with pytest.raises(TypeError):
+        _ = Length(amnt, METRE)
+
+
+@pytest.mark.parametrize("amnt",
+                         ["~3.1 m", "29,3 s"],
+                         ids=lambda p: str(p))
+def test_incompat_amnt(amnt: Any) -> None:
+    with pytest.raises(QuantityError):
         _ = Length(amnt, METRE)
 
 
