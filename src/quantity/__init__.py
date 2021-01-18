@@ -809,12 +809,18 @@ class Unit:
             except KeyError:
                 pass
             # no cache hit
-            res_def = UnitDefT(((self, 1), (other, -1)))
-            try:
-                res = _qty_from_term(res_def)
-            except KeyError:
-                raise UndefinedResultError(operator.truediv, self, other) \
-                    from None
+            if self.qty_cls is other.qty_cls:
+                if self.qty_cls.ref_unit:
+                    res = self._equiv / other._equiv
+                else:
+                    raise UndefinedResultError(operator.truediv, self, other)
+            else:
+                res_def = UnitDefT(((self, 1), (other, -1)))
+                try:
+                    res = _qty_from_term(res_def)
+                except KeyError:
+                    raise UndefinedResultError(operator.truediv, self, other)\
+                        from None
             # cache it
             _op_cache[(operator.truediv, self, other)] = res
             return res
@@ -957,6 +963,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
                        define_as: Optional[UnitDefT]) -> None:
         unit = Unit(symbol, name, define_as)
         unit._qty_cls = cls
+        unit._equiv = ONE
         cls._ref_unit = unit
 
     @property
