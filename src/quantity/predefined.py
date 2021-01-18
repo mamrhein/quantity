@@ -481,6 +481,21 @@ MEGAWATT = Power.new_unit('MW', 'Megawatt', MEGA * WATT)
 GIGAWATT = Power.new_unit('GW', 'Gigawatt', GIGA * WATT)
 TERAWATT = Power.new_unit('TW', 'Terawatt', TERA * WATT)
 
+
+class Frequency(Quantity,
+                define_as=Duration ** -1,
+                ref_unit_name='Hertz',
+                ref_unit_symbol='Hz'):
+    """Frequency = 1 / Duration"""
+
+
+assert Frequency.ref_unit is not None
+HERTZ = Frequency.ref_unit
+
+KILOHERTZ = Frequency.new_unit('kHz', 'Kilohertz', KILO * HERTZ)
+MEGAHERTZ = Frequency.new_unit('MHz', 'Megahertz', MEGA * HERTZ)
+GIGAHERTZ = Frequency.new_unit('GHz', 'Gigahertz', GIGA * HERTZ)
+
 # some more unit definitions based on others than the reference units
 
 # Force
