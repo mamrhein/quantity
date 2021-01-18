@@ -15,10 +15,9 @@
 
 # Standard library imports
 from decimal import Decimal as StdLibDecimal
-
-# Third-party imports
 from typing import Any
 
+# Third-party imports
 import pytest
 from quantity import QuantityError, QuantityMeta, Rational, Unit
 from quantity.predefined import *
