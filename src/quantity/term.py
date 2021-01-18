@@ -68,8 +68,8 @@ class NonNumTermElem(Protocol):
         """Return sort key for `self` used for normalization of terms."""
 
     @abstractmethod
-    def _get_factor(self, other: 'NonNumTermElem') -> Rational:
-        """Return factor f so that f * `other` == `self`."""
+    def _get_factor(self, other: 'NonNumTermElem') -> Optional[Rational]:
+        """Return factor f so that f * `other` == `self`, or None."""
 
 
 T = TypeVar("T", bound=NonNumTermElem)
@@ -152,11 +152,12 @@ class Term(ItemSequenceT[T]):
                 try:
                     # noinspection PyProtectedMember
                     conv = elem2._get_factor(elem1)
-                except (NotImplementedError, TypeError, ValueError):
+                except TypeError:
                     pass
                 else:
-                    return tuple(_filter_items(((conv ** exp2, 1),
-                                                (elem1, exp1 + exp2))))
+                    if conv is not None:
+                        return tuple(_filter_items(((conv ** exp2, 1),
+                                                    (elem1, exp1 + exp2))))
                 if keep_item_order:
                     return tuple(_filter_items(((elem1, exp1),
                                                 (elem2, exp2))))
@@ -209,13 +210,14 @@ class Term(ItemSequenceT[T]):
                         try:
                             # noinspection PyProtectedMember
                             conv = elem_t2._get_factor(elem_t1)
-                        except (NotImplementedError, TypeError):
+                        except TypeError:
                             pass
                         else:
-                            num_elem *= conv ** exp2
-                            accum_items[idx] = (elem_t1, exp1 + exp2)
-                            done = True
-                            break
+                            if conv is not None:
+                                num_elem *= conv ** exp2
+                                accum_items[idx] = (elem_t1, exp1 + exp2)
+                                done = True
+                                break
                     if not done:
                         accum_items.append(item)
                 accum_items = [item for item in accum_items if item[1] != 0]

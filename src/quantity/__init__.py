@@ -540,8 +540,8 @@ from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
 from numbers import Integral, Rational
 from typing import (
-    Any, AnyStr, Callable, cast, Dict, Generator, List, MutableMapping,
-    Optional, overload, Tuple, Type, TypeVar, Union,
+    Any, AnyStr, Callable, cast, Dict, Generator, Iterator, List,
+    MutableMapping, Optional, overload, Tuple, Type, TypeVar, Union,
 )
 
 # Third-party imports
@@ -728,7 +728,12 @@ class Unit:
         """Compare self and other using operator op."""
         if isinstance(other, Unit):
             if self.qty_cls is other.qty_cls:
-                return op(self._get_factor(other), 1)
+                factor = self._get_factor(other)
+                if factor is None:
+                    raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                              self, other)
+                else:
+                    return op(factor, ONE)
             msg = "Can't compare a '%s' unit and a '%s' unit."
             raise IncompatibleUnitsError(msg, self.qty_cls, other.qty_cls)
         return NotImplemented
@@ -777,8 +782,8 @@ class Unit:
             try:
                 res = _qty_from_term(res_def)
             except KeyError:
-                raise UndefinedResultError(operator.mul, self, other) \
-                    from None
+                raise UndefinedResultError(operator.mul,
+                                           self.name, other.name) from None
             # cache it
             _op_cache[(operator.mul, self, other)] = res
             return res
@@ -810,16 +815,19 @@ class Unit:
                 pass
             # no cache hit
             if self.qty_cls is other.qty_cls:
-                if self.qty_cls.ref_unit:
+                try:
                     res = self._equiv / other._equiv
-                else:
-                    raise UndefinedResultError(operator.truediv, self, other)
+                except AttributeError:
+                    raise UndefinedResultError(operator.truediv,
+                                               self.name, other.name) \
+                        from None
             else:
                 res_def = UnitDefT(((self, 1), (other, -1)))
                 try:
                     res = _qty_from_term(res_def)
                 except KeyError:
-                    raise UndefinedResultError(operator.truediv, self, other)\
+                    raise UndefinedResultError(operator.truediv,
+                                               self.name, other.name) \
                         from None
             # cache it
             _op_cache[(operator.truediv, self, other)] = res
@@ -844,7 +852,7 @@ class Unit:
             try:
                 return _qty_from_term(res_def)  # type: ignore
             except KeyError:
-                raise UndefinedResultError(operator.pow, self, exp) \
+                raise UndefinedResultError(operator.pow, self.name, exp) \
                     from None
         return NotImplemented
 
@@ -865,34 +873,15 @@ class Unit:
         """Return sort key for `self` used for normalization of terms."""
         return self._qty_cls.norm_sort_key()
 
-    def _get_factor(self, other: NonNumTermElem) -> Rational:
-        """Return scaling factor f so that f * `other` == `self`."""
-        if not isinstance(other, Unit):
-            return NotImplemented
-        if self.qty_cls is not other.qty_cls:
-            msg = "Can't convert a '%s' unit and a '%s' unit."
-            raise IncompatibleUnitsError(msg, self.qty_cls, other.qty_cls)
-        try:
-            # noinspection PyUnresolvedReferences
-            return self._equiv / other._equiv
-        except AttributeError:
-            pass
-        # try registered converters:
-        # for conv in self.registeredConverters():
-        #     try:
-        #         return conv(equiv, self)
-        #     except UnitConversionError:
-        #         pass
-        # # if derived Unit class, try to convert base units:
-        # cls = self.Unit
-        # if cls.isDerivedQuantity():
-        #     resDef = (equiv.unit.normalizedDefinition /
-        #               self.normalizedDefinition)
-        #     if len(resDef) <= 1:
-        #         return equiv.amount * resDef.amount
-        # no success, give up
-        raise UnitConversionError("Can't convert '%s' to '%s'.",
-                                  self, other)
+    def _get_factor(self, other: NonNumTermElem) -> Optional[Rational]:
+        """Return scaling factor f so that f * `other` == 1 * `self`."""
+        if isinstance(other, Unit):
+            if self.qty_cls is other.qty_cls:
+                try:
+                    return self._equiv / other._equiv
+                except AttributeError:
+                    return None
+        raise TypeError(f"Can't compare a unit to a '{type(other)}'.")
 
 
 class QuantityMeta(ClassWithDefinitionMeta):
@@ -994,6 +983,25 @@ class QuantityMeta(ClassWithDefinitionMeta):
         """Return all registered units od `cls` as tuple."""
         return tuple(cls._unit_map.values())
 
+    def register_converter(cls, conv: ConverterT) -> None:
+        """Add converter conv to the list of converters registered in cls.
+
+        Does nothing if converter is already registered."""
+        if conv not in cls._converters:
+            cls._converters.append(conv)
+
+    def remove_converter(cls, conv: ConverterT) -> None:
+        """Remove converter conv from the list of converters registered in
+        cls.
+
+        Raises ValueError if the converter is not present."""
+        cls._converters.remove(conv)
+
+    def registered_converters(cls) -> Iterator[ConverterT]:
+        """Return an iterator over the converters registered in 'cls', in
+        reversed order of registration."""
+        return reversed(cls._converters)
+
     def norm_sort_key(cls) -> int:
         """Return sort key for `cls` used for normalization of terms."""
         return cls._reg_id
@@ -1094,6 +1102,57 @@ class Quantity(metaclass=QuantityMeta):
         """The quantity's unit."""
         return self._unit
 
+    def equiv_amount(self, unit: Unit) -> Optional[Rational]:
+        """Return amount e so that e * `unit` == `self`."""
+        try:
+            # noinspection PyProtectedMember
+            factor = self.unit._get_factor(unit)
+        except TypeError:
+            if isinstance(unit, Unit):
+                msg = "Can't convert a '%s' unit to a '%s' unit."
+                raise IncompatibleUnitsError(msg, self.__class__,
+                                             unit.qty_cls) from None
+            else:
+                raise
+        else:
+            if factor is None:
+                # try registered converters:
+                for conv in self.__class__.registered_converters():
+                    try:
+                        return conv(self, unit)
+                    except UnitConversionError:
+                        pass
+                return None
+            else:
+                return factor * self.amount
+
+    def convert(self, to_unit: Unit) -> 'Quantity':
+        """Return quantity q where q == `self` and q.unit is `to_unit`.
+
+        Args:
+            to_unit (Unit): unit to be converted to
+
+        Returns:
+            type(self): resulting quantity
+
+        Raises:
+            IncompatibleUnitsError: `self` can't be converted to `to_unit`.
+        """
+        equiv_amount = self.equiv_amount(to_unit)
+        if equiv_amount is None:
+            raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                      self.unit, to_unit)
+        return equiv_amount * to_unit
+
+    @overload
+    def __mul__(self, other: Rational) -> 'Quantity': ...
+
+    @overload
+    def __mul__(self, other: 'Quantity') -> BinOpResT: ...
+
+    @overload
+    def __mul__(self, other: Unit) -> BinOpResT: ...
+
     def __mul__(self, other: Any) -> BinOpResT:
         """self * other"""
         if isinstance(other, Rational):
@@ -1107,17 +1166,42 @@ class Quantity(metaclass=QuantityMeta):
     # other * self
     __rmul__ = __mul__
 
+    @overload
+    def __truediv__(self, other: Rational) -> 'Quantity': ...
+
+    @overload
+    def __truediv__(self, other: 'Quantity') -> BinOpResT: ...
+
+    @overload
+    def __truediv__(self, other: Unit) -> BinOpResT: ...
+
     def __truediv__(self, other: Any) -> BinOpResT:
         """self / other"""
         if isinstance(other, Rational):
             return self.__class__(self.amount / other, self.unit)
         if isinstance(other, Quantity):
-            return (self.amount / other.amount) * (self.unit / other.unit)
+            if self.__class__ is other.__class__:
+                equiv_amount = other.equiv_amount(self.unit)
+                if equiv_amount is None:
+                    raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                              other.unit, self.unit)
+                else:
+                    return self.amount / equiv_amount
+            else:
+                return (self.amount / other.amount) * (self.unit / other.unit)
         if isinstance(other, Unit):
-            return self.amount * (self.unit / other)
+            if self.__class__ is other.qty_cls:
+                equiv_amount = self.equiv_amount(other)
+                if equiv_amount is None:
+                    raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                              self.unit, other)
+                else:
+                    return equiv_amount
+            else:
+                return self.amount * (self.unit / other)
         return NotImplemented
 
-    def __rtruediv__(self, other: Any) -> BinOpResT:
+    def __rtruediv__(self, other: Any) -> 'Quantity':
         """other / self"""
         if isinstance(other, Rational):
             return (other / self.amount) * self.unit ** -1
