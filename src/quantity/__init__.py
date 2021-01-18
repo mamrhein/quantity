@@ -1062,8 +1062,9 @@ class Quantity(metaclass=QuantityMeta):
                         unit = unit_from_sym
                     elif unit is unit_from_sym:
                         pass
-                    # else:
-                    #     amount *= unit(unit_from_sym)
+                    else:
+                        qty = unit_from_sym.qty_cls(amnt, unit_from_sym)
+                        return qty.convert(unit)
         else:
             raise TypeError("Given amount must be a number or a string "
                             "that can be converted to a number.")
