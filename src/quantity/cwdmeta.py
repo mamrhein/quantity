@@ -13,14 +13,9 @@
 
 """Provide metaclass for defining classes with terms as definitions."""
 
-
-# Standard library imports
-
-# Third-party imports
 from numbers import Integral, Rational
-from typing import Any, cast, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, cast
 
-# Local imports
 from .term import NonNumTermElem, Term
 
 ClassDefT = Term['ClassWithDefinitionMeta']
@@ -33,10 +28,11 @@ class ClassWithDefinitionMeta(type):
     # TODO: remove this class variable after mypy issue #1021 got fixed:
     _definition: Optional[ClassDefT]
 
-    def __new__(mcs, name: str, bases: Tuple[type, ...],
+    def __new__(mcs, name: str, bases: Tuple[type, ...],    # noqa: N804
                 clsdict: Dict[str, Any],
                 define_as: Optional[ClassDefT] = None) \
             -> 'ClassWithDefinitionMeta':
+        """Create new class."""
         cls = cast('ClassWithDefinitionMeta',
                    super().__new__(mcs, name, bases, clsdict))
         # check definition
@@ -65,7 +61,7 @@ class ClassWithDefinitionMeta(type):
 
     @property
     def normalized_definition(cls) -> ClassDefT:
-        """Normalized definition of `cls`."""
+        """Normalized definition of `cls`."""       # noqa: D401
         if cls._definition is None:
             return ClassDefT(((cls, 1),))
         else:
@@ -100,7 +96,8 @@ class ClassWithDefinitionMeta(type):
         if isinstance(other, ClassWithDefinitionMeta):
             return ClassDefT(((cls, 1), (other, -1)))
         if isinstance(other, Term):
-            if all((isinstance(elem, ClassWithDefinitionMeta) for (elem, exp) in other)):
+            if all((isinstance(elem, ClassWithDefinitionMeta)
+                    for (elem, exp) in other)):
                 return ClassDefT(((cls, 1),)) * other.reciprocal()
         return NotImplemented
 
@@ -119,6 +116,7 @@ class ClassWithDefinitionMeta(type):
         return NotImplemented
 
     def __str__(cls) -> str:
+        """str(cls)"""
         return cls.__name__
 
     # implement abstract methods of NonNumTermElem to allow instances of

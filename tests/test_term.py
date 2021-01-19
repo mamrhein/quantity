@@ -14,32 +14,25 @@
 
 """Test driver for module term"""
 
-
-# Standard library imports
+import re
 from fractions import Fraction
 from numbers import Rational
 from typing import Any, Optional, Sequence, Tuple, Union
 
-# Third-party imports
 import pytest
 from decimalfp import Decimal
 
-# Local imports
-from quantity.term import (Term, _div_sign, _mulSign,
-                           _powerChars)
+from quantity.term import Term, _DIV_SIGN, _MUL_SIGN, _POWER_CHARS
 
-
-# parse string
-import re
 _pattern = r"""(?P<num>\d*)(?P<base>.*)"""
-_parseString = re.compile(_pattern, re.VERBOSE).match
+_parse_string = re.compile(_pattern, re.VERBOSE).match
 del re, _pattern
 
 
 class TElem(str):
 
     def _split(self) -> Tuple[Decimal, 'TElem']:
-        match = _parseString(self)
+        match = _parse_string(self)
         if match:
             num, base = match.groups()
             if num:
@@ -47,7 +40,7 @@ class TElem(str):
         return Decimal(1), self
 
     def is_base_elem(self) -> bool:
-        """True if self is a base element; i.e. can not be decomposed."""
+        """Return True if self is a base element."""
         num, base = self._split()
         return num == 1
 
@@ -92,7 +85,8 @@ TItemSeq = Sequence[Tuple[Union[TElem, Rational], int]]
         ([(x, 1)], ((x, 1),)),
         ([(y, 2), (x, 1)], ((y, 2), (x, 1))),
         ([(x, 2), (x, 1)], ((x, 3),)),
-        ([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1), (x, -1)], ((y, 4), (z, -1))),
+        ([(y, 2), (x, 1), (y, 1), (z, -1), (y, 1), (x, -1)],
+         ((y, 4), (z, -1))),
         (((y, 1), (x, 1), (x, 1), (5, 1), (y, -1)), ((5, 1), (x, 2))),
         (((y, 0), (1, 1)), ()),
         ([(x, 1)], ((x, 1),)),
@@ -104,8 +98,8 @@ TItemSeq = Sequence[Tuple[Union[TElem, Rational], int]]
         (((5, 1), (TElem('10x'), 1), (2, 2)), ((20, 1), (TElem('10x'), 1))),
         (((25, 1), (Decimal(5), -2)), ()),
         (((10, 3), (Decimal(5), -2)), ((40, 1),)),
+        )
     )
-)
 def test_constructor(term_params: TItemSeq, items: TItemSeq) -> None:
     term = TElemTerm(term_params)
     assert term._items == items
@@ -124,8 +118,8 @@ def test_constructor(term_params: TItemSeq, items: TItemSeq) -> None:
         (TElemTerm([(TElem('10x'), 1), (TElem('1000000z'), 1),
                     (TElem('1000y'), -1)]),
          TElemTerm(((Decimal(10000), 1), (x, 1), (y, -1), (z, 1)))),
-    ),
-)
+        ),
+    )
 def test_normalization(term: TElemTerm, normalized: Optional[TElemTerm]) \
         -> None:
     if normalized is None:
@@ -144,8 +138,8 @@ def test_normalization(term: TElemTerm, normalized: Optional[TElemTerm]) \
         (TElemTerm([(Decimal(5), 1)]), (Decimal(5), TElemTerm())),
         (TElemTerm([(Decimal(5), 1), (y, 2), (z, -1)]),
          (Decimal(5), TElemTerm([(y, 2), (z, -1)]))),
+        )
     )
-)
 def test_split(term: TElemTerm, splitted: Tuple[Rational, TElemTerm]) -> None:
     if not splitted:
         splitted = (1, term)
@@ -184,8 +178,8 @@ def test_comparision() -> None:
         (TElemTerm([(x, 1)]), Decimal(3),
          TElemTerm(((Decimal(3), 1), (x, 1)))),
         (Decimal(10), TElemTerm([(x, 1)]), TElemTerm([(TElem('10x'), 1)])),
+        )
     )
-)
 def test_multiplication(t1: Union[TElemTerm, Rational],
                         t2: Union[TElemTerm, Rational], res: TElemTerm) \
         -> None:
@@ -205,8 +199,8 @@ def test_multiplication(t1: Union[TElemTerm, Rational],
          TElemTerm(((Decimal(5), 1), (x, -1)))),
         (TElemTerm([(x, 1)]), TElemTerm([(x, 1)]), TElemTerm()),
         (TElemTerm([(TElem('10x'), 1)]), Decimal(10), TElemTerm([(x, 1)])),
+        )
     )
-)
 def test_division(t1: Union[TElemTerm, Rational],
                   t2: Union[TElemTerm, Rational], res: TElemTerm) -> None:
     assert res == t1 / t2
@@ -234,10 +228,10 @@ def test_power() -> None:
 
 def test_str() -> None:
     t1 = TElemTerm([(y, 1), (x, 2)])
-    assert str(t1) == 'y%sx%s' % (_mulSign, _powerChars[2])
+    assert str(t1) == 'y%sx%s' % (_MUL_SIGN, _POWER_CHARS[2])
     t2 = TElemTerm([(y, 2), (x, -1), (z, 3)])
-    assert str(t2) == 'y%s%sz%s%sx' % (_powerChars[2], _mulSign,
-                                       _powerChars[3], _div_sign)
+    assert str(t2) == 'y%s%sz%s%sx' % (_POWER_CHARS[2], _MUL_SIGN,
+                                       _POWER_CHARS[3], _DIV_SIGN)
 
 
 def test_repr() -> None:

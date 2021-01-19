@@ -13,13 +13,9 @@
 
 """Test driver for module qtymeta."""
 
-# Standard library imports
-
-# Third-party imports
 import pytest
 from decimalfp import Decimal
 
-# Local imports
 from quantity.cwdmeta import ClassDefT, ClassWithDefinitionMeta
 
 

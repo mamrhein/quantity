@@ -17,37 +17,31 @@
 
 """Provides classes used to convert quantities."""
 
-
 # TODO: uncomment the following when compatibility for Python 3.6 is dropped
 #       and replace forward references
 # from __future__ import annotations
 
-# Standard library imports
 from typing import (
-    Callable, cast, Iterable, Mapping, Optional, Tuple, TYPE_CHECKING, Union,
-)
+    Callable, Iterable, Mapping, Optional, TYPE_CHECKING, Tuple, Union, cast, )
 
-# Third-party imports
-
-# Local imports
-from .exceptions import IncompatibleUnitsError, UnitConversionError
+from .exceptions import IncompatibleUnitsError
 
 if TYPE_CHECKING:
     from . import Quantity, Rational, Unit
-
 
 ConverterT = Callable[['Quantity', 'Unit'], Optional['Rational']]
 
 
 class Converter:
+    """Convert a quantity's amount to the equivalent amount for another unit.
 
-    """A quantity converter can be any callable with a signature like
-    conv(qty, to_unit) -> number f so that type(qty)(f, to_unit) == qty."""
+    A quantity converter can be any callable with a signature like
+    conv(qty, to_unit) -> number f so that type(qty)(f, to_unit) == qty.
+    """
 
     def __call__(self, qty: 'Quantity', to_unit: 'Unit') \
             -> Optional['Rational']:
-        """Convert a quantity's amount to the equivalent amount for another
-        unit.
+        """Convert a `qty`s amount to the equivalent amount for `to_unit`.
 
         Args:
             qty (sub-class of :class:`Quantity`): quantity to be converted
@@ -61,7 +55,7 @@ class Converter:
             IncompatibleUnitsError: `qty` and `to_unit` are incompatible
             UnitConversionError: conversion factor not available
         """
-        if qty.unit is to_unit:          # same unit
+        if qty.unit is to_unit:  # same unit
             return qty.amount
         if qty.__class__ is to_unit.qty_cls:
             return self._get_factor(qty, to_unit)
@@ -73,7 +67,8 @@ class Converter:
             -> Optional['Rational']:
         """Return factor f so that f * `to_unit` == `qty`.
 
-        Returns None if factor can't be determined."""
+        Returns None if factor can't be determined.
+        """
         return NotImplemented
 
 
@@ -82,7 +77,6 @@ ConvSpecIterableT = Iterable[Tuple['Unit', 'Unit', 'Rational', 'Rational']]
 
 
 class TableConverter(Converter):
-
     """Converter using a conversion table.
 
     Args:
@@ -147,7 +141,8 @@ class TableConverter(Converter):
             -> Optional['Rational']:
         """Return factor f so that f * `to_unit` == `qty`.
 
-        Returns None if factor can't be determined."""
+        Returns None if factor can't be determined.
+        """
         try:
             factor, offset = self._unit_map[(qty.unit, to_unit)]
         except KeyError:

@@ -13,16 +13,16 @@
 
 """Test driver for Quantity conversion functions.."""
 
-# Standard library imports
 from fractions import Fraction
 
-# Third-party imports
 import pytest
-from quantity import (
-    IncompatibleUnitsError, QuantityError, QuantityMeta,
-    Rational, Unit,
-    )
-from quantity.predefined import *
+from decimalfp import Decimal
+
+from quantity import IncompatibleUnitsError, Quantity, Rational, Unit
+from quantity.predefined import (
+    CELSIUS, CUBIC_METRE, DAY, FAHRENHEIT, GIGAHERTZ, GRAM, HERTZ, JOULE,
+    KELVIN, KILOWATT, KILOWATT_HOUR, LITRE, METRE, MILE_PER_HOUR, MILLIGRAM,
+    MILLIMETRE, MILLIWATT, SQUARE_METRE, )
 
 
 @pytest.mark.parametrize(("amnt", "unit", "to_unit", "res_amnt"),
@@ -33,7 +33,7 @@ from quantity.predefined import *
                              (30, CELSIUS, KELVIN, "303.15"),
                              (400, KELVIN, FAHRENHEIT, "260.33"),
                              (10, FAHRENHEIT, CELSIUS, Fraction(-110, 9))
-                         ],
+                             ],
                          ids=lambda p: str(p))
 def test_conversion(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str):
     if isinstance(amnt, str):
@@ -59,7 +59,7 @@ def test_conversion(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str):
                              (3, CUBIC_METRE, MILE_PER_HOUR),
                              (50, MILLIWATT, KILOWATT_HOUR),
                              (30, CELSIUS, GIGAHERTZ),
-                         ],
+                             ],
                          ids=lambda p: str(p))
 def test_conv_wrong_unit(amnt: str, unit: Unit, to_unit: Unit):
     qty = Decimal(amnt) * unit
@@ -73,7 +73,7 @@ def test_conv_wrong_unit(amnt: str, unit: Unit, to_unit: Unit):
                              ("20.7 kWh", JOULE, 74520000),
                              ("3 °C", KELVIN, Decimal("276.15")),
                              ("27 °F", CELSIUS, Fraction(-25, 9)),
-                         ],
+                             ],
                          ids=lambda p: str(p))
 def test_qty_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
     qty = Quantity(qty_str, unit)
@@ -87,7 +87,7 @@ def test_qty_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
                              ("20 kWh", CELSIUS),
                              ("3 °C", HERTZ),
                              ("27 GHz", DAY),
-                         ],
+                             ],
                          ids=lambda p: str(p))
 def test_qty_str_wrong_unit(qty_str: str, unit: Unit):
     with pytest.raises(IncompatibleUnitsError):

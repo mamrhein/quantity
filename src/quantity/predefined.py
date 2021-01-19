@@ -16,8 +16,7 @@
 
 
 # @formatter:off
-"""The module `quantity.predefined` provides definitions of commonly used
-quantities and units.
+r"""Definitions of commonly used quantities and units.
 
 Length
 ^^^^^^
@@ -284,26 +283,22 @@ K      Kelvin                    0 K = -273,25 °C = -459.67 °F
 Temperature units are converted using the following formulas:
 
 ========== =========================== =========================== ===========================
-from \\ to Celsius                     Fahrenheit                  Kelvin
+from \ to  Celsius                     Fahrenheit                  Kelvin
 ========== =========================== =========================== ===========================
 Celsius    -                           [°F] = [°C] * 9/5 + 32      [K] = [°C] + 273.15
 Fahrenheit [°C] = ([°F] - 32) * 5/9    -                           [K] = ([°F] + 459.67) * 5/9
 Kelvin     [°C] = [K] - 273.15         [°F] = [K] * 9/5 - 459.67   -
 ========== =========================== =========================== ===========================
-"""
+"""  # noqa: E501   -- does not work see flake8 issue #375
 # @formatter:on
 
-# Standard library imports
 from fractions import Fraction
 
-# Third-party imports
 from decimalfp import Decimal
 
-# Local imports
 from . import Quantity, TableConverter
 from .si_prefixes import (
-    MICRO, MILLI, CENTI, DECI, KILO, MEGA, GIGA, NANO, TERA,
-    )
+    CENTI, DECI, GIGA, KILO, MEGA, MICRO, MILLI, NANO, TERA, )
 
 
 class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):
@@ -602,7 +597,7 @@ FAHRENHEIT = Temperature.new_unit('°F', 'Degree Fahrenheit')
 KELVIN = Temperature.new_unit('K', 'Kelvin')
 
 # Temperature converter
-_tempConv = [
+_temp_conv = [
     (CELSIUS, FAHRENHEIT, Fraction(9, 5), Decimal(32)),
     (FAHRENHEIT, CELSIUS, Fraction(5, 9), Fraction(-160, 9)),
     (CELSIUS, KELVIN, Decimal(1), Decimal('273.15')),
@@ -611,4 +606,4 @@ _tempConv = [
     (KELVIN, FAHRENHEIT, Fraction(9, 5), Decimal('-459.67')),
     ]
 
-Temperature.register_converter(TableConverter(_tempConv))
+Temperature.register_converter(TableConverter(_temp_conv))

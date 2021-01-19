@@ -14,36 +14,32 @@
 
 """Terms of tuples of elements and corresponding exponents."""
 
-# Standard library imports
 import sys
+import unicodedata
 from abc import abstractmethod
 from functools import reduce
 from itertools import chain, groupby
 from numbers import Rational
 from operator import mul
 from typing import (
-    Any, Callable, cast, Generator, Iterable, Iterator, List, Optional,
-    overload, Sequence, Sized, Tuple, TypeVar, Union,
-)
+    Any, Callable, Generator, Iterable, Iterator, List, Optional, Sequence,
+    Sized, Tuple, TypeVar, Union, cast, overload, )
+
 if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
 
-# Local imports
 from .rational import ONE
-
-# characters for string representation of terms
-import unicodedata
 
 _SUPERSCRIPT_CHARS = [unicodedata.lookup("SUPERSCRIPT %s" % num)
                       for num in ["TWO", "THREE", "FOUR", "FIVE", "SIX",
                                   "SEVEN", "EIGHT", "NINE"]]
 _MIDDLEDOT = unicodedata.lookup('MIDDLE DOT')
 del unicodedata
-_powerChars = ['', ''] + _SUPERSCRIPT_CHARS
-_mulSign = _MIDDLEDOT
-_div_sign = '/'
+_POWER_CHARS = ['', ''] + _SUPERSCRIPT_CHARS
+_MUL_SIGN = _MIDDLEDOT
+_DIV_SIGN = '/'
 
 
 class NonNumTermElem(Protocol):
@@ -51,7 +47,7 @@ class NonNumTermElem(Protocol):
 
     @abstractmethod
     def is_base_elem(self) -> bool:
-        """True if elem is a base element; i.e. can not be decomposed."""
+        """Return True if elem is a base element (i.e. can't be decomposed)."""
 
     @property
     @abstractmethod
@@ -82,10 +78,13 @@ ItemListT = List[ItemT[T]]
 
 
 class Term(ItemSequenceT[T]):
-    """Holds definitions of multidimensional items in the form of tuples of
-    elements and corresponding exponents.
+    """Holds definitions of multidimensional items.
 
-    ((x, 1), (y, 3), (z, -2)) means x * y ** 3 / z ** 2"""
+    The definitions are iterables of tuples of elements and corresponding
+    exponents.
+
+    ((x, 1), (y, 3), (z, -2)) means x * y ** 3 / z ** 2
+    """
 
     __slots__ = ['_items', '_normalized', '_hash']
 
@@ -198,8 +197,8 @@ class Term(ItemSequenceT[T]):
                 accum_items = [item]
                 for _, item in group_it:
                     done = False
-                    for idx, otherItem in enumerate(accum_items):
-                        elem_t1, exp1 = otherItem
+                    for idx, other_item in enumerate(accum_items):
+                        elem_t1, exp1 = other_item
                         elem_t2, exp2 = item
                         # same elements?
                         if elem_t1 is elem_t2:
@@ -273,8 +272,10 @@ class Term(ItemSequenceT[T]):
 
     def split(self, dflt_num = ONE) \
             -> Tuple[Rational, 'Term[T]']:
-        """Return `self`s numeric element (or `dflt_num` if None) and
-        `self`s non-numeric part."""
+        """Return `self`s numeric element and `self`s non-numeric part.
+
+        If `self` has no numeric element, `dflt_num` is returned instead.
+        """
         num = self.num_elem
         if num is None:
             return dflt_num, self
@@ -310,7 +311,7 @@ class Term(ItemSequenceT[T]):
         """hash(self)"""
         hash_val: int
         try:
-            hash_val = self._hash   # type: ignore
+            hash_val = self._hash  # type: ignore
         except AttributeError:
             if self.is_normalized:
                 self._hash = hash_val = hash(self._items)
@@ -321,9 +322,9 @@ class Term(ItemSequenceT[T]):
     def __eq__(self, other: Any) -> bool:
         """self == other"""
         if isinstance(other, Term):
-            return (self is other.normalized()
-                    or self.normalized() is other
-                    or self.normalized().items == other.normalized().items)
+            return (self is other.normalized() or
+                    self.normalized() is other or
+                    self.normalized().items == other.normalized().items)
         return NotImplemented
 
     def __mul__(self, other: Union['Term[T]', Rational]) -> 'Term[T]':
@@ -385,19 +386,19 @@ class Term(ItemSequenceT[T]):
             absexp = abs(exp)
             elem_str = str(elem)
             # if string representation of elem contains div-sign, split it:
-            for i, s in enumerate(elem_str.split(_div_sign)):
+            for i, s in enumerate(elem_str.split(_DIV_SIGN)):
                 e = exp * exp_map[i]
                 if e > 0:
-                    elems_pos_exp.append('%s%s' % (s, _powerChars[absexp]))
+                    elems_pos_exp.append('%s%s' % (s, _POWER_CHARS[absexp]))
                 else:
-                    elems_neg_exp.append('%s%s' % (s, _powerChars[absexp]))
+                    elems_neg_exp.append('%s%s' % (s, _POWER_CHARS[absexp]))
         if elems_pos_exp:
-            pos_exp_part = _mulSign.join(elems_pos_exp)
+            pos_exp_part = _MUL_SIGN.join(elems_pos_exp)
         else:
             pos_exp_part = '1'
         if elems_neg_exp:
-            div_sign = _div_sign
-            neg_exp_part = _mulSign.join(elems_neg_exp)
+            div_sign = _DIV_SIGN
+            neg_exp_part = _MUL_SIGN.join(elems_neg_exp)
         else:
             div_sign = neg_exp_part = ''
         return pos_exp_part + div_sign + neg_exp_part
@@ -425,8 +426,8 @@ def _iter_normalized(term: ItemIterableT[T],
         if isinstance(elem, Rational) or elem.is_base_elem():
             yield elem, exp
         else:
-            for item in _iter_normalized(((nElem, nExp * exp)
-                                          for (nElem, nExp)
+            for item in _iter_normalized(((base_elem, base_exp * exp)
+                                          for (base_elem, base_exp)
                                           in normalize_elem(elem)),
                                          normalize_elem):
                 yield item

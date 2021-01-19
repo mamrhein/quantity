@@ -13,8 +13,6 @@
 
 """Class implementing a registry for items holding a term as definition."""
 
-
-# Standard library imports
 import sys
 from typing import Generic, List, MutableMapping
 if sys.version_info >= (3, 8):
@@ -22,9 +20,6 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Final
 
-# Third-party imports
-
-# Local imports
 from .term import T, Term
 
 
@@ -89,4 +84,5 @@ class DefinedItemRegistry(Generic[T]):
         return self._item_list[idx][0]
 
     def __len__(self) -> int:
+        """len(self)"""
         return len(self._item_list)

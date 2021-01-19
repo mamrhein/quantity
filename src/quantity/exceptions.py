@@ -22,40 +22,36 @@ from typing import Any, Callable
 
 
 class QuantityError(ValueError):
-
-    """Exception raised when a quantity can not not be instanciated with the
-    given parameters."""
+    """Raised when a quantity can not be instanciated."""
 
 
 class IncompatibleUnitsError(QuantityError):
-
-    """Exception raised when operands do not have compatible units."""
+    """Raised when operands do not have compatible units."""
 
     def __init__(self, msg: str, operand1: Any, operand2: Any):
         QuantityError.__init__(self, msg % (operand1, operand2))
 
 
 class UndefinedResultError(QuantityError):
+    """Raised when operation results in an undefined quantity."""
 
-    """Exception raised when operation results in an undefined quantity."""
-
-    opSym = {operator.mul: '*',
-             operator.truediv: '/',
-             operator.floordiv: '//',
-             operator.mod: '%',
-             operator.pow: '**'
-             }
+    _op_syms = {
+        operator.mul: '*',
+        operator.truediv: '/',
+        operator.floordiv: '//',
+        operator.mod: '%',
+        operator.pow: '**'
+        }
 
     def __init__(self, op: Callable[[Any, Any], Any],
                  operand1: Any, operand2: Any):
-        msg = f"Undefined result: '{operand1}' {self.opSym[op]} '{operand2}'"
+        msg = f"Undefined result: '{operand1}' {self._op_syms[op]} '" \
+              f"{operand2}'"
         QuantityError.__init__(self, msg)
 
 
 class UnitConversionError(QuantityError):
-
-    """Exception raised when a conversion between two compatible units
-    fails."""
+    """Raised when a conversion between two compatible units fails."""
 
     def __init__(self, msg: str, from_unit: Any, to_unit: Any):
         QuantityError.__init__(self, msg % (from_unit, to_unit))

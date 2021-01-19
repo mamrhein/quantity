@@ -13,7 +13,6 @@
 
 """Provisional typing support for Rational numbers."""
 
-# Standard library imports
 import sys
 from abc import abstractmethod
 from typing import Any
@@ -22,10 +21,7 @@ if sys.version_info >= (3, 8):
 else:
     from typing_extensions import Protocol, runtime_checkable
 
-# Third-party imports
 from decimalfp import Decimal
-
-# Local imports
 
 
 @runtime_checkable

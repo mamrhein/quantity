@@ -13,14 +13,17 @@
 
 """Test constructors for Quantity instances.."""
 
-# Standard library imports
 from decimal import Decimal as StdLibDecimal
+from fractions import Fraction
 from typing import Any
 
-# Third-party imports
 import pytest
-from quantity import QuantityError, QuantityMeta, Rational, Unit
-from quantity.predefined import *
+from decimalfp import Decimal
+
+from quantity import Quantity, QuantityError, QuantityMeta, Rational, Unit
+from quantity.predefined import (
+    CELSIUS, Force, GIGAWATT, KILOWATT, Length, MEGAWATT, METRE, MILLIGRAM,
+    Mass, Power, Temperature, )
 
 
 # noinspection PyPep8Naming
@@ -30,7 +33,7 @@ from quantity.predefined import *
                           Decimal("9283.10006"), 3.5, "0.004", b"2.99"],
                          ids=lambda p: str(p))
 def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
-        -> None:
+        -> None:  # noqa: N803
     qty = Qty(amnt)
     if isinstance(amnt, str):
         amnt = Decimal(amnt)
@@ -46,8 +49,8 @@ def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
                          [17, Fraction(2, 7), Decimal("9283.10006")],
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("unit", [MILLIGRAM, GIGAWATT], ids=("mg", "GW"))
-def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit)\
-        -> None:
+def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
+        -> None:  # noqa: N803
     if Qty is unit.qty_cls:
         qty = Qty(amnt, unit)
         assert qty.amount == amnt
@@ -61,7 +64,7 @@ def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit)\
 def test_wrong_unit_type(unit: Any) -> None:
     with pytest.raises(TypeError):
         # noinspection PyTypeChecker
-        _ = Length(1, unit)                     # type: ignore
+        _ = Length(1, unit)  # type: ignore
 
 
 @pytest.mark.parametrize("amnt",

@@ -13,15 +13,12 @@
 
 """SI metric prefixes."""
 
-# Standard library imports
 from numbers import Rational
 
-# Third-party imports
 from decimalfp import Decimal
 
 
 class SIPrefix:
-
     """Prefix used to scale SI units."""
 
     def __init__(self, name: str, abbr: str, exp: int):
@@ -77,6 +74,6 @@ SI_PREFIXES = [
     EXA,
     ZETTA,
     YOTTA,
-]
+    ]
 
 SI_PREFIX_MAP = {prefix.factor: prefix for prefix in SI_PREFIXES}

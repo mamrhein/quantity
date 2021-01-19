@@ -13,16 +13,13 @@
 
 """Test constructors for Quantities and Units."""
 
-# Standard library imports
 from typing import Tuple
 
-# Third-party imports
 import pytest
 from decimalfp import Decimal
 
-# Local imports
 from quantity import Quantity, QuantityClsDefT, QuantityMeta, Unit, UnitDefT
-from quantity.si_prefixes import SI_PREFIXES, SIPrefix
+from quantity.si_prefixes import SIPrefix, SI_PREFIXES
 
 
 @pytest.fixture(scope="session")
@@ -54,14 +51,14 @@ def qties_bcd() -> Tuple[QuantityMeta, ...]:
                 ids=lambda t: t[0])
 def qty_name_n_def(request, qties_bcd) -> Tuple[str, QuantityClsDefT]:
     # noinspection PyPep8Naming
-    B, C, D = qties_bcd
+    B, C, D = qties_bcd  # noqa: N806
     name, func = request.param
     return name, func(B, C, D)
 
 
 def test_simple_base_qty(qty_simple) -> None:
     # noinspection PyPep8Naming
-    Q = qty_simple
+    Q = qty_simple  # noqa: N806
     assert Q.definition == QuantityClsDefT([(Q, 1)])
     assert Q.normalized_definition == Q.definition
     with pytest.raises(AttributeError):
@@ -73,7 +70,7 @@ def test_simple_base_qty(qty_simple) -> None:
 
 def test_base_qty_with_ref_unit(qty_a) -> None:
     # noinspection PyPep8Naming
-    symbol, name, A = qty_a
+    symbol, name, A = qty_a  # noqa: N806
     assert isinstance(A.ref_unit, Unit)
     with pytest.raises(AttributeError):
         _ = A.ref_unit_name
@@ -90,8 +87,8 @@ def test_base_qty_with_ref_unit(qty_a) -> None:
 
 # noinspection PyPep8Naming
 def test_simple_derived_qty(qty_a) -> None:
-    symbol, name, A = qty_a
-    R = QuantityMeta("R", (Quantity,), {},
+    symbol, name, A = qty_a  # noqa: N806
+    R = QuantityMeta("R", (Quantity,), {},  # noqa: N806
                      define_as=A ** 2, quantum=1)
     assert R.definition == QuantityClsDefT([(R, 1)])
     assert R.normalized_definition == QuantityClsDefT([(A, 2)])
@@ -107,7 +104,7 @@ def test_simple_derived_qty(qty_a) -> None:
 def test_cmplx_derived_qty(qty_name_n_def) -> None:
     name, qty_def = qty_name_n_def
     # noinspection PyPep8Naming
-    Q = QuantityMeta(name, (Quantity,), {}, define_as=qty_def)
+    Q = QuantityMeta(name, (Quantity,), {}, define_as=qty_def)  # noqa: N806
     assert Q.definition == qty_def
     norm_qty_def = qty_def.normalized()
     assert Q.normalized_definition == norm_qty_def
@@ -124,7 +121,7 @@ def test_cmplx_derived_qty(qty_name_n_def) -> None:
 
 # noinspection PyPep8Naming
 def test_cls_already_registered(qties_bcd) -> None:
-    B, C, D = qties_bcd
+    B, C, D = qties_bcd  # noqa: N806
     with pytest.raises(ValueError):
         _ = QuantityMeta("_", (Quantity,), {}, define_as=B.definition)
     _ = QuantityMeta("B2_DC", (Quantity,), {}, define_as=B ** 2 / (D * C))
@@ -142,11 +139,11 @@ def test_unknown_keyword() -> None:
                              ("@sqa", "sqa_name"),
                              ("@sqb", "sqb_name"),
                              ("@sqc", "sqc_name"),
-                         ],
+                             ],
                          ids=("sqa", "sqb", "sqc"))
 def test_simple_qty_units(qty_simple, symbol, name) -> None:
     # noinspection PyPep8Naming
-    Q = qty_simple
+    Q = qty_simple  # noqa: N806
     unit = Q.new_unit(symbol, name)
     assert isinstance(unit, Unit)
     assert unit.qty_cls is Q
@@ -164,7 +161,7 @@ def test_simple_qty_units(qty_simple, symbol, name) -> None:
                          ids=[p.name for p in SI_PREFIXES])
 def test_scaled_units(qty_a, prefix: SIPrefix) -> None:
     # noinspection PyPep8Naming
-    _, _, Q = qty_a
+    _, _, Q = qty_a  # noqa: N806
     ref_unit = Q.ref_unit
     symbol = f"{prefix.abbr}{ref_unit.symbol}"
     name = f"{prefix.name} {ref_unit.name}"
@@ -184,10 +181,10 @@ def test_scaled_units(qty_a, prefix: SIPrefix) -> None:
 
 # noinspection PyPep8Naming
 def test_unit_already_registered(qties_bcd) -> None:
-    B, C, D = qties_bcd
+    B, C, D = qties_bcd  # noqa: N806
     with pytest.raises(ValueError):
         B.new_unit(B.ref_unit.symbol, B.ref_unit.name)
-    Q = QuantityMeta("BDC", (Quantity,), {}, define_as=B * D * C)
+    Q = QuantityMeta("BDC", (Quantity,), {}, define_as=B * D * C)  # noqa: N806
     assert Q.ref_unit is not None
     Q.new_unit("kbdc", "kbdc", define_as=Decimal(1000) * Q.ref_unit)
     with pytest.raises(ValueError):

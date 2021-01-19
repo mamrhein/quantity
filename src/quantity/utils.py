@@ -13,18 +13,12 @@
 
 """Utility functions."""
 
-
-# Standard library imports
 from builtins import sum as builtin_sum
 from typing import Any, Iterable
 
-# Third-party imports
 
-# Local imports
-
-
-def sum(items: Iterable, start: Any = None):
-    """sum(items[, start]) -> value
+def sum(items: Iterable, start: Any = None):    # noqa: A001
+    """Return the sum of `start` (if not None) plus all items in `items`.
 
     Args:
         items: iterable of numbers or number-like objects (NOT strings)

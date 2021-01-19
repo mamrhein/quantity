@@ -13,7 +13,7 @@
 
 
 # TODO: update doc
-"""Unit-safe computations with quantities.
+r"""Unit-safe computations with quantities.
 
 Usage
 =====
@@ -533,31 +533,26 @@ used:
     '*****19.36 m\xb3 '
 """
 
-
-# Standard library imports
 import operator
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
 from numbers import Integral, Rational
 from typing import (
-    Any, AnyStr, Callable, cast, Dict, Generator, Iterator, List,
-    MutableMapping, Optional, overload, Tuple, Type, TypeVar, Union,
-)
+    Any, AnyStr, Callable, Dict, Generator, Iterator, List, MutableMapping,
+    Optional, Tuple, Type, TypeVar, Union, cast, overload, )
 
-# Third-party imports
 from decimalfp import Decimal
 
-# Local imports
 from .converter import Converter, ConverterT, TableConverter
 from .cwdmeta import ClassDefT, ClassWithDefinitionMeta, NonNumTermElem, Term
-from .exceptions import (IncompatibleUnitsError, QuantityError,
-                         UndefinedResultError, UnitConversionError)
-from .rational import ONE, RationalT
+from .exceptions import (
+    IncompatibleUnitsError, QuantityError, UndefinedResultError,
+    UnitConversionError, )
+from .rational import ONE
 from .registry import DefinedItemRegistry
 from .si_prefixes import SIPrefix
 from .utils import sum
-from .version import version_tuple as __version__
-
+from .version import version_tuple as __version__  # noqa: F401
 
 # Public interface
 __all__ = [
@@ -569,8 +564,7 @@ __all__ = [
     'UndefinedResultError',
     'UnitConversionError',
     'sum',
-]
-
+    ]
 
 # Generic types
 T = TypeVar("T")
@@ -600,6 +594,7 @@ def _unit_from_symbol(symbol: str) -> 'Unit':
 def _unit_from_term(term: UnitDefT) -> 'Unit':
     return _TERM_UNIT_MAP[term]
 
+
 # defined here in order to reduce pickle foot-print
 # def r(q_repr: str) -> Quantity:
 #     """Reconstruct quantity from string representation."""
@@ -607,7 +602,6 @@ def _unit_from_term(term: UnitDefT) -> 'Unit':
 
 
 class Unit:
-
     """Unit of measure"""
 
     __slots__ = ['_symbol', '_name', '_equiv', '_definition', '_qty_cls']
@@ -644,28 +638,23 @@ class Unit:
 
     @property
     def symbol(self) -> str:
-        """Return `self`s symbol, a unique string representation of the
-        unit."""
+        """Return `self`s symbol.
+
+        The symbol is a unique string representation of the unit.
+        """
         return self._symbol
 
     @property
     def name(self) -> str:
         """Return `self`s name.
 
-        If the unit was not given a name, its symbol is returned."""
+        If the unit was not given a name, its symbol is returned.
+        """
         return self._name or self._symbol
-
-    # @property
-    # def eqivalent(self) -> Optional[Rational]:
-    #     """Equivalent in terms of reference unit (if any).
-    #
-    #      Returns None if the corresponding Quantity class has no reference
-    #      unit."""
-    #     return self._equiv
 
     @property
     def definition(self) -> UnitDefT:
-        """Definition of `self`."""
+        """Return the definition of `self`."""
         try:
             return self._definition
         except AttributeError:
@@ -673,15 +662,14 @@ class Unit:
 
     @property
     def normalized_definition(self) -> UnitDefT:
-        """Normalized definition of `self`."""
+        """Return the normalized definition of `self`."""
         try:
             return self._definition.normalized()
         except AttributeError:
             return UnitDefT(((self, 1),))
 
     def is_base_unit(self) -> bool:
-        """Return True if `self` is a base unit, i. e. it's not derived
-        from another unit."""
+        """Return True if `self` is not derived from another unit."""
         try:
             self._definition
         except AttributeError:
@@ -702,7 +690,7 @@ class Unit:
 
     @property
     def qty_cls(self) -> Optional['QuantityMeta']:
-        """The related `Quantity` subclass of `self`."""
+        """Return the `Quantity` subclass related to `self`."""
         try:
             return self._qty_cls
         except AttributeError:
@@ -755,25 +743,29 @@ class Unit:
         return self._compare(other, operator.ge)
 
     @overload
-    def __mul__(self, other: Rational) -> 'Quantity': ...
+    def __mul__(self, other: Rational) -> 'Quantity':  # noqa: D105
+        ...
 
     @overload
-    def __mul__(self, other: SIPrefix) -> 'Quantity': ...
+    def __mul__(self, other: SIPrefix) -> 'Quantity':  # noqa: D105
+        ...
 
     @overload
-    def __mul__(self, other: 'Unit') -> BinOpResT: ...
+    def __mul__(self, other: 'Unit') -> BinOpResT:  # noqa: D105
+        ...
 
     @overload
-    def __mul__(self, other: 'Quantity') -> BinOpResT: ...
+    def __mul__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+        ...
 
-    def __mul__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
+    def __mul__(self, other: Any, _op_cache = _UNIT_OP_CACHE) -> BinOpResT:
         """self * other"""
         if isinstance(other, Rational):
             return self._qty_cls(other, self)
         if isinstance(other, SIPrefix):
             return self._qty_cls(other.factor, self)
         if isinstance(other, Unit):
-            try:    # try cache
+            try:  # try cache
                 return _op_cache[(operator.mul, self, other)]
             except KeyError:
                 pass
@@ -788,28 +780,30 @@ class Unit:
             _op_cache[(operator.mul, self, other)] = res
             return res
         if isinstance(other, Quantity):
-            amount, unit = other.amount, other.unit
-            return amount * (self * other.unit)
+            return other.amount * (self * other.unit)
         return NotImplemented
 
     # other * self
     __rmul__ = __mul__
 
     @overload
-    def __truediv__(self, other: Rational) -> 'Quantity': ...
+    def __truediv__(self, other: Rational) -> 'Quantity':  # noqa: D105
+        ...
 
     @overload
-    def __truediv__(self, other: 'Unit') -> BinOpResT: ...
+    def __truediv__(self, other: 'Unit') -> BinOpResT:  # noqa: D105
+        ...
 
     @overload
-    def __truediv__(self, other: 'Quantity') -> BinOpResT: ...
+    def __truediv__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+        ...
 
-    def __truediv__(self, other: Any, _op_cache=_UNIT_OP_CACHE) -> BinOpResT:
+    def __truediv__(self, other: Any, _op_cache = _UNIT_OP_CACHE) -> BinOpResT:
         """self / other"""
         if isinstance(other, Rational):
             return self._qty_cls(ONE / other, self)
         if isinstance(other, Unit):
-            try:    # try cache
+            try:  # try cache
                 return _op_cache[(operator.truediv, self, other)]
             except KeyError:
                 pass
@@ -833,8 +827,7 @@ class Unit:
             _op_cache[(operator.truediv, self, other)] = res
             return res
         if isinstance(other, Quantity):
-            amount, unit = other.amount, other.unit
-            return amount * (self / other.unit)
+            return other.amount * (self / other.unit)
         return NotImplemented
 
     def __rtruediv__(self, other: Any) -> 'Quantity':
@@ -885,7 +878,6 @@ class Unit:
 
 
 class QuantityMeta(ClassWithDefinitionMeta):
-
     """Meta class allowing to construct Quantity subclasses."""
 
     # Registry of Quantity classes (by normalized definition)
@@ -896,8 +888,9 @@ class QuantityMeta(ClassWithDefinitionMeta):
     _ref_unit: Optional[Unit]
     _quantum: Rational
 
-    def __new__(mcs, name: str, bases: Tuple[type, ...],
+    def __new__(mcs, name: str, bases: Tuple[type, ...],  # noqa: N804
                 clsdict: Dict[str, Any], **kwds: Any) -> 'QuantityMeta':
+        """Create new Quantity (sub-)class."""
         cls: 'QuantityMeta'
         ref_unit_def: Optional[UnitDefT] = None
         # optional definition
@@ -934,7 +927,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         cls._quantum = quantum
         return cls
 
-    def __init__(cls, name: str, bases: Tuple[type, ...],
+    def __init__(cls, name: str, bases: Tuple[type, ...],  # noqa: N805
                  clsdict: Dict[str, Any], **kwds: Any):
         super().__init__(name, bases, clsdict)
         # register cls
@@ -948,7 +941,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         # converter registry
         cls._converters: List[ConverterT] = []
 
-    def _make_ref_unit(cls, symbol: str, name: str,
+    def _make_ref_unit(cls, symbol: str, name: str,  # noqa: N805
                        define_as: Optional[UnitDefT]) -> None:
         unit = Unit(symbol, name, define_as)
         unit._qty_cls = cls
@@ -956,18 +949,20 @@ class QuantityMeta(ClassWithDefinitionMeta):
         cls._ref_unit = unit
 
     @property
-    def ref_unit(cls) -> Optional[Unit]:
-        """The reference unit of the :class:`Quantity` sub-class, if defined.
-        """
+    def ref_unit(cls) -> Optional[Unit]:  # noqa: N805
+        """Return the reference unit of `cls`, or None if no one is defined."""
         return cls._ref_unit
 
     @property
-    def quantum(cls) -> Optional[Rational]:
-        """The smallest amount (in terms of the reference unit) an instance of
-        this :class:`Quantity` can take (None if quantum not defined)."""
+    def quantum(cls) -> Optional[Rational]:  # noqa: N805
+        """Return the smallest quantum defined for `cls` (if any).
+
+        The quantum is the smallest amount (in terms of the reference unit) an
+        instance of `cls` can take (None if quantum not defined).
+        """
         return cls._quantum
 
-    def new_unit(cls, symbol: str, name: Optional[str],
+    def new_unit(cls, symbol: str, name: Optional[str],  # noqa: N805
                  define_as: Optional['Quantity'] = None) -> 'Unit':
         """Create, register and return a new unit for `cls`."""
         if define_as is None:
@@ -979,36 +974,38 @@ class QuantityMeta(ClassWithDefinitionMeta):
         cls._unit_map[unit.symbol] = unit
         return unit
 
-    def units(cls) -> Tuple[Unit, ...]:
-        """Return all registered units od `cls` as tuple."""
+    def units(cls) -> Tuple[Unit, ...]:  # noqa: N805
+        """Return all registered units of `cls` as tuple."""
         return tuple(cls._unit_map.values())
 
-    def register_converter(cls, conv: ConverterT) -> None:
-        """Add converter conv to the list of converters registered in cls.
+    def register_converter(cls, conv: ConverterT) -> None:  # noqa: N805
+        """Add converter `conv` to the list of converters registered in cls.
 
-        Does nothing if converter is already registered."""
+        Does nothing if converter is already registered.
+        """
         if conv not in cls._converters:
             cls._converters.append(conv)
 
-    def remove_converter(cls, conv: ConverterT) -> None:
-        """Remove converter conv from the list of converters registered in
-        cls.
+    def remove_converter(cls, conv: ConverterT) -> None:  # noqa: N805
+        """Remove converter `conv` from the converters registered in cls.
 
-        Raises ValueError if the converter is not present."""
+        Raises ValueError if the converter is not present.
+        """
         cls._converters.remove(conv)
 
-    def registered_converters(cls) -> Iterator[ConverterT]:
-        """Return an iterator over the converters registered in 'cls', in
-        reversed order of registration."""
+    def registered_converters(cls) -> Iterator[ConverterT]:  # noqa: N805
+        """Return an iterator over the converters registered in 'cls'.
+
+        The converts are returned in reversed order of registration.
+        """
         return reversed(cls._converters)
 
-    def norm_sort_key(cls) -> int:
+    def norm_sort_key(cls) -> int:  # noqa: N805
         """Return sort key for `cls` used for normalization of terms."""
         return cls._reg_id
 
 
 class Quantity(metaclass=QuantityMeta):
-
     """Base class used to define types of quantities."""
 
     __slots__ = ['_amount', '_unit']
@@ -1022,10 +1019,11 @@ class Quantity(metaclass=QuantityMeta):
 
     def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> 'Quantity':
+        """Create new Quantity instance."""
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
         elif isinstance(amount, (Integral, StdLibDecimal)):
-            amnt = Decimal(amount)      # convert to decimalfp.Decimal
+            amnt = Decimal(amount)  # convert to decimalfp.Decimal
         elif isinstance(amount, float):
             try:
                 amnt = Decimal(amount)
@@ -1063,6 +1061,7 @@ class Quantity(metaclass=QuantityMeta):
                     elif unit is unit_from_sym:
                         pass
                     else:
+                        assert unit_from_sym.qty_cls is not None
                         qty = unit_from_sym.qty_cls(amnt, unit_from_sym)
                         return qty.convert(unit)
         else:
@@ -1095,12 +1094,12 @@ class Quantity(metaclass=QuantityMeta):
 
     @property
     def amount(self) -> Rational:
-        """The quantity's amount, i.e. the numerical part of the quantity."""
+        """Return `self`s amount, i.e. the numerical part of the quantity."""
         return self._amount
 
     @property
     def unit(self) -> Unit:
-        """The quantity's unit."""
+        """Return `self`s unit."""
         return self._unit
 
     def equiv_amount(self, unit: Unit) -> Optional[Rational]:
@@ -1146,13 +1145,16 @@ class Quantity(metaclass=QuantityMeta):
         return equiv_amount * to_unit
 
     @overload
-    def __mul__(self, other: Rational) -> 'Quantity': ...
+    def __mul__(self, other: Rational) -> 'Quantity':  # noqa: D105
+        ...
 
     @overload
-    def __mul__(self, other: 'Quantity') -> BinOpResT: ...
+    def __mul__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+        ...
 
     @overload
-    def __mul__(self, other: Unit) -> BinOpResT: ...
+    def __mul__(self, other: Unit) -> BinOpResT:  # noqa: D105
+        ...
 
     def __mul__(self, other: Any) -> BinOpResT:
         """self * other"""
@@ -1168,13 +1170,16 @@ class Quantity(metaclass=QuantityMeta):
     __rmul__ = __mul__
 
     @overload
-    def __truediv__(self, other: Rational) -> 'Quantity': ...
+    def __truediv__(self, other: Rational) -> 'Quantity':  # noqa: D105
+        ...
 
     @overload
-    def __truediv__(self, other: 'Quantity') -> BinOpResT: ...
+    def __truediv__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+        ...
 
     @overload
-    def __truediv__(self, other: Unit) -> BinOpResT: ...
+    def __truediv__(self, other: Unit) -> BinOpResT:  # noqa: D105
+        ...
 
     def __truediv__(self, other: Any) -> BinOpResT:
         """self / other"""
@@ -1246,7 +1251,7 @@ def _qty_from_term(term: UnitDefT) -> BinOpResT:
         res_unit = _unit_from_term(term)
     except KeyError:
         num, res_def = term.normalized().split()
-        if not res_def:     # empty term
+        if not res_def:  # empty term
             return num
         elif res_def != term:
             res_unit = _unit_from_term(res_def)
