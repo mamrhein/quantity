@@ -1022,6 +1022,7 @@ class Quantity(metaclass=QuantityMeta):
     def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> 'Quantity':
         """Create new Quantity instance."""
+        amnt: Rational
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
         elif isinstance(amount, (Integral, StdLibDecimal)):
@@ -1087,10 +1088,11 @@ class Quantity(metaclass=QuantityMeta):
         qty = super().__new__(cls)
         # check whether it should be quantized
         quantum = cls.quantum
-        if quantum:
+        if quantum is not None:
             assert unit._equiv is not None
             # adjust quantum to unit
             quantum /= unit._equiv
+            assert quantum is not None  # needed to silence mypy; TODO: remove
             amnt = Decimal(amnt / quantum, 0) * quantum
         # finally set amount and unit
         qty._amount = amnt

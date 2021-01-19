@@ -66,7 +66,7 @@ def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
                          ids=lambda p: str(p))
 def test_qty_with_quantum(amnt: Rational) \
         -> None:  # noqa: N803
-    quant = Decimal(DataVolume.quantum)
+    quant: Rational = Decimal(DataVolume.quantum)
     dv = DataVolume(amnt, BYTE)
     assert dv.amount == Decimal(amnt / quant, 0) * quant
     quant /= 125    # adjust quantum to KILOBIT
