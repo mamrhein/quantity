@@ -22,8 +22,9 @@ from decimalfp import Decimal
 
 from quantity import Quantity, QuantityError, QuantityMeta, Rational, Unit
 from quantity.predefined import (
-    CELSIUS, Force, GIGAWATT, KILOWATT, Length, MEGAWATT, METRE, MILLIGRAM,
-    Mass, Power, Temperature, )
+    BYTE, CELSIUS, DataVolume, Force, GIGAWATT, KILOBIT, KILOWATT, Length,
+    MEGAWATT,
+    METRE, MILLIGRAM, Mass, Power, Temperature, )
 
 
 # noinspection PyPep8Naming
@@ -58,6 +59,19 @@ def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
     else:
         with pytest.raises(QuantityError):
             _ = Qty(amnt, unit)
+
+
+@pytest.mark.parametrize("amnt",
+                         [3.7, Fraction(2, 7), Decimal("9283.10006")],
+                         ids=lambda p: str(p))
+def test_qty_with_quantum(amnt: Rational) \
+        -> None:  # noqa: N803
+    quant = Decimal(DataVolume.quantum)
+    dv = DataVolume(amnt, BYTE)
+    assert dv.amount == Decimal(amnt / quant, 0) * quant
+    quant /= 125    # adjust quantum to KILOBIT
+    dv = DataVolume(amnt, KILOBIT)
+    assert dv.amount == Decimal(amnt / quant, 0) * quant
 
 
 @pytest.mark.parametrize("unit", [5, 'a'], ids=("5", "'a'"))

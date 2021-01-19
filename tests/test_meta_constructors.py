@@ -129,6 +129,11 @@ def test_cls_already_registered(qties_bcd) -> None:
         _ = QuantityMeta("_", (Quantity,), {}, define_as=B ** 2 / (C * D))
 
 
+def test_quantum_without_ref_unit() -> None:
+    with pytest.raises(AssertionError):
+        _ = QuantityMeta("X", (Quantity,), {}, quantum=1)
+
+
 def test_unknown_keyword() -> None:
     with pytest.raises(AssertionError):
         _ = QuantityMeta("X", (Quantity,), {}, definition="foo")

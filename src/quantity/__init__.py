@@ -912,6 +912,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
         assert ref_unit_symbol if ref_unit_name else True, \
             "If `ref_unit_name` is given, `ref_unit_symbol` must also be " \
             "given."
+        assert quantum is None or ref_unit_symbol, \
+            "A quantum can only be defined together with a reference unit."
         # prevent __dict__ from being built for subclasses of Quantity
         try:
             clsdict['__slots__']
@@ -1084,9 +1086,12 @@ class Quantity(metaclass=QuantityMeta):
         # make raw instance
         qty = super().__new__(cls)
         # check whether it should be quantized
-        # quantum = cls.getQuantum(unit)
-        # if quantum:
-        #     amnt = cls._quantize(amount / quantum, unit) * quantum
+        quantum = cls.quantum
+        if quantum:
+            assert unit._equiv is not None
+            # adjust quantum to unit
+            quantum /= unit._equiv
+            amnt = Decimal(amnt / quantum, 0) * quantum
         # finally set amount and unit
         qty._amount = amnt
         qty._unit = unit
