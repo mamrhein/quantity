@@ -696,6 +696,20 @@ class Unit:
         except AttributeError:
             return None
 
+    @property
+    def quantum(self) -> Optional[Rational]:
+        """Return the minimum amount of a quantity with unit `self`.
+
+        Returns None if the quantity class related to `self` does not define a
+        quantum.
+        """
+        cls = self.qty_cls
+        if cls is None or cls.quantum is None:
+            return None
+        # cls.quantum not None => cls.ref_unit not None => self._equiv not None
+        assert self._equiv is not None
+        return cls.quantum / self._equiv
+
     def __hash__(self) -> int:
         """hash(self)"""
         return hash(self.symbol)
@@ -957,10 +971,10 @@ class QuantityMeta(ClassWithDefinitionMeta):
 
     @property
     def quantum(cls) -> Optional[Rational]:  # noqa: N805
-        """Return the smallest quantum defined for `cls` (if any).
+        """Return the minumum amount for an instance of `cls`.
 
-        The quantum is the smallest amount (in terms of the reference unit) an
-        instance of `cls` can take (None if quantum not defined).
+        The quantum is the minimum amount (in terms of the reference unit) an
+        instance of `cls` can take (None no quantum is defined).
         """
         return cls._quantum
 
@@ -1087,12 +1101,8 @@ class Quantity(metaclass=QuantityMeta):
         # make raw instance
         qty = super().__new__(cls)
         # check whether it should be quantized
-        quantum = cls.quantum
+        quantum = unit.quantum
         if quantum is not None:
-            assert unit._equiv is not None
-            # adjust quantum to unit
-            quantum /= unit._equiv
-            assert quantum is not None  # needed to silence mypy; TODO: remove
             amnt = Decimal(amnt / quantum, 0) * quantum
         # finally set amount and unit
         qty._amount = amnt
