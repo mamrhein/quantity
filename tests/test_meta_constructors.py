@@ -27,7 +27,7 @@ def qty_simple() -> QuantityMeta:
     return QuantityMeta("SimpleQty", (Quantity,), {})
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def qty_a() -> Tuple[str, str, QuantityMeta]:
     symbol, name = "#a", "1a"
     return symbol, name, QuantityMeta(symbol.upper(), (Quantity,), {},
