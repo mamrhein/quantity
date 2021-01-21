@@ -28,11 +28,11 @@ from quantity.predefined import (
 
 
 # noinspection PyPep8Naming
-@pytest.mark.parametrize("Qty", [Mass, Force], ids=("Mass", "Force"))
 @pytest.mark.parametrize("amnt",
                          [17, Fraction(2, 7), StdLibDecimal("29.82"),
                           Decimal("9283.10006"), 3.5, "0.004", b"2.99"],
                          ids=lambda p: str(p))
+@pytest.mark.parametrize("Qty", [Mass, Force], ids=("Mass", "Force"))
 def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
         -> None:  # noqa: N803
     qty = Qty(amnt)
@@ -45,11 +45,11 @@ def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
 
 
 # noinspection PyPep8Naming
-@pytest.mark.parametrize("Qty", [Mass, Power], ids=("Mass", "Power"))
+@pytest.mark.parametrize("unit", [MILLIGRAM, GIGAWATT], ids=("mg", "GW"))
 @pytest.mark.parametrize("amnt",
                          [17, Fraction(2, 7), Decimal("9283.10006")],
                          ids=lambda p: str(p))
-@pytest.mark.parametrize("unit", [MILLIGRAM, GIGAWATT], ids=("mg", "GW"))
+@pytest.mark.parametrize("Qty", [Mass, Power], ids=("Mass", "Power"))
 def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
         -> None:  # noqa: N803
     if Qty is unit.qty_cls:
