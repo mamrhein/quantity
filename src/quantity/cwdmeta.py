@@ -126,7 +126,16 @@ class ClassWithDefinitionMeta(type):
 
     def norm_sort_key(cls) -> int:
         """Return sort key for `cls` used for normalization of terms."""
-        return hash(cls)
+        cn = cls.__name__
+        ln = len(cn)
+        sn = cn[:25]
+        k = 0
+        for i in range(len(sn)):
+            k = (k << 7) + ord(sn[i])
+        for i in range(25 - len(sn)):
+            k = (k << 7)
+        k = (k << 7) + max(ln, 127)
+        return k
 
     def _get_factor(cls, other: NonNumTermElem) -> Rational:
         """Instances are not convertable, raise TypeError."""
