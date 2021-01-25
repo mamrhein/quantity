@@ -1278,6 +1278,18 @@ class Quantity(metaclass=QuantityMeta):
             return NotImplemented
         return self.amount ** exp * self.unit ** exp
 
+    def __round__(self, n_digits: int = 0) -> 'Quantity':
+        """Return copy of `self` with its amount rounded to `n_digits`.
+
+        Args:
+            n_digits (`Integral`): number of fractional digits to be rounded
+                to
+
+        Returns:
+            type(self): round(self.amount, n_digits) * self.unit
+        """
+        return self.__class__(round(self.amount, n_digits), self.unit)
+
     def __repr__(self) -> str:
         """repr(self)"""
         cls = self.__class__

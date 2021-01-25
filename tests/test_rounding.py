@@ -14,7 +14,6 @@
 """Test-driver for rounding and quantization."""
 
 from fractions import Fraction
-from numbers import Rational
 
 import pytest
 from decimalfp import Decimal, ROUNDING
@@ -22,10 +21,7 @@ from decimalfp import Decimal, ROUNDING
 from quantity import Quantity
 from quantity.predefined import (
     CARAT, CELSIUS, FAHRENHEIT, GRAM, HOUR, KELVIN, KILOGRAM, KILOWATT, METRE,
-    MILE,
-    MILLIWATT,
-    OUNCE, POUND,
-    WATT, )
+    MILE, MILLIWATT, OUNCE, POUND, )
 
 
 @pytest.fixture(scope="module",
@@ -33,6 +29,22 @@ from quantity.predefined import (
                 ids=[rounding_mode.name for rounding_mode in ROUNDING])
 def rounding_mode(request) -> ROUNDING:
     return request.param
+
+
+@pytest.mark.parametrize("n_digits",
+                         [-2, 0, 3],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("qty_unit",
+                         [CARAT, GRAM, FAHRENHEIT, KILOWATT],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("qty_amnt",
+                         [17, Fraction(4, 3), Decimal("834.6719")],
+                         ids=lambda p: str(p))
+def test_round(qty_amnt, qty_unit, n_digits) -> None:
+    qty = qty_amnt * qty_unit
+    rounded = round(qty, n_digits)
+    assert rounded.unit is qty_unit
+    assert rounded.amount == round(qty.amount, n_digits)
 
 
 @pytest.mark.parametrize("quant_unit",
@@ -59,7 +71,7 @@ def test_quantize_linear_scaled(qty_amnt, qty_unit, quant_amnt, quant_unit,
         res_amnt = Decimal(qty_amnt).quantize(equiv, rounding_mode)
     elif isinstance(qty_amnt, Decimal):
         res_amnt = qty_amnt.quantize(equiv, rounding_mode)
-    else:   # handle Fraction
+    else:  # handle Fraction
         mult = Decimal(qty_amnt / equiv, 3).adjusted(0, rounding_mode)
         if mult == 0 and rounding_mode in (ROUNDING.ROUND_05UP,
                                            ROUNDING.ROUND_CEILING):
