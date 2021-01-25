@@ -444,8 +444,8 @@ of the called quantity.
 
     As an alternative the method :meth:`Quantity.quantize` can be used.
 
-For more advanced cases of rounding_mode the method :meth:`Quantity.quantize` can
-round a quantity to any quantum according to any rounding_mode mode:
+For more advanced cases of rounding the method :meth:`Quantity.quantize` can
+round a quantity to any quantum according to any rounding mode:
 
     >>> l = Length('1.7296 km')
     >>> l.quantize(METRE)
@@ -472,7 +472,7 @@ according to a sequence of ratios:
     >>> remainder
     Mass(Decimal(0, 2)))
 
-If the quantity is quantized, there can be rounding_mode errors causing a remainder
+If the quantity is quantized, there can be rounding errors causing a remainder
 with an amount other than 0:
 
     >>> b = 10 ^ KILOBYTE
@@ -1167,18 +1167,19 @@ class Quantity(metaclass=QuantityMeta):
 
         Args:
             quant (type(self)): quantum to get a multiple from
-            rounding (ROUNDING): rounding_mode mode (default: None)
+            rounding (ROUNDING): rounding mode (default: None)
 
-        If no `rounding_mode` mode is given, the current default mode from module
-        `decimalfp` is used.
+        If no `rounding` mode is given, the current default mode from
+        module `decimalfp` is used.
 
         Returns:
             type(self) instance that is the integer multiple of `quant` closest
-            to `self` (according to `rounding_mode` mode)
+                to `self` (according to `rounding` mode)
 
         Raises:
             IncompatibleUnitsError: `quant` can not be converted to self.unit
             TypeError: `quant` is not an instance of type(self)
+            TypeError: type(self) has no reference unit
         """
         cls = self.__class__
         if quant.__class__ is not cls:
@@ -1321,16 +1322,16 @@ def _qty_from_term(term: UnitDefT) -> BinOpResT:
 
 
 def _floordiv_rounded(x: int, y: int,
-                      rounding_mode: Optional[ROUNDING] = None) -> int:
+                      rounding: Optional[ROUNDING] = None) -> int:
     # Return x // y, rounded using given rounding mode (or default mode
     # if none is given)
     quot, rem = divmod(x, y)
-    if rem == 0:  # no need for rounding_mode
+    if rem == 0:  # no need for rounding
         return quot
     else:
-        if rounding_mode is None:
-            rounding_mode = get_dflt_rounding_mode()
-        if rounding_mode == ROUNDING.ROUND_HALF_UP:
+        if rounding is None:
+            rounding = get_dflt_rounding_mode()
+        if rounding == ROUNDING.ROUND_HALF_UP:
             # Round 5 up (away from 0)
             # |remainder| > |divisor|/2 or
             # |remainder| = |divisor|/2 and quotient >= 0
@@ -1340,7 +1341,7 @@ def _floordiv_rounded(x: int, y: int,
                 return quot + 1
             else:
                 return quot
-        elif rounding_mode == ROUNDING.ROUND_HALF_EVEN:
+        elif rounding == ROUNDING.ROUND_HALF_EVEN:
             # Round 5 to even, rest to nearest
             # |remainder| > |divisor|/2 or
             # |remainder| = |divisor|/2 and quotient not even
@@ -1350,7 +1351,7 @@ def _floordiv_rounded(x: int, y: int,
                 return quot + 1
             else:
                 return quot
-        elif rounding_mode == ROUNDING.ROUND_HALF_DOWN:
+        elif rounding == ROUNDING.ROUND_HALF_DOWN:
             # Round 5 down
             # |remainder| > |divisor|/2 or
             # |remainder| = |divisor|/2 and quotient < 0
@@ -1360,7 +1361,7 @@ def _floordiv_rounded(x: int, y: int,
                 return quot + 1
             else:
                 return quot
-        elif rounding_mode == ROUNDING.ROUND_DOWN:
+        elif rounding == ROUNDING.ROUND_DOWN:
             # Round towards 0 (aka truncate)
             # quotient negativ
             # => add 1
@@ -1368,7 +1369,7 @@ def _floordiv_rounded(x: int, y: int,
                 return quot + 1
             else:
                 return quot
-        elif rounding_mode == ROUNDING.ROUND_UP:
+        elif rounding == ROUNDING.ROUND_UP:
             # Round away from 0
             # quotient not negativ
             # => add 1
@@ -1376,15 +1377,15 @@ def _floordiv_rounded(x: int, y: int,
                 return quot + 1
             else:
                 return quot
-        elif rounding_mode == ROUNDING.ROUND_CEILING:
+        elif rounding == ROUNDING.ROUND_CEILING:
             # Round up (not away from 0 if negative)
             # => always add 1
             return quot + 1
-        elif rounding_mode == ROUNDING.ROUND_FLOOR:
+        elif rounding == ROUNDING.ROUND_FLOOR:
             # Round down (not towards 0 if negative)
             # => never add 1
             return quot
-        elif rounding_mode == ROUNDING.ROUND_05UP:
+        elif rounding == ROUNDING.ROUND_05UP:
             # Round down unless last digit is 0 or 5
             # quotient not negativ and
             # quotient divisible by 5 without remainder or
@@ -1396,13 +1397,13 @@ def _floordiv_rounded(x: int, y: int,
                 return quot + 1
             else:
                 return quot
-    raise ValueError(f"Invalid rounding_mode mode: {rounding_mode!r}.")
+    raise ValueError(f"Invalid rounding mode: {rounding!r}.")
 
 
 def _quantize_fraction(self: Fraction, quant: Rational,
-                       rounding_mode: Optional[ROUNDING] = None) -> Fraction:
+                       rounding: Optional[ROUNDING] = None) -> Fraction:
     """Return integer multiple of `quant` closest to `self`."""
     quot: Fraction = self / quant
     mult = _floordiv_rounded(quot.numerator, quot.denominator,
-                             rounding_mode=rounding_mode)
+                             rounding=rounding)
     return mult * quant
