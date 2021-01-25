@@ -14,6 +14,8 @@
 
 """Terms of tuples of elements and corresponding exponents."""
 
+from __future__ import annotations
+
 import sys
 import unicodedata
 from abc import abstractmethod
@@ -51,12 +53,12 @@ class NonNumTermElem(Protocol):
 
     @property
     @abstractmethod
-    def definition(self) -> 'Term':
+    def definition(self) -> Term:
         """Definition of `self`."""
 
     @property
     @abstractmethod
-    def normalized_definition(self) -> 'Term':
+    def normalized_definition(self) -> Term:
         """Return the decomposition of `self`."""
 
     @abstractmethod
@@ -64,7 +66,7 @@ class NonNumTermElem(Protocol):
         """Return sort key for `self` used for normalization of terms."""
 
     @abstractmethod
-    def _get_factor(self, other: 'NonNumTermElem') -> Optional[Rational]:
+    def _get_factor(self, other: NonNumTermElem) -> Optional[Rational]:
         """Return factor f so that f * `other` == `self`, or None."""
 
 
@@ -232,7 +234,7 @@ class Term(ItemSequenceT[T]):
             return tuple(chain((num_item,), res_items))
         return tuple(res_items)
 
-    def normalized(self) -> 'Term[T]':
+    def normalized(self) -> Term[T]:
         """Return normalized term equivalent to `self`."""
         try:
             return self._normalized
@@ -271,7 +273,7 @@ class Term(ItemSequenceT[T]):
         return None
 
     def split(self, dflt_num = ONE) \
-            -> Tuple[Rational, 'Term[T]']:
+            -> Tuple[Rational, Term[T]]:
         """Return `self`s numeric element and `self`s non-numeric part.
 
         If `self` has no numeric element, `dflt_num` is returned instead.
@@ -282,7 +284,7 @@ class Term(ItemSequenceT[T]):
         else:
             return num, Term(self[1:])
 
-    def reciprocal(self) -> 'Term[T]':
+    def reciprocal(self) -> Term[T]:
         """1 / `self`"""
         return self.__class__(_reciprocal(self), reduce_items=False)
 
@@ -327,7 +329,7 @@ class Term(ItemSequenceT[T]):
                     self.normalized().items == other.normalized().items)
         return NotImplemented
 
-    def __mul__(self, other: Union['Term[T]', Rational]) -> 'Term[T]':
+    def __mul__(self, other: Union[Term[T], Rational]) -> Term[T]:
         """self * other"""
         cls = self.__class__
         if isinstance(other, cls):
@@ -343,7 +345,7 @@ class Term(ItemSequenceT[T]):
 
     __rmul__ = __mul__
 
-    def __truediv__(self, other: Union['Term[T]', Rational]) -> 'Term[T]':
+    def __truediv__(self, other: Union[Term[T], Rational]) -> Term[T]:
         """self / other"""
         cls = self.__class__
         if isinstance(other, cls):
@@ -358,7 +360,7 @@ class Term(ItemSequenceT[T]):
             return NotImplemented
         return cls(items, reduce_items=False)
 
-    def __rtruediv__(self, other: Rational) -> 'Term[T]':
+    def __rtruediv__(self, other: Rational) -> Term[T]:
         """other / self"""
         if isinstance(other, Rational):
             n_items = len(self) + 1
@@ -368,7 +370,7 @@ class Term(ItemSequenceT[T]):
             return self.__class__(items, reduce_items=False)
         return NotImplemented
 
-    def __pow__(self, exp: int) -> 'Term[T]':
+    def __pow__(self, exp: int) -> Term[T]:
         """self ** exp"""
         return self.__class__(((ielem, exp * iexp) for (ielem, iexp) in self),
                               reduce_items=True)

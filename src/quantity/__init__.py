@@ -533,6 +533,8 @@ used:
     '*****19.36 m\xb3 '
 """
 
+from __future__ import annotations
+
 import operator
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
@@ -578,20 +580,20 @@ QuantityClsDefT = Term['QuantityMeta']
 
 # Cache for results of operations on unit definitions
 BinOpResT = Union['Quantity', Rational]
-_UNIT_OP_CACHE: MutableMapping[Tuple[BinOpT, 'Unit', 'Unit'], BinOpResT] = {}
+_UNIT_OP_CACHE: MutableMapping[Tuple[BinOpT, Unit, Unit], BinOpResT] = {}
 
 # Global registry of units
 # [symbol -> unit] map, used to ensure that instances of Unit are singletons
-_SYMBOL_UNIT_MAP: MutableMapping[str, 'Unit'] = {}
+_SYMBOL_UNIT_MAP: MutableMapping[str, Unit] = {}
 # [term -> unit] map
 _TERM_UNIT_MAP = UnitRegistryT(unique_items=False)
 
 
-def _unit_from_symbol(symbol: str) -> 'Unit':
+def _unit_from_symbol(symbol: str) -> Unit:
     return _SYMBOL_UNIT_MAP[symbol]
 
 
-def _unit_from_term(term: UnitDefT) -> 'Unit':
+def _unit_from_term(term: UnitDefT) -> Unit:
     return _TERM_UNIT_MAP[term]
 
 
@@ -606,13 +608,9 @@ class Unit:
 
     __slots__ = ['_symbol', '_name', '_equiv', '_definition', '_qty_cls']
 
-    # @classmethod
-    # def _unit_from_term(cls, term: Term) -> 'Unit':
-    #     return Unit(symbol=str(term))
-
     def __init__(self, symbol: str, name: Optional[str] = None,
-                 define_as: Optional[Union['Quantity', UnitDefT]] = None):
-        self._qty_cls: 'QuantityMeta'
+                 define_as: Optional[Union[Quantity, UnitDefT]] = None):
+        self._qty_cls: QuantityMeta
         self._equiv: Rational
         if isinstance(define_as, Quantity):
             definition = UnitDefT([(define_as.amount, 1),
@@ -689,7 +687,7 @@ class Unit:
             return False
 
     @property
-    def qty_cls(self) -> Optional['QuantityMeta']:
+    def qty_cls(self) -> Optional[QuantityMeta]:
         """Return the `Quantity` subclass related to `self`."""
         try:
             return self._qty_cls
@@ -714,11 +712,11 @@ class Unit:
         """hash(self)"""
         return hash(self.symbol)
 
-    def __copy__(self) -> 'Unit':
+    def __copy__(self) -> Unit:
         """Return self (:class:`Unit` instances are immutable)."""
         return self
 
-    def __deepcopy__(self, memo: Any) -> 'Unit':
+    def __deepcopy__(self, memo: Any) -> Unit:
         return self.__copy__()
 
     def __eq__(self, other: Any) -> bool:
@@ -757,19 +755,19 @@ class Unit:
         return self._compare(other, operator.ge)
 
     @overload
-    def __mul__(self, other: Rational) -> 'Quantity':  # noqa: D105
+    def __mul__(self, other: Rational) -> Quantity:  # noqa: D105
         ...
 
     @overload
-    def __mul__(self, other: SIPrefix) -> 'Quantity':  # noqa: D105
+    def __mul__(self, other: SIPrefix) -> Quantity:  # noqa: D105
         ...
 
     @overload
-    def __mul__(self, other: 'Unit') -> BinOpResT:  # noqa: D105
+    def __mul__(self, other: Unit) -> BinOpResT:  # noqa: D105
         ...
 
     @overload
-    def __mul__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+    def __mul__(self, other: Quantity) -> BinOpResT:  # noqa: D105
         ...
 
     def __mul__(self, other: Any, _op_cache = _UNIT_OP_CACHE) -> BinOpResT:
@@ -801,15 +799,15 @@ class Unit:
     __rmul__ = __mul__
 
     @overload
-    def __truediv__(self, other: Rational) -> 'Quantity':  # noqa: D105
+    def __truediv__(self, other: Rational) -> Quantity:  # noqa: D105
         ...
 
     @overload
-    def __truediv__(self, other: 'Unit') -> BinOpResT:  # noqa: D105
+    def __truediv__(self, other: Unit) -> BinOpResT:  # noqa: D105
         ...
 
     @overload
-    def __truediv__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+    def __truediv__(self, other: Quantity) -> BinOpResT:  # noqa: D105
         ...
 
     def __truediv__(self, other: Any, _op_cache = _UNIT_OP_CACHE) -> BinOpResT:
@@ -844,13 +842,13 @@ class Unit:
             return other.amount * (self / other.unit)
         return NotImplemented
 
-    def __rtruediv__(self, other: Any) -> 'Quantity':
+    def __rtruediv__(self, other: Any) -> Quantity:
         """other / self"""
         if isinstance(other, Rational):
             return other * self ** -1
         return NotImplemented
 
-    def __pow__(self, exp: Any) -> 'Quantity':
+    def __pow__(self, exp: Any) -> Quantity:
         """self ** exp"""
         if isinstance(exp, int):
             if exp == 1:
@@ -903,9 +901,9 @@ class QuantityMeta(ClassWithDefinitionMeta):
     _quantum: Rational
 
     def __new__(mcs, name: str, bases: Tuple[type, ...],  # noqa: N804
-                clsdict: Dict[str, Any], **kwds: Any) -> 'QuantityMeta':
+                clsdict: Dict[str, Any], **kwds: Any) -> QuantityMeta:
         """Create new Quantity (sub-)class."""
-        cls: 'QuantityMeta'
+        cls: QuantityMeta
         ref_unit_def: Optional[UnitDefT] = None
         # optional definition
         define_as: Optional[QuantityClsDefT] = kwds.pop('define_as', None)
@@ -933,7 +931,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
             clsdict['__slots__']
         except KeyError:
             clsdict['__slots__'] = ()
-        cls = cast('QuantityMeta',
+        cls = cast(QuantityMeta,
                    super().__new__(mcs, name, bases, clsdict,
                                    define_as=cast(ClassDefT, define_as)))
         if ref_unit_symbol:
@@ -979,7 +977,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         return cls._quantum
 
     def new_unit(cls, symbol: str, name: Optional[str],  # noqa: N805
-                 define_as: Optional['Quantity'] = None) -> 'Unit':
+                 define_as: Optional[Quantity] = None) -> Unit:
         """Create, register and return a new unit for `cls`."""
         if define_as is None:
             unit = Unit(symbol, name)
@@ -1034,7 +1032,7 @@ class Quantity(metaclass=QuantityMeta):
     _unit: Unit
 
     def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
-                unit: Optional[Unit] = None) -> 'Quantity':
+                unit: Optional[Unit] = None) -> Quantity:
         """Create new Quantity instance."""
         amnt: Rational
         if isinstance(amount, (Decimal, Fraction)):
@@ -1143,7 +1141,7 @@ class Quantity(metaclass=QuantityMeta):
             else:
                 return factor * self.amount
 
-    def convert(self, to_unit: Unit) -> 'Quantity':
+    def convert(self, to_unit: Unit) -> Quantity:
         """Return quantity q where q == `self` and q.unit is `to_unit`.
 
         Args:
@@ -1161,8 +1159,8 @@ class Quantity(metaclass=QuantityMeta):
                                       self.unit, to_unit)
         return equiv_amount * to_unit
 
-    def quantize(self, quant: 'Quantity',
-                 rounding: Optional[ROUNDING] = None) -> 'Quantity':
+    def quantize(self, quant: Quantity,
+                 rounding: Optional[ROUNDING] = None) -> Quantity:
         """Return integer multiple of `quant` closest to `self`.
 
         Args:
@@ -1204,11 +1202,11 @@ class Quantity(metaclass=QuantityMeta):
         return cls(res_amnt, self.unit)
 
     @overload
-    def __mul__(self, other: Rational) -> 'Quantity':  # noqa: D105
+    def __mul__(self, other: Rational) -> Quantity:  # noqa: D105
         ...
 
     @overload
-    def __mul__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+    def __mul__(self, other: Quantity) -> BinOpResT:  # noqa: D105
         ...
 
     @overload
@@ -1229,11 +1227,11 @@ class Quantity(metaclass=QuantityMeta):
     __rmul__ = __mul__
 
     @overload
-    def __truediv__(self, other: Rational) -> 'Quantity':  # noqa: D105
+    def __truediv__(self, other: Rational) -> Quantity:  # noqa: D105
         ...
 
     @overload
-    def __truediv__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
+    def __truediv__(self, other: Quantity) -> BinOpResT:  # noqa: D105
         ...
 
     @overload
@@ -1266,7 +1264,7 @@ class Quantity(metaclass=QuantityMeta):
                 return self.amount * (self.unit / other)
         return NotImplemented
 
-    def __rtruediv__(self, other: Any) -> 'Quantity':
+    def __rtruediv__(self, other: Any) -> Quantity:
         """other / self"""
         if isinstance(other, Rational):
             return (other / self.amount) * self.unit ** -1
@@ -1278,7 +1276,7 @@ class Quantity(metaclass=QuantityMeta):
             return NotImplemented
         return self.amount ** exp * self.unit ** exp
 
-    def __round__(self, n_digits: int = 0) -> 'Quantity':
+    def __round__(self, n_digits: int = 0) -> Quantity:
         """Return copy of `self` with its amount rounded to `n_digits`.
 
         Args:

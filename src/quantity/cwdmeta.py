@@ -13,6 +13,8 @@
 
 """Provide metaclass for defining classes with terms as definitions."""
 
+from __future__ import annotations
+
 from numbers import Integral, Rational
 from typing import Any, Dict, Optional, Tuple, Union, cast
 
@@ -31,9 +33,9 @@ class ClassWithDefinitionMeta(type):
     def __new__(mcs, name: str, bases: Tuple[type, ...],    # noqa: N804
                 clsdict: Dict[str, Any],
                 define_as: Optional[ClassDefT] = None) \
-            -> 'ClassWithDefinitionMeta':
+            -> ClassWithDefinitionMeta:
         """Create new class."""
-        cls = cast('ClassWithDefinitionMeta',
+        cls = cast(ClassWithDefinitionMeta,
                    super().__new__(mcs, name, bases, clsdict))
         # check definition
         if define_as is not None:
@@ -71,7 +73,7 @@ class ClassWithDefinitionMeta(type):
         """Return True if `cls` is derived from other class(es)."""
         return not cls.is_base_cls()
 
-    def __mul__(cls, other: Union['ClassWithDefinitionMeta', ClassDefT]) \
+    def __mul__(cls, other: Union[ClassWithDefinitionMeta, ClassDefT]) \
             -> ClassDefT:
         """Return class definition: `cls` * `other`."""
         if isinstance(other, ClassWithDefinitionMeta):
@@ -90,7 +92,7 @@ class ClassWithDefinitionMeta(type):
                 return other * ClassDefT(((cls, 1),))
         return NotImplemented
 
-    def __truediv__(cls, other: Union['ClassWithDefinitionMeta',
+    def __truediv__(cls, other: Union[ClassWithDefinitionMeta,
                                       ClassDefT]) -> ClassDefT:
         """Return class definition: `cls` / `other`."""
         if isinstance(other, ClassWithDefinitionMeta):

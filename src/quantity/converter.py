@@ -17,9 +17,7 @@
 
 """Provides classes used to convert quantities."""
 
-# TODO: uncomment the following when compatibility for Python 3.6 is dropped
-#       and replace forward references
-# from __future__ import annotations
+from __future__ import annotations
 
 from typing import (
     Callable, Iterable, Mapping, Optional, TYPE_CHECKING, Tuple, Union, cast, )
@@ -39,8 +37,8 @@ class Converter:
     conv(qty, to_unit) -> number f so that type(qty)(f, to_unit) == qty.
     """
 
-    def __call__(self, qty: 'Quantity', to_unit: 'Unit') \
-            -> Optional['Rational']:
+    def __call__(self, qty: Quantity, to_unit: Unit) \
+            -> Optional[Rational]:
         """Convert a `qty`s amount to the equivalent amount for `to_unit`.
 
         Args:
@@ -63,8 +61,8 @@ class Converter:
             "Can't convert a '%s' unit to a '%s' unit.",
             qty.__class__, to_unit.qty_cls)
 
-    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') \
-            -> Optional['Rational']:
+    def _get_factor(self, qty: Quantity, to_unit: Unit) \
+            -> Optional[Rational]:
         """Return factor f so that f * `to_unit` == `qty`.
 
         Returns None if factor can't be determined.
@@ -137,8 +135,8 @@ class TableConverter(Converter):
         else:
             raise TypeError("A Mapping or list must be given.")
 
-    def _get_factor(self, qty: 'Quantity', to_unit: 'Unit') \
-            -> Optional['Rational']:
+    def _get_factor(self, qty: Quantity, to_unit: Unit) \
+            -> Optional[Rational]:
         """Return factor f so that f * `to_unit` == `qty`.
 
         Returns None if factor can't be determined.
