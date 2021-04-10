@@ -74,6 +74,3 @@ class RationalT(Protocol):
     @abstractmethod
     def __hash__(self) -> int:
         """hash(self)"""
-
-
-ONE = Decimal(1)

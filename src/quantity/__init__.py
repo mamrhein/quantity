@@ -550,9 +550,9 @@ from .cwdmeta import ClassDefT, ClassWithDefinitionMeta, NonNumTermElem, Term
 from .exceptions import (
     IncompatibleUnitsError, QuantityError, UndefinedResultError,
     UnitConversionError, )
-from .rational import ONE
 from .registry import DefinedItemRegistry
 from .si_prefixes import SIPrefix
+from .term import ONE
 from .utils import sum
 from .version import version_tuple as __version__  # noqa: F401
 

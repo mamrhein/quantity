@@ -27,12 +27,14 @@ from typing import (
     Any, Callable, Generator, Iterable, Iterator, List, Optional, Sequence,
     Sized, Tuple, TypeVar, Union, cast, overload, )
 
+from decimalfp import Decimal
+
 if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
 
-from .rational import ONE
+ONE = Decimal(1)
 
 _SUPERSCRIPT_CHARS = [unicodedata.lookup("SUPERSCRIPT %s" % num)
                       for num in ["TWO", "THREE", "FOUR", "FIVE", "SIX",
