@@ -13,9 +13,12 @@
 
 """Provisional typing support for Rational numbers."""
 
+from __future__ import annotations
+
 import sys
 from abc import abstractmethod
-from typing import Any
+from typing import Any, Optional, Union
+
 if sys.version_info >= (3, 8):
     from typing import Protocol, runtime_checkable
 else:
@@ -29,28 +32,32 @@ class RationalT(Protocol):
     """Protocol for rational numbers."""
 
     @abstractmethod
-    def __abs__(self):
+    def __abs__(self) -> RationalT:
         """abs(self)"""
 
     @abstractmethod
-    def __add__(self, other):
+    def __add__(self, other) -> RationalT:
         """self + other"""
 
     @abstractmethod
-    def __sub__(self, other):
+    def __sub__(self, other) -> RationalT:
         """self - other"""
 
     @abstractmethod
-    def __mul__(self, other):
+    def __mul__(self, other) -> RationalT:
         """self * other"""
 
     @abstractmethod
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> RationalT:
         """self / other"""
 
     @abstractmethod
-    def __pow__(self, exponent):
+    def __pow__(self, exponent) -> RationalT:
         """self ** exponent"""
+
+    @abstractmethod
+    def __round__(self, n_digits: Optional[int]) -> Union[int, RationalT]:
+        """round(self)"""
 
     @abstractmethod
     def __eq__(self, other: Any) -> bool:
