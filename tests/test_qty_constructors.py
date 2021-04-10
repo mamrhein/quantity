@@ -129,3 +129,16 @@ def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) \
     assert qty.amount == amnt
     assert qty.unit is unit
     assert qty.__class__ is unit.qty_cls
+
+
+@pytest.mark.parametrize(("amnt", "unit"),
+                         [(3, METRE),
+                          (Fraction(1, 7), MEGAWATT),
+                          (Decimal("-25"), CELSIUS)],
+                         ids=lambda p: str(p))
+def test_qty_from_unit_div_amnt(amnt: Rational, unit: Unit) \
+        -> None:
+    qty = unit / amnt
+    assert qty.amount == Decimal(1) / amnt
+    assert qty.unit is unit
+    assert qty.__class__ is unit.qty_cls
