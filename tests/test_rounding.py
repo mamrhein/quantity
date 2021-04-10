@@ -75,7 +75,7 @@ def test_quantize_linear_scaled(qty_amnt, qty_unit, quant_amnt, quant_unit,
         mult = Decimal(qty_amnt / equiv, 3).adjusted(0, rounding_mode)
         if mult == 0 and rounding_mode in (ROUNDING.ROUND_05UP,
                                            ROUNDING.ROUND_CEILING):
-            mult = 1
+            mult = Decimal(1)
         res_amnt = mult * equiv
     assert quantized.amount == res_amnt
 
