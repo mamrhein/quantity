@@ -755,6 +755,10 @@ class Unit:
         return self._compare(other, operator.ge)
 
     @overload
+    def __mul__(self, other: int) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
     def __mul__(self, other: Rational) -> Quantity:  # noqa: D105
         ...
 
@@ -797,6 +801,10 @@ class Unit:
 
     # other * self
     __rmul__ = __mul__
+
+    @overload
+    def __truediv__(self, other: int) -> Quantity:  # noqa: D105
+        ...
 
     @overload
     def __truediv__(self, other: Rational) -> Quantity:  # noqa: D105
@@ -1019,6 +1027,9 @@ class QuantityMeta(ClassWithDefinitionMeta):
         return cls._reg_id
 
 
+Q = TypeVar("Q", bound="Quantity")
+
+
 class Quantity(metaclass=QuantityMeta):
     """Base class used to define types of quantities."""
 
@@ -1033,7 +1044,7 @@ class Quantity(metaclass=QuantityMeta):
 
     def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> Quantity:
-        """Create new Quantity instance."""
+        """Create new `Quantity` instance."""
         amnt: Rational
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
@@ -1141,7 +1152,7 @@ class Quantity(metaclass=QuantityMeta):
             else:
                 return factor * self.amount
 
-    def convert(self, to_unit: Unit) -> Quantity:
+    def convert(self: Q, to_unit: Unit) -> Q:
         """Return quantity q where q == `self` and q.unit is `to_unit`.
 
         Args:
@@ -1159,8 +1170,7 @@ class Quantity(metaclass=QuantityMeta):
                                       self.unit, to_unit)
         return equiv_amount * to_unit
 
-    def quantize(self, quant: Quantity,
-                 rounding: Optional[ROUNDING] = None) -> Quantity:
+    def quantize(self: Q, quant: Q, rounding: Optional[ROUNDING] = None) -> Q:
         """Return integer multiple of `quant` closest to `self`.
 
         Args:
@@ -1202,7 +1212,11 @@ class Quantity(metaclass=QuantityMeta):
         return cls(res_amnt, self.unit)
 
     @overload
-    def __mul__(self, other: Rational) -> Quantity:  # noqa: D105
+    def __mul__(self: Q, other: int) -> Q:  # noqa: D105
+        ...
+
+    @overload
+    def __mul__(self: Q, other: Rational) -> Q:  # noqa: D105
         ...
 
     @overload
@@ -1227,7 +1241,11 @@ class Quantity(metaclass=QuantityMeta):
     __rmul__ = __mul__
 
     @overload
-    def __truediv__(self, other: Rational) -> Quantity:  # noqa: D105
+    def __truediv__(self: Q, other: int) -> Q:  # noqa: D105
+        ...
+
+    @overload
+    def __truediv__(self: Q, other: Rational) -> Q:  # noqa: D105
         ...
 
     @overload
@@ -1276,7 +1294,7 @@ class Quantity(metaclass=QuantityMeta):
             return NotImplemented
         return self.amount ** exp * self.unit ** exp
 
-    def __round__(self, n_digits: int = 0) -> Quantity:
+    def __round__(self: Q, n_digits: int = 0) -> Q:
         """Return copy of `self` with its amount rounded to `n_digits`.
 
         Args:
