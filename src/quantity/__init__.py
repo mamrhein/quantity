@@ -1211,6 +1211,16 @@ class Quantity(metaclass=QuantityMeta):
             raise QuantityError
         return cls(res_amnt, self.unit)
 
+    def __eq__(self, other: Any) -> bool:
+        """self == other"""
+        if isinstance(other, self.__class__):
+            if self.unit is other.unit:
+                return self.amount == other.amount
+            equiv = other.equiv_amount(self.unit)
+            if equiv is not None:
+                return self.amount == equiv
+        return False
+
     @overload
     def __mul__(self: Q, other: int) -> Q:  # noqa: D105
         ...
