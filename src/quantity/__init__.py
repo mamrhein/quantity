@@ -984,7 +984,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         """
         return cls._quantum
 
-    def new_unit(cls, symbol: str, name: Optional[str],  # noqa: N805
+    def new_unit(cls, symbol: str, name: Optional[str] = None,  # noqa: N805
                  define_as: Optional[Quantity] = None) -> Unit:
         """Create, register and return a new unit for `cls`."""
         if define_as is None:
