@@ -731,7 +731,7 @@ class Unit:
                 factor = self._get_factor(other)
                 if factor is None:
                     raise UnitConversionError("Can't convert '%s' to '%s'.",
-                                              self, other)
+                                              self.name, other.name)
                 else:
                     return op(factor, ONE)
             msg = "Can't compare a '%s' unit and a '%s' unit."
@@ -1220,6 +1220,37 @@ class Quantity(metaclass=QuantityMeta):
             if equiv is not None:
                 return self.amount == equiv
         return False
+
+    def _compare(self, other: Any, op: CmpOpT) -> bool:
+        """Compare self and other using operator op."""
+        if isinstance(other, self.__class__):
+            if self.unit is other.unit:
+                return op(self.amount, other.amount)
+            equiv = other.equiv_amount(self.unit)
+            if equiv is None:
+                raise UnitConversionError("Can't compare '%s' and '%s'.",
+                                          self.unit.name, other.unit.name)
+            return op(self.amount, equiv)
+        elif isinstance(other, Quantity):
+            raise IncompatibleUnitsError("Can't compare a '%s' and a '%s'.",
+                                         self.__class__, other.__class__)
+        return NotImplemented
+
+    def __lt__(self, other: Any) -> bool:
+        """self < other"""
+        return self._compare(other, operator.lt)
+
+    def __le__(self, other: Any) -> bool:
+        """self <= other"""
+        return self._compare(other, operator.le)
+
+    def __gt__(self, other: Any) -> bool:
+        """self > other"""
+        return self._compare(other, operator.gt)
+
+    def __ge__(self, other: Any) -> bool:
+        """self >= other"""
+        return self._compare(other, operator.ge)
 
     @overload
     def __mul__(self: Q, other: int) -> Q:  # noqa: D105
