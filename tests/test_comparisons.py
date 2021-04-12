@@ -33,14 +33,6 @@ T = TypeVar("T")
 CmpOpT = Callable[[T, T], bool]
 
 
-class QtyWithoutConv(Quantity):
-    pass
-
-
-QWC1 = QtyWithoutConv.new_unit('qwc1')
-QWC2 = QtyWithoutConv.new_unit('qwc2')
-
-
 @pytest.mark.parametrize(("rhs_amnt", "rhs_unit"),
                          [
                              (Decimal("17.3"), GRAM),
@@ -89,9 +81,10 @@ def test_qty_eq_non_qty(lhs: str, rhs: Any):
 
 
 # noinspection PyMissingTypeHints
-def test_eq_qty_without_conv():
-    qty1 = 5 * QWC1
-    qty2 = 5 * QWC2
+def test_eq_qty_without_conv(units_without_conv):
+    unit1, unit2 = units_without_conv
+    qty1 = 5 * unit1
+    qty2 = 5 * unit2
     assert qty1 == qty1
     assert qty2 == qty2
     assert qty1 != qty2
@@ -151,9 +144,10 @@ def test_qty_cmp_incompat_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
 @pytest.mark.parametrize("op",
                          [operator.lt, operator.le, operator.gt, operator.ge],
                          ids=lambda p: p.__name__)
-def test_cmp_qty_without_conv(op: CmpOpT):
-    qty1 = 5 * QWC1
-    qty2 = 5 * QWC2
+def test_cmp_qty_without_conv(units_without_conv, op: CmpOpT):
+    unit1, unit2 = units_without_conv
+    qty1 = 5 * unit1
+    qty2 = 5 * unit2
     with pytest.raises(UnitConversionError):
         op(qty1, qty2)
     with pytest.raises(UnitConversionError):
