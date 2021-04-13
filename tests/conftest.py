@@ -13,14 +13,16 @@
 
 """Shared pytest fixtures."""
 
-from typing import Tuple
-
 import pytest
 
-from quantity import Quantity, QuantityMeta, Unit
+from quantity import Quantity, QuantityMeta
 
 
+# noinspection PyPep8Naming
 @pytest.fixture(scope="session")
-def units_without_conv() -> Tuple[Unit, Unit]:
-    _cls = QuantityMeta("QtyWithoutConv", (Quantity,), {})
-    return _cls.new_unit('qwc1'), _cls.new_unit('qwc2')
+def qty_cls_without_conv() -> QuantityMeta:
+    QWC = QuantityMeta("QtyWithoutConv", (Quantity,), {})
+    qwc1 = QWC.new_unit('qwc1')
+    qwc2 = QWC.new_unit('qwc2')
+    SQWC = QuantityMeta("SquareQWC", (Quantity,), {}, define_as=QWC ** 2)
+    return QWC

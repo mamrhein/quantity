@@ -21,8 +21,8 @@ import pytest
 from decimalfp import Decimal
 
 from quantity import (
-    IncompatibleUnitsError, Quantity, QuantityError, Rational, Unit,
-    UnitConversionError,
+    IncompatibleUnitsError, Quantity, QuantityError, QuantityMeta, Rational,
+    Unit, UnitConversionError,
     )
 from quantity.predefined import (
     CELSIUS, FAHRENHEIT, GRAM, KELVIN, KILOGRAM, KILOWATT, METRE, MILLIGRAM,
@@ -80,9 +80,8 @@ def test_qty_eq_non_qty(lhs: str, rhs: Any):
     assert lhs != rhs
 
 
-# noinspection PyMissingTypeHints
-def test_eq_qty_without_conv(units_without_conv):
-    unit1, unit2 = units_without_conv
+def test_eq_qty_without_conv(qty_cls_without_conv: QuantityMeta):
+    unit1, unit2 = qty_cls_without_conv.units()
     qty1 = 5 * unit1
     qty2 = 5 * unit2
     assert qty1 == qty1
@@ -144,8 +143,8 @@ def test_qty_cmp_incompat_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
 @pytest.mark.parametrize("op",
                          [operator.lt, operator.le, operator.gt, operator.ge],
                          ids=lambda p: p.__name__)
-def test_cmp_qty_without_conv(units_without_conv, op: CmpOpT):
-    unit1, unit2 = units_without_conv
+def test_cmp_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: CmpOpT):
+    unit1, unit2 = qty_cls_without_conv.units()
     qty1 = 5 * unit1
     qty2 = 5 * unit2
     with pytest.raises(UnitConversionError):
