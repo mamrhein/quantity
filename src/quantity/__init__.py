@@ -1195,7 +1195,7 @@ class Quantity(metaclass=QuantityMeta):
                             f"'{type(quant)}'.")
         if cls.ref_unit is None:
             raise TypeError(f"Can't quantize a quantity without reference "
-                            f"unit: {cls.__name__}")
+                            f"unit: {cls.__name__}.")
         num_quant = quant.equiv_amount(self.unit)
         if num_quant is None:
             raise UnitConversionError("Can't convert '%s' to '%s'.",
@@ -1251,6 +1251,58 @@ class Quantity(metaclass=QuantityMeta):
     def __ge__(self, other: Any) -> bool:
         """self >= other"""
         return self._compare(other, operator.ge)
+
+    def __hash__(self) -> int:
+        """hash(self)"""
+        return hash((self.amount, self.unit))
+
+    def __abs__(self: Q) -> Q:
+        """abs(self) -> self.Quantity(abs(self.amount), self.unit)"""
+        return self.__class__(cast(Rational, abs(self.amount)), self.unit)
+
+    def __pos__(self: Q) -> Q:
+        """+self"""
+        return self
+
+    def __neg__(self: Q) -> Q:
+        """-self -> self.Quantity(-self.amount, self.unit)"""
+        return self.__class__(-self.amount, self.unit)
+
+    def __add__(self: Q, other: Q) -> Q:
+        """self + other"""
+        if isinstance(other, self.__class__):
+            equiv = other.equiv_amount(self.unit)
+            if equiv is None:
+                raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                          other.unit, self.unit)
+            return self.__class__(self.amount + equiv, self.unit)
+        elif isinstance(other, Quantity):
+            raise IncompatibleUnitsError("Can't add a '%s' and a '%s'.",
+                                         self.__class__, other.__class__)
+        return NotImplemented
+
+    # other + self
+    __radd__ = __add__
+
+    def __sub__(self: Q, other: Q) -> Q:
+        """self - other"""
+        if isinstance(other, self.__class__):
+            equiv = other.equiv_amount(self.unit)
+            if equiv is None:
+                raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                          other.unit, self.unit)
+            return self.__class__(self.amount - equiv, self.unit)
+        elif isinstance(other, Quantity):
+            raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'.",
+                                         other.__class__, self.__class__)
+        return NotImplemented
+
+    def __rsub__(self: Q, other: Q) -> Q:
+        """other - self"""
+        if isinstance(other, Quantity):
+            raise IncompatibleUnitsError("Can't subtract a '%s' from a '%s'.",
+                                         self.__class__, other.__class__)
+        return NotImplemented
 
     @overload
     def __mul__(self: Q, other: int) -> Q:  # noqa: D105
@@ -1329,7 +1381,7 @@ class Quantity(metaclass=QuantityMeta):
             return (other / self.amount) * self.unit ** -1
         return NotImplemented
 
-    def __pow__(self, exp: Any) -> BinOpResT:
+    def __pow__(self, exp: Any) -> Quantity:
         """self ** exp"""
         if not isinstance(exp, int):
             return NotImplemented
