@@ -75,8 +75,8 @@ def test_qty_eq_qty(lhs_amnt: Rational, lhs_unit: Unit,
                              ("27 GHz", "GHz"),
                              ],
                          ids=lambda p: str(p))
-def test_qty_eq_non_qty(lhs: str, rhs: Any):
-    lhs = Quantity(lhs)
+def test_qty_eq_non_qty(qty_str: str, rhs: Any):
+    lhs = Quantity(qty_str)
     assert lhs != rhs
 
 
