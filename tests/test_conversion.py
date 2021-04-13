@@ -20,9 +20,10 @@ from decimalfp import Decimal
 
 from quantity import IncompatibleUnitsError, Quantity, Rational, Unit
 from quantity.predefined import (
-    CELSIUS, CUBIC_METRE, DAY, FAHRENHEIT, GIGAHERTZ, GRAM, HERTZ, JOULE,
-    KELVIN, KILOWATT, KILOWATT_HOUR, LITRE, METRE, MILE_PER_HOUR, MILLIGRAM,
-    MILLIMETRE, MILLIWATT, SQUARE_METRE, )
+    CELSIUS, CUBIC_CENTIMETRE, CUBIC_METRE, DAY, FAHRENHEIT, GIGAHERTZ, GRAM,
+    HERTZ, JOULE, KELVIN, KILOWATT, KILOWATT_HOUR, LITRE, METRE, MILE_PER_HOUR,
+    MILLIGRAM, MILLIMETRE, MILLIWATT, NEWTON, SQUARE_METRE,
+    )
 
 
 @pytest.mark.parametrize(("amnt", "unit", "to_unit", "res_amnt"),
@@ -35,7 +36,7 @@ from quantity.predefined import (
                              (10, FAHRENHEIT, CELSIUS, Fraction(-110, 9))
                              ],
                          ids=lambda p: str(p))
-def test_conversion(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str):
+def test_convert(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str):
     if isinstance(amnt, str):
         amount = Decimal(amnt)
     else:
@@ -75,7 +76,7 @@ def test_conv_wrong_unit(amnt: str, unit: Unit, to_unit: Unit):
                              ("27 °F", CELSIUS, Fraction(-25, 9)),
                              ],
                          ids=lambda p: str(p))
-def test_qty_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
+def test_qty_from_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
     qty = Quantity(qty_str, unit)
     assert qty.unit is unit
     assert qty.amount == res_amnt
@@ -89,6 +90,37 @@ def test_qty_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
                              ("27 GHz", DAY),
                              ],
                          ids=lambda p: str(p))
-def test_qty_str_wrong_unit(qty_str: str, unit: Unit):
+def test_qty_from_str_wrong_unit(qty_str: str, unit: Unit):
     with pytest.raises(IncompatibleUnitsError):
         _ = Quantity(qty_str, unit)
+
+
+@pytest.mark.parametrize("unit",
+                         [NEWTON, FAHRENHEIT, CUBIC_CENTIMETRE],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("value",
+                         [Decimal("0.0003"),
+                          Fraction(1000, 3),
+                          ],
+                         ids=lambda p: str(p))
+def test_qty_to_str(value: Rational, unit: Unit):
+    qty = value * unit
+    assert str(qty) == " ".join((str(qty.amount), str(qty.unit)))
+
+
+@pytest.mark.parametrize("unit",
+                         [NEWTON, FAHRENHEIT, CUBIC_CENTIMETRE],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("value",
+                         [Decimal("0.0003"),
+                          Fraction(1000, 3),
+                          ],
+                         ids=lambda p: str(p))
+def test_qty_repr(value: Rational, unit: Unit):
+    qty = value * unit
+    if unit.is_ref_unit():
+        assert repr(qty) == "%s(%s)" % (qty.__class__.__name__,
+                                        repr(qty.amount))
+    else:
+        assert repr(qty) == "%s(%s, %s)" % (qty.__class__.__name__,
+                                            repr(qty.amount), repr(qty.unit))
