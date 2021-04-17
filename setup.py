@@ -19,7 +19,7 @@ setup(
     packages=find_packages(where='src'),
     include_package_data=True,
     python_requires=">=3.7",
-    install_requires=["decimalfp>=0.11.2"],
+    install_requires=["decimalfp>=0.11.4"],
     tests_require=["pytest"],
     license='BSD',
     keywords='quantity quantities unit units money currency exchange',
