@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -16,26 +16,23 @@
 import operator
 from fractions import Fraction
 from numbers import Rational
-from typing import Any, Callable, TypeVar, Union
+from typing import Any, Callable
 
 import pytest
-from decimalfp import Decimal
+from decimalfp import Decimal, ONE
 
 from quantity import (
-    IncompatibleUnitsError, ONE, Quantity, QuantityMeta, UndefinedResultError,
+    IncompatibleUnitsError, Quantity, QuantityMeta, UndefinedResultError,
     Unit, UnitConversionError,
     )
 from quantity.predefined import (
     CENTIMETRE, CUBIC_CENTIMETRE, Duration, FAHRENHEIT, GRAM, HECTARE, HOUR,
-    JOULE,
-    KILOMETRE, KILOMETRE_PER_HOUR, LITRE, Length, METRE,
-    METRE_PER_SECOND_SQUARED, MICROSECOND, MILLIGRAM, MILLIMETRE,
-    MILLIWATT, MINUTE, NEWTON, SECOND, SQUARE_METRE, TERAWATT,
+    JOULE, KILOMETRE, KILOMETRE_PER_HOUR, LITRE, Length, METRE,
+    METRE_PER_SECOND_SQUARED, MICROSECOND, MILLIGRAM, MILLIMETRE, MILLIWATT,
+    MINUTE, NEWTON, SECOND, SQUARE_METRE, TERAWATT,
     )
 
-T = TypeVar("T")
-U = TypeVar("U")
-BinOpT = Union[Callable[[U, T], T], Callable[[T, U], T]]
+BinOpT = Callable[[Any, Any], Any]
 
 
 @pytest.mark.parametrize("unit",
@@ -44,7 +41,7 @@ BinOpT = Union[Callable[[U, T], T], Callable[[T, U], T]]
 @pytest.mark.parametrize("value",
                          [-302, -1, 0, 4],
                          ids=lambda p: str(p))
-def test_abs(value: Any, unit: Unit):
+def test_abs(value: Any, unit: Unit) -> None:
     qty = value * unit
     abs_qty = abs(qty)
     assert qty.__class__ is abs_qty.__class__
@@ -58,7 +55,7 @@ def test_abs(value: Any, unit: Unit):
 @pytest.mark.parametrize("value",
                          [-302, -1, 0, 4],
                          ids=lambda p: str(p))
-def test_pos(value: Any, unit: Unit):
+def test_pos(value: Any, unit: Unit) -> None:
     qty = value * unit
     assert +qty is qty
 
@@ -69,7 +66,7 @@ def test_pos(value: Any, unit: Unit):
 @pytest.mark.parametrize("value",
                          [-302, -1, 0, 4],
                          ids=lambda p: str(p))
-def test_neg(value: Any, unit: Unit):
+def test_neg(value: Any, unit: Unit) -> None:
     qty = value * unit
     neg_qty = -qty
     assert qty.__class__ is neg_qty.__class__
@@ -87,7 +84,7 @@ def test_neg(value: Any, unit: Unit):
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("op",
                          [operator.add, operator.sub],
-                         ids=lambda p: p.__name__)
+                         ids=lambda p: str(str(p.__name__)))
 @pytest.mark.parametrize("unit1",
                          Length.units(),
                          ids=lambda p: str(p))
@@ -97,7 +94,7 @@ def test_neg(value: Any, unit: Unit):
                           ],
                          ids=lambda p: str(p))
 def test_add_sub_compat_qty(value1: Rational, unit1: Unit, op: BinOpT,
-                            value2: Rational, unit2: Unit):
+                            value2: Rational, unit2: Unit) -> None:
     qty1 = value1 * unit1
     qty2 = value2 * unit2
     res = op(qty1, qty2)
@@ -111,11 +108,12 @@ def test_add_sub_compat_qty(value1: Rational, unit1: Unit, op: BinOpT,
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("op",
                          [operator.add, operator.sub],
-                         ids=lambda p: p.__name__)
+                         ids=lambda p: str(str(p.__name__)))
 @pytest.mark.parametrize("qty1",
                          [3 * MILLIMETRE, 17 * NEWTON],
                          ids=lambda p: str(p))
-def test_add_sub_incompat_qty(qty1: Quantity, op: BinOpT, qty2: Quantity):
+def test_add_sub_incompat_qty(qty1: Quantity, op: BinOpT, qty2: Quantity) -> \
+        None:
     with pytest.raises(IncompatibleUnitsError):
         op(qty1, qty2)
     with pytest.raises(IncompatibleUnitsError):
@@ -127,11 +125,11 @@ def test_add_sub_incompat_qty(qty1: Quantity, op: BinOpT, qty2: Quantity):
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("op",
                          [operator.add, operator.sub],
-                         ids=lambda p: p.__name__)
+                         ids=lambda p: str(p.__name__))
 @pytest.mark.parametrize("qty",
                          [3 * METRE, 17 * NEWTON],
                          ids=lambda p: str(p))
-def test_add_sub_incompat_type(qty: Quantity, op: BinOpT, other: Any):
+def test_add_sub_incompat_type(qty: Quantity, op: BinOpT, other: Any) -> None:
     with pytest.raises(TypeError):
         op(qty, other)
     with pytest.raises(TypeError):
@@ -144,7 +142,7 @@ def test_add_sub_incompat_type(qty: Quantity, op: BinOpT, other: Any):
 @pytest.mark.parametrize("qty",
                          [7 * METRE, 35 * NEWTON],
                          ids=lambda p: str(p))
-def test_qty_mul_rational(qty: Quantity, other: Rational):
+def test_qty_mul_rational(qty: Quantity, other: Rational) -> None:
     res = other * qty
     assert res.__class__ is qty.__class__
     assert res.unit is qty.unit
@@ -161,7 +159,7 @@ def test_qty_mul_rational(qty: Quantity, other: Rational):
                           (Decimal("23.4") * METRE, 7 * CENTIMETRE),
                           ],
                          ids=lambda p: str(p))
-def test_qty_mul_qty_defined_result(qty1: Quantity, qty2: Quantity):
+def test_qty_mul_qty_defined_result(qty1: Quantity, qty2: Quantity) -> None:
     res = qty1 * qty2
     amount = qty1.amount * qty2.amount
     qty = qty1.unit * qty2.unit
@@ -174,11 +172,11 @@ def test_qty_mul_qty_defined_result(qty1: Quantity, qty2: Quantity):
 @pytest.mark.parametrize("qty1",
                          [3 * MILLIMETRE, 17 * FAHRENHEIT],
                          ids=lambda p: str(p))
-def test_qty_mul_qty_undefined_result(qty1: Quantity, qty2: Quantity):
+def test_qty_mul_qty_undefined_result(qty1: Quantity, qty2: Quantity) -> None:
     with pytest.raises(UndefinedResultError):
-        res = qty1 * qty2
+        _ = qty1 * qty2
     with pytest.raises(UndefinedResultError):
-        res = qty2 * qty1
+        _ = qty2 * qty1
 
 
 @pytest.mark.parametrize(("qty", "unit"),
@@ -187,7 +185,7 @@ def test_qty_mul_qty_undefined_result(qty1: Quantity, qty2: Quantity):
                           (Decimal("23.4") * METRE, KILOMETRE),
                           ],
                          ids=lambda p: str(p))
-def test_qty_mul_unit_defined_result(qty: Quantity, unit: Unit):
+def test_qty_mul_unit_defined_result(qty: Quantity, unit: Unit) -> None:
     res = qty * unit
     assert res == qty.amount * (qty.unit * unit)
 
@@ -198,11 +196,11 @@ def test_qty_mul_unit_defined_result(qty: Quantity, unit: Unit):
 @pytest.mark.parametrize("qty1",
                          [3 * MILLIMETRE, 17 * FAHRENHEIT],
                          ids=lambda p: str(p))
-def test_qty_mul_unit_undefined_result(qty1: Quantity, unit: Unit):
+def test_qty_mul_unit_undefined_result(qty1: Quantity, unit: Unit) -> None:
     with pytest.raises(UndefinedResultError):
-        res = qty1 * unit
+        _ = qty1 * unit
     with pytest.raises(UndefinedResultError):
-        res = unit * qty1
+        _ = unit * qty1
 
 
 @pytest.mark.parametrize("other",
@@ -211,7 +209,7 @@ def test_qty_mul_unit_undefined_result(qty1: Quantity, unit: Unit):
 @pytest.mark.parametrize("qty",
                          [7 * METRE, 35 * NEWTON],
                          ids=lambda p: str(p))
-def test_qty_div_rational(qty: Quantity, other: Rational):
+def test_qty_div_rational(qty: Quantity, other: Rational) -> None:
     res = qty / other
     assert res.__class__ is qty.__class__
     assert res.unit is qty.unit
@@ -224,7 +222,8 @@ def test_qty_div_rational(qty: Quantity, other: Rational):
 @pytest.mark.parametrize("qty",
                          [7 * SECOND, 35 * MICROSECOND],
                          ids=lambda p: str(p))
-def test_rational_div_qty_defined_result(qty: Quantity, other: Rational):
+def test_rational_div_qty_defined_result(qty: Quantity, other: Rational) \
+        -> None:
     res = other / qty
     amount = other / qty.amount
     qty = ONE / qty.unit
@@ -237,9 +236,10 @@ def test_rational_div_qty_defined_result(qty: Quantity, other: Rational):
 @pytest.mark.parametrize("qty",
                          [7 * METRE, 35 * MILLIGRAM],
                          ids=lambda p: str(p))
-def test_rational_div_qty_undefined_result(qty: Quantity, other: Rational):
+def test_rational_div_qty_undefined_result(qty: Quantity, other: Rational) \
+        -> None:
     with pytest.raises(UndefinedResultError):
-        res = other / qty
+        _ = other / qty
 
 
 @pytest.mark.parametrize(("qty1", "qty2"),
@@ -248,7 +248,7 @@ def test_rational_div_qty_undefined_result(qty: Quantity, other: Rational):
                           (Decimal("23.4") * METRE, 7 * MICROSECOND),
                           ],
                          ids=lambda p: str(p))
-def test_qty_div_qty_defined_result(qty1: Quantity, qty2: Quantity):
+def test_qty_div_qty_defined_result(qty1: Quantity, qty2: Quantity) -> None:
     res = qty1 / qty2
     amount = qty1.amount / qty2.amount
     qty = qty1.unit / qty2.unit
@@ -261,11 +261,11 @@ def test_qty_div_qty_defined_result(qty1: Quantity, qty2: Quantity):
 @pytest.mark.parametrize("qty1",
                          [3 * GRAM, 17 * FAHRENHEIT],
                          ids=lambda p: str(p))
-def test_qty_div_qty_undefined_result(qty1: Quantity, qty2: Quantity):
+def test_qty_div_qty_undefined_result(qty1: Quantity, qty2: Quantity) -> None:
     with pytest.raises(UndefinedResultError):
-        res = qty1 / qty2
+        _ = qty1 / qty2
     with pytest.raises(UndefinedResultError):
-        res = qty2 / qty1
+        _ = qty2 / qty1
 
 
 @pytest.mark.parametrize(("qty1", "qty2"),
@@ -274,7 +274,7 @@ def test_qty_div_qty_undefined_result(qty1: Quantity, qty2: Quantity):
                           (Decimal("23.4") * HOUR, 7 * MICROSECOND),
                           ],
                          ids=lambda p: str(p))
-def test_qty_div_same_qty(qty1: Quantity, qty2: Quantity):
+def test_qty_div_same_qty(qty1: Quantity, qty2: Quantity) -> None:
     res = qty1 / qty2
     amount = qty1.amount / qty2.amount
     factor = qty1.unit / qty2.unit
@@ -290,7 +290,7 @@ def test_qty_div_same_qty(qty1: Quantity, qty2: Quantity):
                           (Decimal("23.4") * HOUR, MINUTE),
                           ],
                          ids=lambda p: str(p))
-def test_qty_div_unit_defined_result(qty: Quantity, unit: Unit):
+def test_qty_div_unit_defined_result(qty: Quantity, unit: Unit) -> None:
     res = qty / unit
     assert res == qty.amount * (qty.unit / unit)
 
@@ -301,15 +301,16 @@ def test_qty_div_unit_defined_result(qty: Quantity, unit: Unit):
 @pytest.mark.parametrize("qty",
                          [3 * GRAM, 17 * FAHRENHEIT],
                          ids=lambda p: str(p))
-def test_qty_div_unit_undefined_result(qty: Quantity, unit: Quantity):
+def test_qty_div_unit_undefined_result(qty: Quantity, unit: Quantity) -> None:
     with pytest.raises(UndefinedResultError):
-        res = qty / unit
+        _ = qty / unit
 
 
 @pytest.mark.parametrize("op",
                          [operator.add, operator.sub, operator.truediv],
-                         ids=lambda p: p.__name__)
-def test_op_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: BinOpT):
+                         ids=lambda p: str(p.__name__))
+def test_op_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: BinOpT) \
+        -> None:
     unit1, unit2 = qty_cls_without_conv.units()
     qty1 = 5 * unit1
     qty2 = 5 * unit2
@@ -319,14 +320,14 @@ def test_op_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: BinOpT):
         op(qty2, qty1)
 
 
-def test_mul_qty_without_conv(qty_cls_without_conv: QuantityMeta):
+def test_mul_qty_without_conv(qty_cls_without_conv: QuantityMeta) -> None:
     unit1, unit2 = qty_cls_without_conv.units()
     qty1 = 5 * unit1
     qty2 = 5 * unit2
     with pytest.raises(UndefinedResultError):
-        res = qty1 * qty2
+        _ = qty1 * qty2
     with pytest.raises(UndefinedResultError):
-        res = qty2 * qty1
+        _ = qty2 * qty1
 
 
 @pytest.mark.parametrize("exp", [2, 3], ids=lambda p: str(p))
@@ -338,7 +339,8 @@ def test_mul_qty_without_conv(qty_cls_without_conv: QuantityMeta):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_pow_pos_exp_defined_result(value: Rational, unit: Unit, exp: int):
+def test_pow_pos_exp_defined_result(value: Rational, unit: Unit, exp: int) \
+        -> None:
     base = value * unit
     res = base ** exp
     qty = base.unit ** exp
@@ -354,7 +356,7 @@ def test_pow_pos_exp_defined_result(value: Rational, unit: Unit, exp: int):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_pow_neg_exp_defined_result(value: Rational, unit: Unit):
+def test_pow_neg_exp_defined_result(value: Rational, unit: Unit) -> None:
     exp = -1
     base = value * unit
     res = base ** exp
@@ -372,10 +374,10 @@ def test_pow_neg_exp_defined_result(value: Rational, unit: Unit):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_pow_undefined_result(value: Rational, unit: Unit, exp: int):
+def test_pow_undefined_result(value: Rational, unit: Unit, exp: int) -> None:
     base = value * unit
     with pytest.raises(UndefinedResultError):
-        res = base ** exp
+        _ = base ** exp
 
 
 @pytest.mark.parametrize("unit",
@@ -386,7 +388,7 @@ def test_pow_undefined_result(value: Rational, unit: Unit, exp: int):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_pow_one(value: Rational, unit: Unit):
+def test_pow_one(value: Rational, unit: Unit) -> None:
     base = value * unit
     assert base == base ** 1
 
@@ -399,7 +401,7 @@ def test_pow_one(value: Rational, unit: Unit):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_pow_zero(value: Rational, unit: Unit):
+def test_pow_zero(value: Rational, unit: Unit) -> None:
     base = value * unit
     assert base ** 0 == ONE
 
@@ -413,7 +415,7 @@ def test_pow_zero(value: Rational, unit: Unit):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_pow_non_int(value: Rational, unit: Unit, exp: int):
+def test_pow_non_int(value: Rational, unit: Unit, exp: int) -> None:
     base = value * unit
     with pytest.raises(TypeError):
-        res = base ** exp
+        _ = base ** exp

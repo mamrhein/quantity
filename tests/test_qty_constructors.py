@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -15,16 +15,17 @@
 
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
+from numbers import Rational
 from typing import Any
 
 import pytest
 from decimalfp import Decimal
 
-from quantity import Quantity, QuantityError, QuantityMeta, Rational, Unit
+from quantity import Quantity, QuantityError, QuantityMeta, Unit
 from quantity.predefined import (
     BYTE, CELSIUS, DataVolume, Force, GIGAWATT, KILOBIT, KILOWATT, Length,
-    MEGAWATT,
-    METRE, MILLIGRAM, Mass, Power, Temperature, )
+    MEGAWATT, METRE, MILLIGRAM, Mass, Power, Temperature,
+    )
 
 
 # noinspection PyPep8Naming
@@ -34,7 +35,7 @@ from quantity.predefined import (
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("Qty", [Mass, Force], ids=("Mass", "Force"))
 def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
-        -> None:  # noqa: N803
+        -> None:
     qty = Qty(amnt)
     if isinstance(amnt, str):
         amnt = Decimal(amnt)
@@ -51,7 +52,7 @@ def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("Qty", [Mass, Power], ids=("Mass", "Power"))
 def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
-        -> None:  # noqa: N803
+        -> None:
     if Qty is unit.qty_cls:
         qty = Qty(amnt, unit)
         assert qty.amount == amnt
@@ -64,12 +65,11 @@ def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
 @pytest.mark.parametrize("amnt",
                          [3.7, Fraction(2, 7), Decimal("9283.10006")],
                          ids=lambda p: str(p))
-def test_qty_with_quantum(amnt: Rational) \
-        -> None:  # noqa: N803
+def test_qty_with_quantum(amnt: Rational) -> None:
     quant: Rational = Decimal(DataVolume.quantum)
     dv = DataVolume(amnt, BYTE)
     assert dv.amount == Decimal(amnt / quant, 0) * quant
-    quant /= 125    # adjust quantum to KILOBIT
+    quant /= 125  # adjust quantum to KILOBIT
     dv = DataVolume(amnt, KILOBIT)
     assert dv.amount == Decimal(amnt / quant, 0) * quant
 
@@ -112,7 +112,7 @@ def test_qty_from_str_with_unit(num_str: str, amnt: Rational, unit: Unit) \
 
 @pytest.mark.parametrize("num_str",
                          ["28.5 ", "17 m"],
-                         ids=lambda p: p)
+                         ids=lambda p: str(p))
 def test_missing_or_unknown_symbol(num_str: str) -> None:
     with pytest.raises(QuantityError):
         _ = Temperature(num_str)
@@ -123,8 +123,7 @@ def test_missing_or_unknown_symbol(num_str: str) -> None:
                           (Fraction(2, 100), MEGAWATT),
                           (Decimal("-15"), CELSIUS)],
                          ids=lambda p: str(p))
-def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) \
-        -> None:
+def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) -> None:
     qty = amnt * unit
     assert qty.amount == amnt
     assert qty.unit is unit
@@ -136,8 +135,7 @@ def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) \
                           (Fraction(1, 7), MEGAWATT),
                           (Decimal("-25"), CELSIUS)],
                          ids=lambda p: str(p))
-def test_qty_from_unit_div_amnt(amnt: Rational, unit: Unit) \
-        -> None:
+def test_qty_from_unit_div_amnt(amnt: Rational, unit: Unit) -> None:
     qty = unit / amnt
     assert qty.amount == Decimal(1) / amnt
     assert qty.unit is unit

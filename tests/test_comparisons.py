@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -15,22 +15,22 @@
 
 import operator
 from fractions import Fraction
-from typing import Any, Callable, TypeVar
+from numbers import Rational
+from typing import Any, Callable
 
 import pytest
 from decimalfp import Decimal
 
 from quantity import (
-    IncompatibleUnitsError, Quantity, QuantityError, QuantityMeta, Rational,
-    Unit, UnitConversionError,
+    IncompatibleUnitsError, Quantity, QuantityError, QuantityMeta, Unit,
+    UnitConversionError,
     )
 from quantity.predefined import (
     CELSIUS, FAHRENHEIT, GRAM, KELVIN, KILOGRAM, KILOWATT, METRE, MILLIGRAM,
     MILLIWATT,
     )
 
-T = TypeVar("T")
-CmpOpT = Callable[[T, T], bool]
+CmpOpT = Callable[[Any, Any], bool]
 
 
 @pytest.mark.parametrize(("rhs_amnt", "rhs_unit"),
@@ -56,7 +56,7 @@ CmpOpT = Callable[[T, T], bool]
                              ],
                          ids=lambda p: str(p))
 def test_qty_eq_qty(lhs_amnt: Rational, lhs_unit: Unit,
-                    rhs_amnt: Rational, rhs_unit: Unit):
+                    rhs_amnt: Rational, rhs_unit: Unit) -> None:
     lhs = lhs_amnt * lhs_unit
     rhs = rhs_amnt * rhs_unit
     try:
@@ -67,7 +67,7 @@ def test_qty_eq_qty(lhs_amnt: Rational, lhs_unit: Unit,
         assert (lhs == rhs) == (lhs_amnt == equiv.amount)
 
 
-@pytest.mark.parametrize(("lhs", "rhs"),
+@pytest.mark.parametrize(("qty_str", "rhs"),
                          [
                              ("283 mm", METRE),
                              ("20 kWh", 20),
@@ -75,12 +75,12 @@ def test_qty_eq_qty(lhs_amnt: Rational, lhs_unit: Unit,
                              ("27 GHz", "GHz"),
                              ],
                          ids=lambda p: str(p))
-def test_qty_eq_non_qty(qty_str: str, rhs: Any):
+def test_qty_eq_non_qty(qty_str: str, rhs: Any) -> None:
     lhs = Quantity(qty_str)
     assert lhs != rhs
 
 
-def test_eq_qty_without_conv(qty_cls_without_conv: QuantityMeta):
+def test_eq_qty_without_conv(qty_cls_without_conv: QuantityMeta) -> None:
     unit1, unit2 = qty_cls_without_conv.units()
     qty1 = 5 * unit1
     qty2 = 5 * unit2
@@ -100,7 +100,7 @@ def test_eq_qty_without_conv(qty_cls_without_conv: QuantityMeta):
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("op",
                          [operator.lt, operator.le, operator.gt, operator.ge],
-                         ids=lambda p: p.__name__)
+                         ids=lambda p: str(p.__name__))
 @pytest.mark.parametrize(("lhs_amnt", "lhs_unit"),
                          [
                              (Decimal("13.04"), GRAM),
@@ -110,7 +110,7 @@ def test_eq_qty_without_conv(qty_cls_without_conv: QuantityMeta):
                              ],
                          ids=lambda p: str(p))
 def test_qty_cmp_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
-                     rhs_amnt: Rational, rhs_unit: Unit):
+                     rhs_amnt: Rational, rhs_unit: Unit) -> None:
     lhs = lhs_amnt * lhs_unit
     rhs = rhs_amnt * rhs_unit
     equiv = rhs.convert(lhs_unit)
@@ -125,7 +125,7 @@ def test_qty_cmp_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("op",
                          [operator.lt, operator.le, operator.gt, operator.ge],
-                         ids=lambda p: p.__name__)
+                         ids=lambda p: str(p.__name__))
 @pytest.mark.parametrize(("lhs_amnt", "lhs_unit"),
                          [
                              (50, CELSIUS),
@@ -133,7 +133,7 @@ def test_qty_cmp_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
                              ],
                          ids=lambda p: str(p))
 def test_qty_cmp_incompat_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
-                              rhs_amnt: Rational, rhs_unit: Unit):
+                              rhs_amnt: Rational, rhs_unit: Unit) -> None:
     lhs = lhs_amnt * lhs_unit
     rhs = rhs_amnt * rhs_unit
     with pytest.raises(IncompatibleUnitsError):
@@ -142,8 +142,9 @@ def test_qty_cmp_incompat_qty(lhs_amnt: Rational, lhs_unit: Unit, op: CmpOpT,
 
 @pytest.mark.parametrize("op",
                          [operator.lt, operator.le, operator.gt, operator.ge],
-                         ids=lambda p: p.__name__)
-def test_cmp_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: CmpOpT):
+                         ids=lambda p: str(p.__name__))
+def test_cmp_qty_without_conv(qty_cls_without_conv: QuantityMeta,
+                              op: CmpOpT) -> None:
     unit1, unit2 = qty_cls_without_conv.units()
     qty1 = 5 * unit1
     qty2 = 5 * unit2
@@ -162,7 +163,7 @@ def test_cmp_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: CmpOpT):
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("op",
                          [operator.lt, operator.le, operator.gt, operator.ge],
-                         ids=lambda p: p.__name__)
+                         ids=lambda p: str(p.__name__))
 @pytest.mark.parametrize(("amnt", "unit"),
                          [
                              (530, METRE),
@@ -170,7 +171,7 @@ def test_cmp_qty_without_conv(qty_cls_without_conv: QuantityMeta, op: CmpOpT):
                              ],
                          ids=lambda p: str(p))
 def test_qty_cmp_non_qty(amnt: Rational, unit: Unit, op: CmpOpT,
-                         other: Any):
+                         other: Any) -> None:
     qty = amnt * unit
     with pytest.raises(TypeError):
         op(qty, other)

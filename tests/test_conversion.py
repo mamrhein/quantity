@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -14,11 +14,12 @@
 """Test driver for Quantity conversion functions.."""
 
 from fractions import Fraction
+from numbers import Rational
 
 import pytest
 from decimalfp import Decimal
 
-from quantity import IncompatibleUnitsError, Quantity, Rational, Unit
+from quantity import IncompatibleUnitsError, Quantity, Unit
 from quantity.predefined import (
     CELSIUS, CUBIC_CENTIMETRE, CUBIC_METRE, DAY, FAHRENHEIT, GIGAHERTZ, GRAM,
     HERTZ, JOULE, KELVIN, KILOWATT, KILOWATT_HOUR, LITRE, METRE, MILE_PER_HOUR,
@@ -36,7 +37,7 @@ from quantity.predefined import (
                              (10, FAHRENHEIT, CELSIUS, Fraction(-110, 9))
                              ],
                          ids=lambda p: str(p))
-def test_convert(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str):
+def test_convert(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str) -> None:
     if isinstance(amnt, str):
         amount = Decimal(amnt)
     else:
@@ -62,7 +63,7 @@ def test_convert(amnt: str, unit: Unit, to_unit: Unit, res_amnt: str):
                              (30, CELSIUS, GIGAHERTZ),
                              ],
                          ids=lambda p: str(p))
-def test_conv_wrong_unit(amnt: str, unit: Unit, to_unit: Unit):
+def test_conv_wrong_unit(amnt: str, unit: Unit, to_unit: Unit) -> None:
     qty = Decimal(amnt) * unit
     with pytest.raises(IncompatibleUnitsError):
         _ = qty.convert(to_unit)
@@ -76,7 +77,8 @@ def test_conv_wrong_unit(amnt: str, unit: Unit, to_unit: Unit):
                              ("27 °F", CELSIUS, Fraction(-25, 9)),
                              ],
                          ids=lambda p: str(p))
-def test_qty_from_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
+def test_qty_from_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational) \
+        -> None:
     qty = Quantity(qty_str, unit)
     assert qty.unit is unit
     assert qty.amount == res_amnt
@@ -90,7 +92,7 @@ def test_qty_from_str_with_unit(qty_str: str, unit: Unit, res_amnt: Rational):
                              ("27 GHz", DAY),
                              ],
                          ids=lambda p: str(p))
-def test_qty_from_str_wrong_unit(qty_str: str, unit: Unit):
+def test_qty_from_str_wrong_unit(qty_str: str, unit: Unit) -> None:
     with pytest.raises(IncompatibleUnitsError):
         _ = Quantity(qty_str, unit)
 
@@ -103,7 +105,7 @@ def test_qty_from_str_wrong_unit(qty_str: str, unit: Unit):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_qty_to_str(value: Rational, unit: Unit):
+def test_qty_to_str(value: Rational, unit: Unit) -> None:
     qty = value * unit
     assert str(qty) == " ".join((str(qty.amount), str(qty.unit)))
 
@@ -116,7 +118,7 @@ def test_qty_to_str(value: Rational, unit: Unit):
                           Fraction(1000, 3),
                           ],
                          ids=lambda p: str(p))
-def test_qty_repr(value: Rational, unit: Unit):
+def test_qty_repr(value: Rational, unit: Unit) -> None:
     qty = value * unit
     if unit.is_ref_unit():
         assert repr(qty) == "%s(%s)" % (qty.__class__.__name__,

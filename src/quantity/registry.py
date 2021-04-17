@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2020 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -14,13 +14,17 @@
 """Class implementing a registry for items holding a term as definition."""
 
 import sys
-from typing import Generic, List, MutableMapping
+from typing import Generic, List, MutableMapping, TypeVar, cast
+
 if sys.version_info >= (3, 8):
     from typing import Final
 else:
     from typing_extensions import Final
 
-from .term import T, Term
+from .term import NonNumTermElem, Term
+
+
+T = TypeVar("T", bound=NonNumTermElem)
 
 
 class DefinedItemRegistry(Generic[T]):
@@ -45,7 +49,7 @@ class DefinedItemRegistry(Generic[T]):
             ValueError: item with same or equivalent definition already
                 registered
         """
-        item_norm_def = item.normalized_definition
+        item_norm_def = cast(Term[T], item.normalized_definition)
         try:
             idx = self._item_def_map[item_norm_def]
         except KeyError:

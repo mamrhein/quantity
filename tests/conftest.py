@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -22,7 +22,7 @@ from quantity import Quantity, QuantityMeta
 @pytest.fixture(scope="session")
 def qty_cls_without_conv() -> QuantityMeta:
     QWC = QuantityMeta("QtyWithoutConv", (Quantity,), {})
-    qwc1 = QWC.new_unit('qwc1')
-    qwc2 = QWC.new_unit('qwc2')
-    SQWC = QuantityMeta("SquareQWC", (Quantity,), {}, define_as=QWC ** 2)
+    _ = QWC.new_unit('qwc1')
+    _ = QWC.new_unit('qwc2')
+    _ = QuantityMeta("SquareQWC", (Quantity,), {}, define_as=QWC ** 2)
     return QWC

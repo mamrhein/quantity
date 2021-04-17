@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Name:        quantities.predefined
-# Purpose:     Define commonly used quantities.
-#
 # Author:      Michael Amrhein (michael@adrhinum.de)
 #
 # Copyright:   (c) 2012 ff. Michael Amrhein
 # License:     This program is free software. You can redistribute it, use it
 #              and/or modify it under the terms of the 2-clause BSD license.
-#              For license details please read the file LICENSE.TXT provided
+#              For license details please read the file LICENSE.txt provided
 #              together with the source code.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -298,7 +295,8 @@ from decimalfp import Decimal
 
 from . import Quantity, TableConverter
 from .si_prefixes import (
-    CENTI, DECI, GIGA, KILO, MEGA, MICRO, MILLI, NANO, TERA, )
+    CENTI, DECI, GIGA, KILO, MEGA, MICRO, MILLI, NANO, TERA,
+    )
 
 
 class Mass(Quantity, ref_unit_name='Kilogram', ref_unit_symbol='kg'):

@@ -5,7 +5,7 @@
 # Copyright:   (c) 2012 ff. Michael Amrhein
 # License:     This program is free software. You can redistribute it, use it
 #              and/or modify it under the terms of the 2-clause BSD license.
-#              For license details please read the file LICENSE.TXT provided
+#              For license details please read the file LICENSE.txt provided
 #              together with the source code.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -25,16 +25,15 @@ from numbers import Rational
 from operator import mul
 from typing import (
     Any, Callable, Generator, Iterable, Iterator, List, Optional, Sequence,
-    Sized, Tuple, TypeVar, Union, cast, overload, )
+    Sized, Tuple, TypeVar, Union, cast, overload,
+    )
 
-from decimalfp import Decimal
+from decimalfp import ONE
 
 if sys.version_info >= (3, 8):
     from typing import Protocol
 else:
     from typing_extensions import Protocol
-
-ONE = Decimal(1)
 
 _SUPERSCRIPT_CHARS = [unicodedata.lookup("SUPERSCRIPT %s" % num)
                       for num in ["TWO", "THREE", "FOUR", "FIVE", "SIX",
@@ -55,12 +54,12 @@ class NonNumTermElem(Protocol):
 
     @property
     @abstractmethod
-    def definition(self) -> Term:
+    def definition(self) -> Term[NonNumTermElem]:
         """Definition of `self`."""
 
     @property
     @abstractmethod
-    def normalized_definition(self) -> Term:
+    def normalized_definition(self) -> Term[NonNumTermElem]:
         """Return the decomposition of `self`."""
 
     @abstractmethod
@@ -72,7 +71,7 @@ class NonNumTermElem(Protocol):
         """Return factor f so that f * `other` == `self`, or None."""
 
 
-T = TypeVar("T", bound=NonNumTermElem)
+T = TypeVar("T", bound=NonNumTermElem, covariant=True)
 ElemT = Union[T, Rational]
 ItemT = Tuple[ElemT[T], int]
 ItemIterableT = Iterable[ItemT[T]]
@@ -100,7 +99,7 @@ class Term(ItemSequenceT[T]):
         elif elem.is_base_elem():
             return [(elem, 1)]
         else:
-            return elem.normalized_definition
+            return cast(ItemIterableT[T], elem.normalized_definition)
 
     @staticmethod
     def norm_sort_key(elem: ElemT[T]) -> int:
@@ -134,8 +133,8 @@ class Term(ItemSequenceT[T]):
         if n_items == 1:  # already reduced
             return tuple(_filter_items(items))
         if n_items == 2:
-            elem1: ElemT
-            elem2: ElemT
+            elem1: ElemT[T]
+            elem2: ElemT[T]
             (elem1, exp1), (elem2, exp2) = items
             # most relevant case: numeric + non-numeric element
             if isinstance(elem1, Rational) and \
@@ -232,7 +231,7 @@ class Term(ItemSequenceT[T]):
                                         for _, (elem, exp) in group_it),
                                   num_elem)
         if num_elem != 1:
-            num_item: ItemT = (num_elem, 1)
+            num_item: ItemT[T] = (num_elem, 1)
             return tuple(chain((num_item,), res_items))
         return tuple(res_items)
 
@@ -271,10 +270,10 @@ class Term(ItemSequenceT[T]):
             pass
         else:
             if isinstance(elem, Rational):
-                return elem ** exp
+                return cast(Rational, elem ** exp)
         return None
 
-    def split(self, dflt_num = ONE) \
+    def split(self, dflt_num: Rational = ONE) \
             -> Tuple[Rational, Term[T]]:
         """Return `self`s numeric element and `self`s non-numeric part.
 
@@ -290,7 +289,7 @@ class Term(ItemSequenceT[T]):
         """1 / `self`"""
         return self.__class__(_reciprocal(self), reduce_items=False)
 
-    def __iter__(self) -> Iterator[ItemT]:
+    def __iter__(self) -> Iterator[ItemT[T]]:
         """Return iterator over items in `self`."""
         return iter(self._items)
 

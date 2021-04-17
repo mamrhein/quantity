@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -13,7 +13,7 @@
 
 """Test constructors for Quantities and Units."""
 
-from typing import Tuple
+from typing import Any, Tuple
 
 import pytest
 from decimalfp import Decimal
@@ -48,33 +48,38 @@ def qties_bcd() -> Tuple[QuantityMeta, ...]:
                     ("C_D", lambda b, c, d: c / d),
                     ("B2_D3", lambda b, c, d: b ** 2 * d ** 3),
                     ("BC2_D", lambda b, c, d: b * c ** 2 / d)],
-                ids=lambda t: t[0])
-def qty_name_n_def(request, qties_bcd) -> Tuple[str, QuantityClsDefT]:
+                ids=lambda t: str(t[0]))
+def qty_name_n_def(request: Any,
+                   qties_bcd: Tuple[QuantityMeta, QuantityMeta, QuantityMeta])\
+        -> Tuple[str, QuantityClsDefT]:
     # noinspection PyPep8Naming
-    B, C, D = qties_bcd  # noqa: N806
+    B, C, D = qties_bcd     # noqa: N806
     name, func = request.param
     return name, func(B, C, D)
 
 
-def test_simple_base_qty(qty_simple) -> None:
+def test_simple_base_qty(qty_simple: QuantityMeta) -> None:
     # noinspection PyPep8Naming
-    Q = qty_simple  # noqa: N806
+    Q = qty_simple
     assert Q.definition == QuantityClsDefT([(Q, 1)])
     assert Q.normalized_definition == Q.definition
     with pytest.raises(AttributeError):
-        _ = Q.define_as
+        # noinspection PyUnresolvedReferences
+        _ = Q.define_as     # type: ignore[attr-defined]
     assert Q.ref_unit is None
     assert Q.is_base_cls()
     assert not Q.is_derived_cls()
 
 
-def test_base_qty_with_ref_unit(qty_a) -> None:
+def test_base_qty_with_ref_unit(qty_a: Tuple[str, str, QuantityMeta]) -> None:
     # noinspection PyPep8Naming
     symbol, name, A = qty_a  # noqa: N806
     assert isinstance(A.ref_unit, Unit)
     with pytest.raises(AttributeError):
-        _ = A.ref_unit_name
-        _ = A.ref_unit_symbol
+        # noinspection PyUnresolvedReferences
+        _ = A.ref_unit_name     # type: ignore[attr-defined]
+        # noinspection PyUnresolvedReferences
+        _ = A.ref_unit_symbol   # type: ignore[attr-defined]
     assert A.quantum is None
     unit = A.ref_unit
     assert unit.symbol == symbol
@@ -86,7 +91,7 @@ def test_base_qty_with_ref_unit(qty_a) -> None:
 
 
 # noinspection PyPep8Naming
-def test_simple_derived_qty(qty_a) -> None:
+def test_simple_derived_qty(qty_a: Tuple[str, str, QuantityMeta]) -> None:
     symbol, name, A = qty_a  # noqa: N806
     R = QuantityMeta("R", (Quantity,), {},  # noqa: N806
                      define_as=A ** 2, quantum=1)
@@ -97,11 +102,13 @@ def test_simple_derived_qty(qty_a) -> None:
     assert R.quantum == 1
     unit = R.ref_unit
     assert isinstance(unit, Unit)
+    assert A.ref_unit is not None   # for mypy
     assert unit.symbol == unit.name == A.ref_unit.symbol + "²"
     assert unit.definition == UnitDefT(((A.ref_unit, 2),))
 
 
-def test_cmplx_derived_qty(qty_name_n_def) -> None:
+def test_cmplx_derived_qty(qty_name_n_def: Tuple[str, QuantityClsDefT]) \
+        -> None:
     name, qty_def = qty_name_n_def
     # noinspection PyPep8Naming
     Q = QuantityMeta(name, (Quantity,), {}, define_as=qty_def)  # noqa: N806
@@ -112,7 +119,7 @@ def test_cmplx_derived_qty(qty_name_n_def) -> None:
     assert Q.is_derived_cls()
     assert Q.quantum is None
     unit = Q.ref_unit
-    ref_unit_def = UnitDefT(((elem.ref_unit, exp)
+    ref_unit_def = UnitDefT(((elem.ref_unit, exp)       # type: ignore
                              for (elem, exp) in norm_qty_def))
     assert isinstance(unit, Unit)
     assert unit.definition == ref_unit_def
@@ -120,7 +127,7 @@ def test_cmplx_derived_qty(qty_name_n_def) -> None:
 
 
 # noinspection PyPep8Naming
-def test_cls_already_registered(qties_bcd) -> None:
+def test_cls_already_registered(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
     B, C, D = qties_bcd  # noqa: N806
     with pytest.raises(ValueError):
         _ = QuantityMeta("_", (Quantity,), {}, define_as=B.definition)
@@ -146,7 +153,8 @@ def test_unknown_keyword() -> None:
                              ("@sqc", "sqc_name"),
                              ],
                          ids=("sqa", "sqb", "sqc"))
-def test_simple_qty_units(qty_simple, symbol, name) -> None:
+def test_simple_qty_units(qty_simple: QuantityMeta, symbol: str, name: str) \
+        -> None:
     # noinspection PyPep8Naming
     Q = qty_simple  # noqa: N806
     unit = Q.new_unit(symbol, name)
@@ -164,9 +172,11 @@ def test_simple_qty_units(qty_simple, symbol, name) -> None:
 @pytest.mark.parametrize("prefix",
                          [p for p in SI_PREFIXES],
                          ids=[p.name for p in SI_PREFIXES])
-def test_scaled_units(qty_a, prefix: SIPrefix) -> None:
+def test_scaled_units(qty_a: Tuple[str, str, QuantityMeta], prefix: SIPrefix) \
+        -> None:
     # noinspection PyPep8Naming
     _, _, Q = qty_a  # noqa: N806
+    assert Q.ref_unit is not None   # for mypy
     ref_unit = Q.ref_unit
     symbol = f"{prefix.abbr}{ref_unit.symbol}"
     name = f"{prefix.name} {ref_unit.name}"
@@ -185,8 +195,9 @@ def test_scaled_units(qty_a, prefix: SIPrefix) -> None:
 
 
 # noinspection PyPep8Naming
-def test_unit_already_registered(qties_bcd) -> None:
+def test_unit_already_registered(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
     B, C, D = qties_bcd  # noqa: N806
+    assert B.ref_unit is not None   # for mypy
     with pytest.raises(ValueError):
         B.new_unit(B.ref_unit.symbol, B.ref_unit.name)
     Q = QuantityMeta("BDC", (Quantity,), {}, define_as=B * D * C)  # noqa: N806

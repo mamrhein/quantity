@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2020 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -17,7 +17,7 @@ from builtins import sum as builtin_sum
 from typing import Any, Iterable
 
 
-def sum(items: Iterable, start: Any = None):    # noqa: A001
+def sum(items: Iterable[Any], start: Any = None) -> Any:
     """Return the sum of `start` (if not None) plus all items in `items`.
 
     Args:

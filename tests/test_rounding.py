@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2021 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -14,21 +14,24 @@
 """Test-driver for rounding and quantization."""
 
 from fractions import Fraction
+from numbers import Rational
+from typing import Any, cast
 
 import pytest
 from decimalfp import Decimal, ROUNDING
 
-from quantity import Quantity
+from quantity import Quantity, Unit
 from quantity.predefined import (
     CARAT, CELSIUS, FAHRENHEIT, GRAM, HOUR, KELVIN, KILOGRAM, KILOWATT, METRE,
-    MILE, MILLIWATT, OUNCE, POUND, )
+    MILE, MILLIWATT, OUNCE, POUND,
+    )
 
 
 @pytest.fixture(scope="module",
                 params=[rounding_mode for rounding_mode in ROUNDING],
                 ids=[rounding_mode.name for rounding_mode in ROUNDING])
-def rounding_mode(request) -> ROUNDING:
-    return request.param
+def rounding_mode(request: Any) -> ROUNDING:
+    return cast(ROUNDING, request.param)
 
 
 @pytest.mark.parametrize("n_digits",
@@ -40,7 +43,7 @@ def rounding_mode(request) -> ROUNDING:
 @pytest.mark.parametrize("qty_amnt",
                          [17, Fraction(4, 3), Decimal("834.6719")],
                          ids=lambda p: str(p))
-def test_round(qty_amnt, qty_unit, n_digits) -> None:
+def test_round(qty_amnt: Rational, qty_unit: Unit, n_digits: int) -> None:
     qty = qty_amnt * qty_unit
     rounded = round(qty, n_digits)
     assert rounded.unit is qty_unit
@@ -59,8 +62,9 @@ def test_round(qty_amnt, qty_unit, n_digits) -> None:
 @pytest.mark.parametrize("qty_amnt",
                          [17, Fraction(4, 3), Decimal("834.6719")],
                          ids=lambda p: str(p))
-def test_quantize_linear_scaled(qty_amnt, qty_unit, quant_amnt, quant_unit,
-                                rounding_mode) -> None:
+def test_quantize_linear_scaled(qty_amnt: Rational, qty_unit: Unit,
+                                quant_amnt: Rational, quant_unit: Unit,
+                                rounding_mode: ROUNDING) -> None:
     qty = qty_amnt * qty_unit
     quant = quant_amnt * quant_unit
     quantized = qty.quantize(quant, rounding_mode)
@@ -86,7 +90,7 @@ def test_quantize_linear_scaled(qty_amnt, qty_unit, quant_amnt, quant_unit,
 @pytest.mark.parametrize("qty_unit",
                          [METRE, MILE, HOUR, KELVIN],
                          ids=lambda p: str(p))
-def test_quantize_wrong_quant_unit(qty_unit, quant_unit) -> None:
+def test_quantize_wrong_quant_unit(qty_unit: Unit, quant_unit: Unit) -> None:
     qty = 5 * qty_unit
     quant = 1 * quant_unit
     with pytest.raises(TypeError):

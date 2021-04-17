@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Author:      Michael Amrhein (michael@adrhinum.de)
-#
-# Copyright:   (c) 2012 ff. Michael Amrhein
+# Copyright:   (c) 2012 ff. Michael Amrhein (michael@adrhinum.de)
 # License:     This program is free software. You can redistribute it, use it
 #              and/or modify it under the terms of the 2-clause BSD license.
-#              For license details please read the file LICENSE.TXT provided
+#              For license details please read the file LICENSE.txt provided
 #              together with the source code.
 # ----------------------------------------------------------------------------
 # $Source$
 # $Revision$
 
+# mypy: no-warn-return-any
 
 # TODO: update doc
 r"""Unit-safe computations with quantities.
@@ -541,18 +540,20 @@ from fractions import Fraction
 from numbers import Integral, Rational
 from typing import (
     Any, AnyStr, Callable, Dict, Generator, Iterator, List, MutableMapping,
-    Optional, Tuple, Type, TypeVar, Union, cast, overload, )
+    Optional, Tuple, Type, TypeVar, Union, cast, overload,
+    )
 
-from decimalfp import Decimal, ROUNDING, get_dflt_rounding_mode
+from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
 
 from .converter import Converter, ConverterT, TableConverter
-from .cwdmeta import ClassDefT, ClassWithDefinitionMeta, NonNumTermElem, Term
+from .cwdmeta import ClassDefT, ClassWithDefinitionMeta
 from .exceptions import (
     IncompatibleUnitsError, QuantityError, UndefinedResultError,
-    UnitConversionError, )
+    UnitConversionError,
+    )
 from .registry import DefinedItemRegistry
 from .si_prefixes import SIPrefix
-from .term import ONE
+from .term import NonNumTermElem, Term
 from .utils import sum
 from .version import version_tuple as __version__  # noqa: F401
 
@@ -569,9 +570,8 @@ __all__ = [
     ]
 
 # Generic types
-T = TypeVar("T")
-CmpOpT = Callable[[T, T], bool]
-BinOpT = Callable[[T, T], T]
+CmpOpT = Callable[[Any, Any], bool]
+BinOpT = Callable[[Any, Any], Any]
 
 # Parameterized types
 UnitDefT = Term['Unit']
@@ -580,7 +580,8 @@ QuantityClsDefT = Term['QuantityMeta']
 
 # Cache for results of operations on unit definitions
 BinOpResT = Union['Quantity', Rational]
-_UNIT_OP_CACHE: MutableMapping[Tuple[BinOpT, Unit, Unit], BinOpResT] = {}
+UnitOpCacheT = MutableMapping[Tuple[BinOpT, 'Unit', 'Unit'], BinOpResT]
+_UNIT_OP_CACHE: UnitOpCacheT = {}
 
 # Global registry of units
 # [symbol -> unit] map, used to ensure that instances of Unit are singletons
@@ -706,7 +707,7 @@ class Unit:
             return None
         # cls.quantum not None => cls.ref_unit not None => self._equiv not None
         assert self._equiv is not None
-        return cls.quantum / self._equiv
+        return cast(Rational, cls.quantum / self._equiv)
 
     def __hash__(self) -> int:
         """hash(self)"""
@@ -774,7 +775,8 @@ class Unit:
     def __mul__(self, other: Quantity) -> BinOpResT:  # noqa: D105
         ...
 
-    def __mul__(self, other: Any, _op_cache = _UNIT_OP_CACHE) -> BinOpResT:
+    def __mul__(self, other: Any, _op_cache: UnitOpCacheT = _UNIT_OP_CACHE) \
+            -> BinOpResT:
         """self * other"""
         if isinstance(other, Rational):
             return self._qty_cls(other, self)
@@ -818,7 +820,8 @@ class Unit:
     def __truediv__(self, other: Quantity) -> BinOpResT:  # noqa: D105
         ...
 
-    def __truediv__(self, other: Any, _op_cache = _UNIT_OP_CACHE) -> BinOpResT:
+    def __truediv__(self, other: Any,
+                    _op_cache: UnitOpCacheT = _UNIT_OP_CACHE) -> BinOpResT:
         """self / other"""
         if isinstance(other, Rational):
             return self._qty_cls(ONE / other, self)
@@ -830,7 +833,7 @@ class Unit:
             # no cache hit
             if self.qty_cls is other.qty_cls:
                 try:
-                    res = self._equiv / other._equiv
+                    res: BinOpResT = self._equiv / other._equiv
                 except AttributeError:
                     raise UndefinedResultError(operator.truediv,
                                                self.name, other.name) \
@@ -949,6 +952,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         cls._quantum = quantum
         return cls
 
+    # noinspection PyUnusedLocal
     def __init__(cls, name: str, bases: Tuple[type, ...],  # noqa: N805
                  clsdict: Dict[str, Any], **kwds: Any):
         super().__init__(name, bases, clsdict)
@@ -990,7 +994,6 @@ class QuantityMeta(ClassWithDefinitionMeta):
         if define_as is None:
             unit = Unit(symbol, name)
         else:
-            assert isinstance(define_as, cls)
             unit = Unit(symbol, name, define_as)
         unit._qty_cls = cls
         cls._unit_map[unit.symbol] = unit
@@ -1045,7 +1048,8 @@ class Quantity(metaclass=QuantityMeta):
     def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> Quantity:
         """Create new `Quantity` instance."""
-        amnt: Rational
+        qty: Quantity
+        amnt: Union[Decimal, Fraction]
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
         elif isinstance(amount, (Integral, StdLibDecimal)):
@@ -1381,7 +1385,7 @@ class Quantity(metaclass=QuantityMeta):
             return (other / self.amount) * self.unit ** -1
         return NotImplemented
 
-    def __pow__(self, exp: Any) -> Quantity:
+    def __pow__(self, exp: int) -> Quantity:
         """self ** exp"""
         if not isinstance(exp, int):
             return NotImplemented

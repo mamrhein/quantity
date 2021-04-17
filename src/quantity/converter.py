@@ -8,7 +8,7 @@
 # Copyright:   (c) 2012 ff. Michael Amrhein
 # License:     This program is free software. You can redistribute it, use it
 #              and/or modify it under the terms of the 2-clause BSD license.
-#              For license details please read the file LICENSE.TXT provided
+#              For license details please read the file LICENSE.txt provided
 #              together with the source code.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -20,12 +20,14 @@
 from __future__ import annotations
 
 from typing import (
-    Callable, Iterable, Mapping, Optional, TYPE_CHECKING, Tuple, Union, cast, )
+    Callable, Iterable, Mapping, Optional, TYPE_CHECKING, Tuple, Union, cast,
+    )
 
 from .exceptions import IncompatibleUnitsError
 
-if TYPE_CHECKING:
-    from . import Quantity, Rational, Unit
+if TYPE_CHECKING:   # needed to avoid cyclic import at runtime
+    from numbers import Rational
+    from . import Quantity, Unit
 
 ConverterT = Callable[['Quantity', 'Unit'], Optional['Rational']]
 
@@ -38,7 +40,7 @@ class Converter:
     """
 
     def __call__(self, qty: Quantity, to_unit: Unit) \
-            -> Optional[Rational]:
+            -> Optional['Rational']:
         """Convert a `qty`s amount to the equivalent amount for `to_unit`.
 
         Args:
@@ -62,7 +64,7 @@ class Converter:
             qty.__class__, to_unit.qty_cls)
 
     def _get_factor(self, qty: Quantity, to_unit: Unit) \
-            -> Optional[Rational]:
+            -> Optional['Rational']:
         """Return factor f so that f * `to_unit` == `qty`.
 
         Returns None if factor can't be determined.
@@ -136,7 +138,7 @@ class TableConverter(Converter):
             raise TypeError("A Mapping or list must be given.")
 
     def _get_factor(self, qty: Quantity, to_unit: Unit) \
-            -> Optional[Rational]:
+            -> Optional['Rational']:
         """Return factor f so that f * `to_unit` == `qty`.
 
         Returns None if factor can't be determined.
@@ -150,6 +152,6 @@ class TableConverter(Converter):
             except KeyError:
                 return None
             else:
-                return (qty.amount - offset) / factor
+                return cast('Rational', (qty.amount - offset) / factor)
         else:
-            return factor * qty.amount + offset
+            return cast('Rational', factor * qty.amount + offset)

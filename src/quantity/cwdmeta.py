@@ -4,7 +4,7 @@
 #
 # Copyright:   (c) 2020 ff. Michael Amrhein
 # License:     This program is part of a larger application. For license
-#              details please read the file LICENSE.TXT provided together
+#              details please read the file LICENSE.txt provided together
 #              with the application.
 # ----------------------------------------------------------------------------
 # $Source$
@@ -139,6 +139,6 @@ class ClassWithDefinitionMeta(type):
         k = (k << 7) + max(ln, 127)
         return k
 
-    def _get_factor(cls, other: NonNumTermElem) -> Rational:
+    def _get_factor(cls, other: NonNumTermElem) -> Optional[Rational]:
         """Instances are not convertable, raise TypeError."""
         raise TypeError
