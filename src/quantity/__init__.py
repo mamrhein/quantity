@@ -607,12 +607,21 @@ def _unit_from_term(term: UnitDefT) -> Unit:
 class Unit:
     """Unit of measure"""
 
-    __slots__ = ['_symbol', '_name', '_equiv', '_definition', '_qty_cls']
+    __slots__ = ['_qty_cls', '_symbol', '_name', '_equiv', '_definition']
 
-    def __init__(self, symbol: str, name: Optional[str] = None,
-                 define_as: Optional[Union[Quantity, UnitDefT]] = None):
-        self._qty_cls: QuantityMeta
-        self._equiv: Rational
+    # TODO: remove these class variables after mypy issue #1021 got fixed:
+    _qty_cls: QuantityMeta
+    _symbol: str
+    _name: Optional[str]
+    _equiv: Rational
+    _definition: UnitDefT
+
+    def __new__(cls, qty_cls: QuantityMeta, symbol: str,
+                name: Optional[str] = None,
+                define_as: Optional[Union[Quantity, UnitDefT]] = None,
+                ref_unit: bool = False) -> Unit:
+        self = super().__new__(cls)
+        self._qty_cls = qty_cls
         if isinstance(define_as, Quantity):
             definition = UnitDefT([(define_as.amount, 1),
                                    (define_as.unit, 1)])
@@ -621,6 +630,10 @@ class Unit:
         elif isinstance(define_as, Term):
             self._definition = define_as
             self._equiv = ONE
+        else:
+            assert define_as is None, "Unknown type of Unit definition."
+            self._definition = None
+            self._equiv = ONE if ref_unit else None
         assert symbol, "A symbol must be given for the unit."
         try:
             _SYMBOL_UNIT_MAP[symbol]
@@ -634,6 +647,7 @@ class Unit:
         # UnitRegistryT has unique_items=False, so this will not raise an
         # exception!
         _TERM_UNIT_MAP.register_item(self)
+        return self
 
     @property
     def symbol(self) -> str:
@@ -654,46 +668,32 @@ class Unit:
     @property
     def definition(self) -> UnitDefT:
         """Return the definition of `self`."""
-        try:
-            return self._definition
-        except AttributeError:
-            return UnitDefT(((self, 1),))
+        return self._definition or UnitDefT(((self, 1),))
 
     @property
     def normalized_definition(self) -> UnitDefT:
         """Return the normalized definition of `self`."""
-        try:
-            return self._definition.normalized()
-        except AttributeError:
+        definition = self._definition
+        if definition is None:
             return UnitDefT(((self, 1),))
+        return definition.normalized()
 
     def is_base_unit(self) -> bool:
         """Return True if `self` is not derived from another unit."""
-        try:
-            self._definition
-        except AttributeError:
-            return True
-        else:
-            return False
+        return self._definition is None
 
     def is_derived_unit(self) -> bool:
         """Return True if `self` is derived from another unit."""
-        return not self.is_base_unit()
+        return self._definition is not None
 
     def is_ref_unit(self) -> bool:
         """Return True if `self` is a reference unit."""
-        try:
-            return self is self._qty_cls.ref_unit
-        except AttributeError:
-            return False
+        return self is self._qty_cls.ref_unit
 
     @property
-    def qty_cls(self) -> Optional[QuantityMeta]:
+    def qty_cls(self) -> QuantityMeta:
         """Return the `Quantity` subclass related to `self`."""
-        try:
-            return self._qty_cls
-        except AttributeError:
-            return None
+        return self._qty_cls
 
     @property
     def quantum(self) -> Optional[Rational]:
@@ -703,7 +703,7 @@ class Unit:
         quantum.
         """
         cls = self.qty_cls
-        if cls is None or cls.quantum is None:
+        if cls.quantum is None:
             return None
         # cls.quantum not None => cls.ref_unit not None => self._equiv not None
         assert self._equiv is not None
@@ -891,12 +891,12 @@ class Unit:
 
     def _get_factor(self, other: NonNumTermElem) -> Optional[Rational]:
         """Return scaling factor f so that f * `other` == 1 * `self`."""
+        qty_cls = self._qty_cls
         if isinstance(other, Unit):
             if self.qty_cls is other.qty_cls:
-                try:
-                    return self._equiv / other._equiv
-                except AttributeError:
+                if qty_cls.ref_unit is None:
                     return None
+                return self._equiv / other._equiv
         raise TypeError(f"Can't compare a unit to a '{type(other)}'.")
 
 
@@ -969,10 +969,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
 
     def _make_ref_unit(cls, symbol: str, name: str,  # noqa: N805
                        define_as: Optional[UnitDefT]) -> None:
-        unit = Unit(symbol, name, define_as)
-        unit._qty_cls = cls
-        unit._equiv = ONE
-        cls._ref_unit = unit
+        cls._ref_unit = Unit(cls, symbol, name=name, define_as=define_as,
+                             ref_unit=True)
 
     @property
     def ref_unit(cls) -> Optional[Unit]:  # noqa: N805
@@ -991,11 +989,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
     def new_unit(cls, symbol: str, name: Optional[str] = None,  # noqa: N805
                  define_as: Optional[Quantity] = None) -> Unit:
         """Create, register and return a new unit for `cls`."""
-        if define_as is None:
-            unit = Unit(symbol, name)
-        else:
-            unit = Unit(symbol, name, define_as)
-        unit._qty_cls = cls
+        unit = Unit(cls, symbol, name=name, define_as=define_as)
         cls._unit_map[unit.symbol] = unit
         return unit
 

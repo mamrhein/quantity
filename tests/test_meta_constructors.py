@@ -161,7 +161,7 @@ def test_simple_qty_units(qty_simple: QuantityMeta, symbol: str, name: str) \
     assert isinstance(unit, Unit)
     assert unit.qty_cls is Q
     assert unit in Q.units()
-    assert not hasattr(unit, '_definition')
+    assert unit._definition is None
     assert unit.definition == UnitDefT(((unit, 1),))
     assert unit.symbol == symbol
     assert unit.name == name
