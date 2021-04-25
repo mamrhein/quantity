@@ -19,7 +19,7 @@ import pytest
 from decimalfp import Decimal
 
 from quantity import Quantity, QuantityClsDefT, QuantityMeta, Unit, UnitDefT
-from quantity.si_prefixes import SIPrefix, SI_PREFIXES
+from quantity.si_prefixes import KILO, MEGA, SIPrefix, SI_PREFIXES
 
 
 @pytest.fixture(scope="session")
@@ -35,11 +35,24 @@ def qty_a() -> Tuple[str, str, QuantityMeta]:
                                       ref_unit_name=name)
 
 
+# noinspection PyPep8Naming
 @pytest.fixture(scope="session")
 def qties_bcd() -> Tuple[QuantityMeta, ...]:
-    return tuple(QuantityMeta(name, (Quantity,), {},
-                              ref_unit_symbol=f"#{name.lower()}")
-                 for name in ("B", "C", "D"))
+    B = QuantityMeta("B", (Quantity,), {}, ref_unit_symbol="#b")
+    assert B.ref_unit is not None   # for mypy
+    _ = B.new_unit(f"{KILO.abbr}{B.ref_unit.symbol}",
+                   define_as=KILO * B.ref_unit)
+    _ = B.new_unit(f"{MEGA.abbr}{B.ref_unit.symbol}",
+                   define_as=MEGA * B.ref_unit)
+    C = QuantityMeta("C", (Quantity,), {}, ref_unit_symbol="#c")
+    assert C.ref_unit is not None   # for mypy
+    _ = C.new_unit(f"{KILO.abbr}{C.ref_unit.symbol}",
+                   define_as=KILO * C.ref_unit)
+    D = QuantityMeta("D", (Quantity,), {}, ref_unit_symbol="#d")
+    assert D.ref_unit is not None   # for mypy
+    _ = D.new_unit(f"{KILO.abbr}{D.ref_unit.symbol}",
+                   define_as=KILO * D.ref_unit)
+    return B, C, D
 
 
 @pytest.fixture(scope="session",
@@ -205,3 +218,80 @@ def test_unit_already_registered(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
     Q.new_unit("kbdc", "kbdc", define_as=Decimal(1000) * Q.ref_unit)
     with pytest.raises(ValueError):
         Q.new_unit("kbdc", "kbdc")
+
+
+# noinspection PyPep8Naming
+def test_derived_units(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    Q = QuantityMeta("C2_BD", (Quantity,), {},      # noqa: N806
+                     define_as=C ** 2 / (B * D))
+    assert Q.ref_unit is not None
+    for b_unit in B.units():
+        for c_unit in C.units():
+            for d_unit in D.units():
+                symbol = f"{c_unit.symbol}2{b_unit.symbol}{d_unit.symbol}"
+                unit = Q.new_unit(symbol,
+                                  derive_from=(c_unit, b_unit, d_unit))
+                assert isinstance(unit, Unit)
+                assert unit.qty_cls is Q
+                assert unit in Q.units()
+                assert unit.symbol == symbol
+                assert not unit.is_ref_unit()
+                assert not unit.is_base_unit()
+                assert unit.is_derived_unit()
+
+
+# noinspection PyPep8Naming
+def test_new_unit_wrong_qty(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    qty = 1 * C.units()[1]
+    with pytest.raises(TypeError):
+        B.new_unit('x', define_as=qty)
+
+
+# noinspection PyPep8Naming
+def test_new_unit_wrong_term(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    with pytest.raises(ValueError):
+        B.new_unit('x', define_as=D.definition)     # type: ignore
+    with pytest.raises(ValueError):
+        B.new_unit('x', define_as=C.units()[1].definition)
+
+
+# noinspection PyPep8Naming
+def test_new_unit_wrong_type(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    with pytest.raises(TypeError):
+        B.new_unit('x', define_as=D)    # type: ignore
+
+
+# noinspection PyPep8Naming
+def test_derive_unit_fails_on_base_qty(qties_bcd: Tuple[QuantityMeta, ...]) \
+        -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    with pytest.raises(TypeError):
+        B.new_unit('x', derive_from=B.units()[1])
+
+
+# noinspection PyPep8Naming
+def test_define_and_derive_fails(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    Q = QuantityMeta("D_C", (Quantity,), {},      # noqa: N806
+                     define_as=D / C)
+    assert Q.ref_unit is not None   # for mypy
+    with pytest.raises(ValueError):
+        Q.new_unit('x', define_as=10 * Q.ref_unit, derive_from=Q.ref_unit)
+
+
+# noinspection PyPep8Naming
+def test_derive_unit_mismatched_units(qties_bcd: Tuple[QuantityMeta, ...]) \
+        -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    assert B.ref_unit is not None   # for mypy
+    assert C.ref_unit is not None   # for mypy
+    assert D.ref_unit is not None   # for mypy
+    Q = QuantityMeta("B2C_D", (Quantity,), {},      # noqa: N806
+                     define_as=B ** 2 * C / D)
+    assert Q.ref_unit is not None   # for mypy
+    with pytest.raises(ValueError):
+        Q.new_unit('x', derive_from=(C.ref_unit, B.ref_unit, D.units()[1]))
