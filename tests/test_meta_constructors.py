@@ -208,6 +208,17 @@ def test_scaled_units(qty_a: Tuple[str, str, QuantityMeta], prefix: SIPrefix) \
 
 
 # noinspection PyPep8Naming
+def test_unit_map(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
+    B, C, D = qties_bcd  # noqa: N806
+    assert len(B) == len(B.units())
+    for unit in B.units():
+        assert unit.symbol in B
+        assert B[unit.symbol] is unit
+    for symbol in B:
+        assert B[symbol] in B.units()
+
+
+# noinspection PyPep8Naming
 def test_unit_already_registered(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
     B, C, D = qties_bcd  # noqa: N806
     assert B.ref_unit is not None   # for mypy
@@ -236,6 +247,8 @@ def test_derived_units(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
                 assert unit.qty_cls is Q
                 assert unit in Q.units()
                 assert unit.symbol == symbol
+                assert symbol in Q
+                assert Q[symbol] is unit
                 assert not unit.is_ref_unit()
                 assert not unit.is_base_unit()
                 assert unit.is_derived_unit()

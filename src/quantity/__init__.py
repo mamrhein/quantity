@@ -1041,6 +1041,34 @@ class QuantityMeta(ClassWithDefinitionMeta):
         """Return all registered units of `cls` as tuple."""
         return tuple(cls._unit_map.values())
 
+    def __len__(cls) -> int:
+        """Return the number of registered units of `cls`."""
+        return len(cls._unit_map)
+
+    def __contains__(cls, symbol: str) -> bool:
+        """Return True if a unit with symbol `symbol` is registered in `cls`.
+        """
+        return symbol in cls._unit_map
+
+    def __iter__(cls) -> Iterator[str]:
+        """Return an iterator over the symbols registered in `cls`."""
+        return iter(cls._unit_map)
+
+    def __getitem__(cls, symbol: str) -> Unit:
+        """Return the unit with symbol `symbol`.
+
+        Args:
+            symbol (str): symbol to look-up
+
+        Returns:
+            :class:`Unit`: unit with given `symbol`
+
+        Raises:
+            is registered with
+                `cls`, otherwise None
+        """
+        return cls._unit_map[symbol]
+
     def register_converter(cls, conv: ConverterT) -> None:  # noqa: N805
         """Add converter `conv` to the list of converters registered in cls.
 
