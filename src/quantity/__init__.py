@@ -537,7 +537,7 @@ from __future__ import annotations
 import operator
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
-from numbers import Integral, Rational
+from numbers import Integral, Rational, Real
 from typing import (
     Any, AnyStr, Callable, Dict, Generator, Iterator, List, MutableMapping,
     Optional, Tuple, Type, TypeVar, Union, cast, overload,
@@ -1379,7 +1379,11 @@ class Quantity(metaclass=QuantityMeta):
         ...
 
     @overload
-    def __mul__(self: Q, other: Rational) -> Q:  # noqa: D105
+    def __mul__(self: Q, other: float) -> Q:  # noqa: D105
+        ...
+
+    @overload
+    def __mul__(self: Q, other: Real) -> Q:  # noqa: D105
         ...
 
     @overload
@@ -1398,6 +1402,8 @@ class Quantity(metaclass=QuantityMeta):
             return (self.amount * other.amount) * (self.unit * other.unit)
         if isinstance(other, Unit):
             return self.amount * (self.unit * other)
+        if isinstance(other, Real):
+            return self.__class__(self.amount * Decimal(other), self.unit)
         return NotImplemented
 
     # other * self
@@ -1408,7 +1414,11 @@ class Quantity(metaclass=QuantityMeta):
         ...
 
     @overload
-    def __truediv__(self: Q, other: Rational) -> Q:  # noqa: D105
+    def __truediv__(self: Q, other: float) -> Q:  # noqa: D105
+        ...
+
+    @overload
+    def __truediv__(self: Q, other: Real) -> Q:  # noqa: D105
         ...
 
     @overload
@@ -1443,12 +1453,16 @@ class Quantity(metaclass=QuantityMeta):
                     return equiv_amount
             else:
                 return self.amount * (self.unit / other)
+        if isinstance(other, Real):
+            return self.__class__(self.amount / Decimal(other), self.unit)
         return NotImplemented
 
     def __rtruediv__(self, other: Any) -> Quantity:
         """other / self"""
         if isinstance(other, Rational):
             return (other / self.amount) * self.unit ** -1
+        if isinstance(other, Real):
+            return (other / Decimal(self.amount)) * self.unit ** -1
         return NotImplemented
 
     def __pow__(self, exp: int) -> Quantity:

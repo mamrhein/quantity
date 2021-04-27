@@ -15,7 +15,7 @@
 
 import operator
 from fractions import Fraction
-from numbers import Rational
+from numbers import Rational, Real
 from typing import Any, Callable
 
 import pytest
@@ -153,6 +153,23 @@ def test_qty_mul_rational(qty: Quantity, other: Rational) -> None:
     assert res.amount == other * qty.amount
 
 
+@pytest.mark.parametrize("other",
+                         [29.4, 7.8, 0.000003],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("qty",
+                         [Decimal("2.5") * METRE, 35 * NEWTON],
+                         ids=lambda p: str(p))
+def test_qty_mul_float(qty: Quantity, other: float) -> None:
+    res = other * qty
+    assert res.__class__ is qty.__class__
+    assert res.unit is qty.unit
+    assert res.amount == qty.amount * Decimal(other)
+    res = qty * other
+    assert res.__class__ is qty.__class__
+    assert res.unit is qty.unit
+    assert res.amount == Decimal(other) * qty.amount
+
+
 @pytest.mark.parametrize(("qty1", "qty2"),
                          [(3 * MILLIGRAM, 3 * METRE_PER_SECOND_SQUARED),
                           (15 * MILLIMETRE, 17 * NEWTON),
@@ -217,15 +234,31 @@ def test_qty_div_rational(qty: Quantity, other: Rational) -> None:
 
 
 @pytest.mark.parametrize("other",
-                         [293, Decimal(5), Fraction(1, 3)],
+                         [17.4, 5.0382, 0.00037],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("qty",
+                         [7 * METRE, 35 * NEWTON],
+                         ids=lambda p: str(p))
+def test_qty_div_float(qty: Quantity, other: float) -> None:
+    res = qty / other
+    assert res.__class__ is qty.__class__
+    assert res.unit is qty.unit
+    assert res.amount == qty.amount / Decimal(other)
+
+
+@pytest.mark.parametrize("other",
+                         [293, Decimal(5), Fraction(1, 3), 0.495],
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("qty",
                          [7 * SECOND, 35 * MICROSECOND],
                          ids=lambda p: str(p))
-def test_rational_div_qty_defined_result(qty: Quantity, other: Rational) \
+def test_rdiv_qty_defined_result(qty: Quantity, other: Real) \
         -> None:
     res = other / qty
-    amount = other / qty.amount
+    if isinstance(other, float):
+        amount = Decimal(other) / qty.amount
+    else:
+        amount = other / qty.amount
     qty = ONE / qty.unit
     assert res == amount * qty
 
