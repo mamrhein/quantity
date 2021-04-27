@@ -475,7 +475,7 @@ If the quantity is quantized, there can be rounding errors causing a remainder
 with an amount other than 0:
 
     >>> b = 10 ^ KILOBYTE
-    >>> portions, remainder = b.allocate(ratios, disperseRoundingError=False)
+    >>> portions, remainder = b.allocate(ratios, disperse_rounding_error=False)
     >>> portions
     [DataVolume(Decimal('6.333375'), DataVolume.Unit('kB')),
      DataVolume(Decimal('0.833375'), DataVolume.Unit('kB')),
@@ -539,8 +539,8 @@ from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
 from numbers import Integral, Rational, Real
 from typing import (
-    Any, AnyStr, Callable, Dict, Generator, Iterator, List, MutableMapping,
-    Optional, Tuple, Type, TypeVar, Union, cast, overload,
+    Any, AnyStr, Callable, Collection, Dict, Generator, Iterator, List,
+    MutableMapping, Optional, Tuple, Type, TypeVar, Union, cast, overload,
     )
 
 from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
@@ -1280,6 +1280,63 @@ class Quantity(metaclass=QuantityMeta):
         else:
             raise QuantityError
         return cls(res_amnt, self.unit)
+
+    def allocate(self: Q, ratios: Collection[Union[Rational, Quantity]],
+                 disperse_rounding_error: bool = True) \
+            -> Tuple[List[Q], Q]:
+        """Apportion `self` according to `ratios`.
+
+        Args:
+            ratios (Collection[Union[Rational, Quantity]]): sequence of values
+                defining the relative amount of the requested portions
+            disperse_rounding_error (bool): determines whether a rounding error
+                (if there is one due to quantization) shall be dispersed
+
+        Returns:
+            List[Q]: portions of `self` according to `ratios`
+            Q: remainder = `self` - sum(portions)
+
+        Raises:
+            TypeError: `ratios` contains elements that can not be added
+            IncompatibleUnitsError: `ratios` contains quantities that can not
+                be added
+        """
+        n_portions = len(ratios)
+        total = sum(ratios)
+        if isinstance(total, Rational):
+            # force 'total' to a Decimal, if possible
+            try:
+                total = Decimal(total)
+            except ValueError:
+                pass
+        # calculate fractions from ratios
+        fractions = [ratio / total for ratio in ratios]
+        # apportion self according to fractions
+        portions: List[Q] = [self * fraction for fraction in fractions]
+        # check whether there's a remainder
+        remainder = self - sum(portions)
+        rem_amount = remainder.amount
+        if rem_amount != 0:
+            # calculate quantum for the quantity's unit
+            assert self.unit.quantum is not None, \
+                "Remainder != 0 for quantity w/o quantum."
+            quantum = self.unit.quantum
+            if disperse_rounding_error:
+                if rem_amount < 0:
+                    quantum = -quantum
+                # calculate rounding errors
+                errors = sorted(map(lambda portion, fraction, idx:
+                                    (portion.amount - self.amount * fraction,
+                                     idx),
+                                    portions, fractions, range(n_portions)),
+                                reverse=(rem_amount < 0))
+                for error, idx in errors:
+                    portions[idx]._amount += quantum
+                    rem_amount -= quantum
+                    if rem_amount == 0:
+                        break
+                remainder = rem_amount * self.unit
+        return portions, remainder
 
     def __eq__(self, other: Any) -> bool:
         """self == other"""
