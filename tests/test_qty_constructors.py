@@ -15,7 +15,7 @@
 
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
-from numbers import Rational
+from numbers import Rational, Real
 from typing import Any
 
 import pytest
@@ -23,8 +23,9 @@ from decimalfp import Decimal
 
 from quantity import Quantity, QuantityError, QuantityMeta, Unit
 from quantity.predefined import (
-    BYTE, CELSIUS, DataVolume, Force, GIGAWATT, KILOBIT, KILOWATT, Length,
-    MEGAWATT, METRE, MILLIGRAM, Mass, Power, Temperature,
+    BYTE, CELSIUS, DataVolume, Force, GIGAWATT, HERTZ, KILOBIT, KILOWATT,
+    Length,
+    MEGAWATT, METRE, MILLIGRAM, Mass, Power, SECOND, Temperature,
     )
 
 
@@ -34,7 +35,7 @@ from quantity.predefined import (
                           Decimal("9283.10006"), 3.5, "0.004", b"2.99"],
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("Qty", [Mass, Force], ids=("Mass", "Force"))
-def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
+def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Real) \
         -> None:
     qty = Qty(amnt)
     if isinstance(amnt, str):
@@ -48,10 +49,10 @@ def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Rational) \
 # noinspection PyPep8Naming
 @pytest.mark.parametrize("unit", [MILLIGRAM, GIGAWATT], ids=("mg", "GW"))
 @pytest.mark.parametrize("amnt",
-                         [17, Fraction(2, 7), Decimal("9283.10006")],
+                         [17, Fraction(2, 7), Decimal("9283.10006"), 3.4],
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("Qty", [Mass, Power], ids=("Mass", "Power"))
-def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Rational, unit: Unit) \
+def test_qty_from_amnt_n_unit(Qty: QuantityMeta, amnt: Real, unit: Unit) \
         -> None:
     if Qty is unit.qty_cls:
         qty = Qty(amnt, unit)
@@ -121,9 +122,10 @@ def test_missing_or_unknown_symbol(num_str: str) -> None:
 @pytest.mark.parametrize(("amnt", "unit"),
                          [(319, METRE),
                           (Fraction(2, 100), MEGAWATT),
-                          (Decimal("-15"), CELSIUS)],
+                          (Decimal("-15"), CELSIUS),
+                          (17.5, MILLIGRAM)],
                          ids=lambda p: str(p))
-def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) -> None:
+def test_qty_from_amnt_mul_unit(amnt: Real, unit: Unit) -> None:
     qty = amnt * unit
     assert qty.amount == amnt
     assert qty.unit is unit
@@ -133,10 +135,20 @@ def test_qty_from_amnt_mul_unit(amnt: Rational, unit: Unit) -> None:
 @pytest.mark.parametrize(("amnt", "unit"),
                          [(3, METRE),
                           (Fraction(1, 7), MEGAWATT),
-                          (Decimal("-25"), CELSIUS)],
+                          (Decimal("-25"), CELSIUS),
+                          (0.4, MILLIGRAM)],
                          ids=lambda p: str(p))
-def test_qty_from_unit_div_amnt(amnt: Rational, unit: Unit) -> None:
+def test_qty_from_unit_div_amnt(amnt: Real, unit: Unit) -> None:
     qty = unit / amnt
     assert qty.amount == Decimal(1) / amnt
     assert qty.unit is unit
     assert qty.__class__ is unit.qty_cls
+
+
+@pytest.mark.parametrize("amnt",
+                         [23, Fraction(3, 2), Decimal("0.04"), 3.5],
+                         ids=lambda p: str(p))
+def test_qty_from_amnt_div_unit(amnt: Real) -> None:
+    qty = amnt / SECOND
+    assert qty.amount == amnt
+    assert qty.unit is HERTZ
