@@ -45,8 +45,7 @@ class UndefinedResultError(QuantityError):
 
     def __init__(self, op: Callable[[Any, Any], Any],
                  operand1: Any, operand2: Any):
-        msg = f"Undefined result: '{operand1}' {self._op_syms[op]} '" \
-              f"{operand2}'"
+        msg = f"Undefined result: {operand1} {self._op_syms[op]} {operand2}"
         QuantityError.__init__(self, msg)
 
 

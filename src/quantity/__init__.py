@@ -732,7 +732,7 @@ class Unit:
                 factor = self._get_factor(other)
                 if factor is None:
                     raise UnitConversionError("Can't convert '%s' to '%s'.",
-                                              self.name, other.name)
+                                              other, self)
                 else:
                     return op(factor, ONE)
             msg = "Can't compare a '%s' unit and a '%s' unit."
@@ -799,7 +799,9 @@ class Unit:
                 res = _qty_from_term(res_def)
             except KeyError:
                 raise UndefinedResultError(operator.mul,
-                                           self.name, other.name) from None
+                                           self._qty_cls.__name__,
+                                           other._qty_cls.__name__,) \
+                    from None
             # cache it
             _op_cache[(operator.mul, self, other)] = res
             return res
@@ -848,7 +850,8 @@ class Unit:
                     res: BinOpResT = self._equiv / other._equiv
                 except AttributeError:
                     raise UndefinedResultError(operator.truediv,
-                                               self.name, other.name) \
+                                               self._qty_cls.__name__,
+                                               other._qty_cls.__name__) \
                         from None
             else:
                 res_def = UnitDefT(((self, 1), (other, -1)))
@@ -856,7 +859,8 @@ class Unit:
                     res = _qty_from_term(res_def)
                 except KeyError:
                     raise UndefinedResultError(operator.truediv,
-                                               self.name, other.name) \
+                                               self._qty_cls.__name__,
+                                               other._qty_cls.__name__) \
                         from None
             # cache it
             _op_cache[(operator.truediv, self, other)] = res
@@ -882,7 +886,8 @@ class Unit:
             try:
                 return _qty_from_term(res_def)  # type: ignore
             except KeyError:
-                raise UndefinedResultError(operator.pow, self.name, exp) \
+                raise UndefinedResultError(operator.pow,
+                                           self._qty_cls.__name__, exp) \
                     from None
         return NotImplemented
 
@@ -1187,7 +1192,7 @@ class Quantity(metaclass=QuantityMeta):
         if cls is Quantity:
             cls = cast(Type[Quantity], unit.qty_cls)
             if cls is None:
-                raise TypeError(f"'{unit}' is nor a registered unit.")
+                raise TypeError(f"'{unit}' is not a registered unit.")
         elif cls is not unit.qty_cls:
             raise QuantityError(f"Given unit '{unit}' is not a "
                                 f"'{cls.__name__}' unit.")
@@ -1368,8 +1373,8 @@ class Quantity(metaclass=QuantityMeta):
                 return op(self.amount, other.amount)
             equiv = other.equiv_amount(self.unit)
             if equiv is None:
-                raise UnitConversionError("Can't compare '%s' and '%s'.",
-                                          self.unit.name, other.unit.name)
+                raise UnitConversionError("Can't convert '%s' to '%s'.",
+                                          other.unit, self.unit)
             return op(self.amount, equiv)
         elif isinstance(other, Quantity):
             raise IncompatibleUnitsError("Can't compare a '%s' and a '%s'.",
