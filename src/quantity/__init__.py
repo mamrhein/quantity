@@ -760,7 +760,11 @@ class Unit:
         ...
 
     @overload
-    def __mul__(self, other: Rational) -> Quantity:  # noqa: D105
+    def __mul__(self, other: float) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
+    def __mul__(self, other: Real) -> Quantity:  # noqa: D105
         ...
 
     @overload
@@ -780,6 +784,8 @@ class Unit:
         """self * other"""
         if isinstance(other, Rational):
             return self._qty_cls(other, self)
+        if isinstance(other, Real):
+            return self._qty_cls(Decimal(other), self)
         if isinstance(other, SIPrefix):
             return self._qty_cls(other.factor, self)
         if isinstance(other, Unit):
@@ -809,7 +815,11 @@ class Unit:
         ...
 
     @overload
-    def __truediv__(self, other: Rational) -> Quantity:  # noqa: D105
+    def __truediv__(self, other: float) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
+    def __truediv__(self, other: Real) -> Quantity:  # noqa: D105
         ...
 
     @overload
@@ -825,6 +835,8 @@ class Unit:
         """self / other"""
         if isinstance(other, Rational):
             return self._qty_cls(ONE / other, self)
+        if isinstance(other, Real):
+            return self._qty_cls(ONE / Decimal(other), self)
         if isinstance(other, Unit):
             try:  # try cache
                 return _op_cache[(operator.truediv, self, other)]
@@ -857,6 +869,8 @@ class Unit:
         """other / self"""
         if isinstance(other, Rational):
             return other * self ** -1
+        if isinstance(other, Real):
+            return Decimal(other) * self ** -1
         return NotImplemented
 
     def __pow__(self, exp: Any) -> Quantity:
