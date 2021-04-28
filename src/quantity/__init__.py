@@ -1228,10 +1228,9 @@ class Quantity(metaclass=QuantityMeta):
             if factor is None:
                 # try registered converters:
                 for conv in self.__class__.registered_converters():
-                    try:
-                        return conv(self, unit)
-                    except UnitConversionError:
-                        pass
+                    amnt = conv(self, unit)
+                    if amnt is not None:
+                        return amnt
                 return None
             else:
                 return factor * self.amount
