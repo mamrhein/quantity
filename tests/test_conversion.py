@@ -14,7 +14,7 @@
 """Test driver for Quantity conversion functions.."""
 
 from fractions import Fraction
-from numbers import Rational
+from numbers import Rational, Real
 
 import pytest
 from decimalfp import Decimal
@@ -126,3 +126,14 @@ def test_qty_repr(value: Rational, unit: Unit) -> None:
     else:
         assert repr(qty) == "%s(%s, %s)" % (qty.__class__.__name__,
                                             repr(qty.amount), repr(qty.unit))
+
+
+@pytest.mark.parametrize(("amnt", "unit", "fmt", "result"),
+                         [(2.5, NEWTON, "", "2.5 N"),
+                          (Decimal("7.8"), FAHRENHEIT,
+                           "{a:_>7.2f} {u}", "___7.80 °F"),
+                          (Fraction(1, 3), KILOWATT_HOUR,
+                           "  {a} {u:<4}", "  1/3 kWh ")],
+                         ids=lambda p: str(p))
+def test_qty_format(amnt: Real, unit: Unit, fmt: str, result: str) -> None:
+    assert format(amnt * unit, fmt) == result

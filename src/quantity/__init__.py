@@ -93,8 +93,8 @@ provided in a sub-module:
     >>> NANOMETRE
     Unit('nm')
 
-Using one unit as a reference and defining all other units by giving
-a scaling factor is only possible if the units have the same scale. Otherwise,
+Using one unit as a reference and defining all other units by giving a
+scaling factor is only possible if the units have the same scale. Otherwise,
 units can just be instantiated without giving a definition:
 
     >>> class Temperature(Quantity):
@@ -510,7 +510,7 @@ used:
 
     >>> v = Volume('19.36')
     >>> format(v)
-    '19.36 m\xb3'
+    '19.36 m³'
     >>> format(v, '{a:*>10.2f} {u:<3}')
     '*****19.36 m³ '
 """
@@ -881,6 +881,13 @@ class Unit:
     def __str__(self) -> str:
         """str(self)"""
         return f"{self.symbol}"
+
+    def __format__(self, fmt_spec: str = "") -> str:
+        """Convert to string (according to `fmt_spec`).
+
+        `fmt_spec` must be a valid format spec for strings.
+        """
+        return format(self.symbol, fmt_spec)
 
     # implement abstract methods of NonNumTermElem to allow instances of
     # Unit to be elements in terms:
@@ -1552,6 +1559,18 @@ class Quantity(metaclass=QuantityMeta):
     def __str__(self) -> str:
         """str(self)"""
         return f"{self.amount} {self.unit}"
+
+    def __format__(self, fmt_spec: str = "") -> str:
+        """Convert to string (according to format specifier).
+
+        The specifier must be a standard format specifier in the form
+        described in PEP 3101. It should use two keys: 'a' for self.amount and
+        'u' for self.unit, where 'a' can be followed by a valid format spec
+        for numbers and 'u' by a valid format spec for strings.
+        """
+        if not fmt_spec:
+            fmt_spec = self.dflt_format_spec
+        return fmt_spec.format(a=self.amount, u=self.unit)
 
 
 # helper functions
