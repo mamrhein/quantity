@@ -1073,8 +1073,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
             :class:`Unit`: unit with given `symbol`
 
         Raises:
-            is registered with
-                `cls`, otherwise None
+            KexError: a unit with given `symbol` is not registered with `cls`
+
         """
         return cls._unit_map[symbol]
 
