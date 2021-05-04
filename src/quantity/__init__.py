@@ -523,7 +523,7 @@ from fractions import Fraction
 from numbers import Integral, Rational, Real
 from typing import (
     Any, AnyStr, Callable, Collection, Dict, Generator, Iterator, List,
-    MutableMapping, Optional, Tuple, Type, TypeVar, Union, cast, overload,
+    MutableMapping, Optional, Tuple, TypeVar, Union, overload,
     )
 
 from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
@@ -690,7 +690,7 @@ class Unit:
             return None
         # cls.quantum not None => cls.ref_unit not None => self._equiv not None
         assert self._equiv is not None
-        return cast(Rational, cls.quantum / self._equiv)
+        return cls.quantum / self._equiv
 
     def __hash__(self) -> int:
         """hash(self)"""
@@ -864,7 +864,7 @@ class Unit:
         """self ** exp"""
         if isinstance(exp, int):
             if exp == 1:
-                return self._qty_cls(1, self)
+                return self._qty_cls(ONE, self)
             res_def = UnitDefT(((self, exp),))
             try:
                 return _qty_from_term(res_def)  # type: ignore
@@ -923,12 +923,11 @@ class QuantityMeta(ClassWithDefinitionMeta):
     def __new__(mcs, name: str, bases: Tuple[type, ...],  # noqa: N804
                 clsdict: Dict[str, Any], **kwds: Any) -> QuantityMeta:
         """Create new Quantity (sub-)class."""
-        cls: QuantityMeta
         ref_unit_def: Optional[UnitDefT] = None
         # optional definition
         define_as: Optional[QuantityClsDefT] = kwds.pop('define_as', None)
         # reference unit
-        if define_as is not None:
+        if define_as is not None:   # empty Term
             assert define_as, "Given definition is not valid."
             try:
                 ref_unit_def = UnitDefT(_iter_ref_units(define_as))
@@ -951,9 +950,9 @@ class QuantityMeta(ClassWithDefinitionMeta):
             clsdict['__slots__']
         except KeyError:
             clsdict['__slots__'] = ()
-        cls = cast(QuantityMeta,
-                   super().__new__(mcs, name, bases, clsdict,
-                                   define_as=cast(ClassDefT, define_as)))
+        cls = super().__new__(mcs, name, bases, clsdict,
+                              define_as=define_as)
+        assert isinstance(cls, QuantityMeta)
         if ref_unit_symbol:
             cls._make_ref_unit(ref_unit_symbol, ref_unit_name, ref_unit_def)
         else:
@@ -1121,14 +1120,15 @@ class Quantity(metaclass=QuantityMeta):
     dflt_format_spec = '{a} {u}'
 
     # TODO: remove these class variables after mypy issue #1021 got fixed:
-    _amount: Union[Decimal, Fraction]
+    _amount: Rational
     _unit: Unit
 
-    def __new__(cls, amount: Union[Rational, StdLibDecimal, AnyStr],
+    def __new__(cls: QuantityMeta,
+                amount: Union[Rational, StdLibDecimal, AnyStr],
                 unit: Optional[Unit] = None) -> Quantity:
         """Create new `Quantity` instance."""
         qty: Quantity
-        amnt: Union[Decimal, Fraction]
+        amnt: Rational
         if isinstance(amount, (Decimal, Fraction)):
             amnt = amount
         elif isinstance(amount, (Integral, StdLibDecimal)):
@@ -1184,7 +1184,7 @@ class Quantity(metaclass=QuantityMeta):
             raise TypeError("Instance of 'Unit' expected as 'unit', got: "
                             f"{unit!r}.")
         if cls is Quantity:
-            cls = cast(Type[Quantity], unit.qty_cls)
+            cls = unit.qty_cls
             if cls is None:
                 raise TypeError(f"'{unit}' is not a registered unit.")
         elif cls is not unit.qty_cls:
@@ -1397,7 +1397,7 @@ class Quantity(metaclass=QuantityMeta):
 
     def __abs__(self: Q) -> Q:
         """abs(self) -> self.Quantity(abs(self.amount), self.unit)"""
-        return self.__class__(cast(Rational, abs(self.amount)), self.unit)
+        return self.__class__(abs(self._amount), self.unit)
 
     def __pos__(self: Q) -> Q:
         """+self"""
