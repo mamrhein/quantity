@@ -35,8 +35,8 @@ class ClassWithDefinitionMeta(type):
                 define_as: Optional[ClassDefT] = None) \
             -> ClassWithDefinitionMeta:
         """Create new class."""
-        cls = cast(ClassWithDefinitionMeta,
-                   super().__new__(mcs, name, bases, clsdict))
+        cls = super().__new__(mcs, name, bases, clsdict)
+        assert isinstance(cls, ClassWithDefinitionMeta)
         # check definition
         if define_as is not None:
             assert isinstance(define_as, Term), \
