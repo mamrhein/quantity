@@ -523,7 +523,7 @@ from fractions import Fraction
 from numbers import Integral, Rational, Real
 from typing import (
     Any, AnyStr, Callable, Collection, Dict, Generator, Iterator, List,
-    MutableMapping, Optional, Tuple, TypeVar, Union, overload,
+    MutableMapping, Optional, Tuple, Type, TypeVar, Union, overload,
     )
 
 from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
@@ -917,6 +917,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
 
     # TODO: remove these class variables after mypy issue #1021 got fixed:
     _definition: Optional[ClassDefT]
+    _unit_cls: Type[Unit]
     _ref_unit: Optional[Unit]
     _quantum: Rational
 
@@ -945,6 +946,11 @@ class QuantityMeta(ClassWithDefinitionMeta):
             "given."
         assert quantum is None or ref_unit_symbol, \
             "A quantum can only be defined together with a reference unit."
+        # default unit class
+        try:
+            clsdict['_unit_cls']
+        except KeyError:
+            clsdict['_unit_cls'] = Unit
         # prevent __dict__ from being built for subclasses of Quantity
         try:
             clsdict['__slots__']
@@ -977,8 +983,9 @@ class QuantityMeta(ClassWithDefinitionMeta):
 
     def _make_ref_unit(cls, symbol: str, name: str,  # noqa: N805
                        define_as: Optional[UnitDefT]) -> None:
-        cls._ref_unit = Unit(cls, symbol, name=name, define_as=define_as,
-                             ref_unit=True)
+        unit_cls = cls._unit_cls
+        cls._ref_unit = unit_cls(cls, symbol, name=name, define_as=define_as,
+                                 ref_unit=True)
 
     @property
     def ref_unit(cls) -> Optional[Unit]:  # noqa: N805
@@ -999,16 +1006,17 @@ class QuantityMeta(ClassWithDefinitionMeta):
                  derive_from: Optional[Union[Unit, Tuple[Unit, ...]]] = None) \
             -> Unit:
         """Create, register and return a new unit for `cls`."""
+        unit_cls = cls._unit_cls
         if derive_from is None:
             if define_as is None:
-                unit = Unit(cls, symbol, name=name)
+                unit = unit_cls(cls, symbol, name=name)
             elif isinstance(define_as, Quantity):
                 if not isinstance(define_as, cls):
                     raise TypeError(f"Can't use an instance of "
                                     f"'{define_as.__class__.__name__}' to "
                                     f"define a '{cls.__name__}' unit.")
                 # noinspection PyTypeChecker
-                unit = Unit(cls, symbol, name=name, define_as=define_as)
+                unit = unit_cls(cls, symbol, name=name, define_as=define_as)
             elif isinstance(define_as, Term):
                 try:
                     qty = _qty_from_term(define_as)
@@ -1018,7 +1026,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
                     if qty.__class__ is not cls:
                         raise ValueError(f"Given term doesn't define a "
                                          f"'{cls.__name__}' unit.")
-                unit = Unit(cls, symbol, name=name, define_as=define_as)
+                unit = unit_cls(cls, symbol, name=name, define_as=define_as)
             else:
                 raise TypeError(f"'define_as' must be an instance of "
                                 f"'{cls.__name__}' or a term denoting such "
@@ -1041,7 +1049,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
                 unit_def_items.append((unit, exp))
             # noinspection PyTypeChecker
             unit_def_term = Term(unit_def_items)
-            unit = Unit(cls, symbol, name=name, define_as=unit_def_term)
+            unit = unit_cls(cls, symbol, name=name, define_as=unit_def_term)
         cls._unit_map[unit.symbol] = unit
         return unit
 
