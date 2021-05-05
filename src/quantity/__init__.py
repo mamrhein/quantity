@@ -1080,14 +1080,14 @@ class QuantityMeta(ClassWithDefinitionMeta):
             :class:`Unit`: unit with given `symbol`
 
         Raises:
-            KeyError: a unit with given `symbol` is not registered with `cls`
+            ValueError: a unit with given `symbol` is not registered with `cls`
 
         """
         try:
             return cls._unit_map[symbol]
         except KeyError:
-            raise KeyError(f"'{cls.__name__}' does not have a unit with "
-                           f"symbol '{symbol}'.") from None
+            raise ValueError(f"'{cls.__name__}' does not have a unit with "
+                             f"symbol '{symbol}'.") from None
 
     def register_converter(cls, conv: ConverterT) -> None:  # noqa: N805
         """Add converter `conv` to the list of converters registered in cls.
