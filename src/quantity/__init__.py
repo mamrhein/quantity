@@ -522,7 +522,7 @@ from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
 from numbers import Integral, Rational, Real
 from typing import (
-    Any, AnyStr, Callable, Collection, Dict, Generator, Iterator, List,
+    Any, Callable, Collection, Dict, Generator, Iterator, List,
     MutableMapping, Optional, Tuple, Type, TypeVar, Union, overload,
     )
 
@@ -1132,7 +1132,7 @@ class Quantity(metaclass=QuantityMeta):
     _unit: Unit
 
     def __new__(cls: QuantityMeta,
-                amount: Union[Rational, StdLibDecimal, AnyStr],
+                amount: Union[Real, str],
                 unit: Optional[Unit] = None) -> Quantity:
         """Create new `Quantity` instance."""
         qty: Quantity
@@ -1146,15 +1146,8 @@ class Quantity(metaclass=QuantityMeta):
                 amnt = Decimal(amount)
             except ValueError:
                 amnt = Fraction(amount)
-        elif isinstance(amount, (str, bytes)):
-            if isinstance(amount, bytes):
-                try:
-                    q_repr = amount.decode()
-                except UnicodeError:
-                    raise QuantityError("Can't decode given bytes using "
-                                        "default encoding.")
-            else:
-                q_repr = amount
+        elif isinstance(amount, str):
+            q_repr = amount
             parts = q_repr.lstrip().split(' ', 1)
             s_amount = parts[0]
             try:
@@ -1199,6 +1192,7 @@ class Quantity(metaclass=QuantityMeta):
             raise QuantityError(f"Given unit '{unit}' is not a "
                                 f"'{cls.__name__}' unit.")
         # make raw instance
+        # noinspection PyTypeChecker
         qty = super().__new__(cls)
         # check whether it should be quantized
         quantum = unit.quantum

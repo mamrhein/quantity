@@ -32,7 +32,7 @@ from quantity.predefined import (
 # noinspection PyPep8Naming
 @pytest.mark.parametrize("amnt",
                          [17, Fraction(2, 7), StdLibDecimal("29.82"),
-                          Decimal("9283.10006"), 3.5, "0.004", b"2.99"],
+                          Decimal("9283.10006"), 3.5, "0.004"],
                          ids=lambda p: str(p))
 @pytest.mark.parametrize("Qty", [Mass, Force], ids=("Mass", "Force"))
 def test_qty_from_amnt_without_unit(Qty: QuantityMeta, amnt: Real) \
