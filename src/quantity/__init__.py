@@ -1070,7 +1070,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         """Return an iterator over the symbols registered in `cls`."""
         return iter(cls._unit_map)
 
-    def __getitem__(cls, symbol: str) -> Unit:
+    def get_unit_by_symbol(cls, symbol: str) -> Unit:
         """Return the unit with symbol `symbol`.
 
         Args:
@@ -1193,7 +1193,7 @@ class Quantity(metaclass=QuantityMeta):
                                 f"'{cls.__name__}' unit.")
         # make raw instance
         # noinspection PyTypeChecker
-        qty = super().__new__(cls)
+        qty = super().__new__(cls)      # type: ignore
         # check whether it should be quantized
         quantum = unit.quantum
         if quantum is not None:
