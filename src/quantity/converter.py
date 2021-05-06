@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 from typing import (
-    Callable, Iterable, Mapping, Optional, TYPE_CHECKING, Tuple, Union, cast,
+    Iterable, Mapping, Optional, TYPE_CHECKING, Tuple, Union, cast,
     )
 
 from .exceptions import IncompatibleUnitsError
@@ -28,8 +28,6 @@ from .exceptions import IncompatibleUnitsError
 if TYPE_CHECKING:   # needed to avoid cyclic import at runtime
     from numbers import Rational
     from . import Quantity, Unit
-
-ConverterT = Callable[['Quantity', 'Unit'], Optional['Rational']]
 
 
 class Converter:

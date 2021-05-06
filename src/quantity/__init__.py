@@ -528,7 +528,7 @@ from typing import (
 
 from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
 
-from .converter import Converter, ConverterT, TableConverter
+from .converter import Converter, TableConverter
 from .cwdmeta import ClassDefT, ClassWithDefinitionMeta
 from .exceptions import (
     IncompatibleUnitsError, QuantityError, UndefinedResultError,
@@ -560,6 +560,7 @@ BinOpT = Callable[[Any, Any], Any]
 UnitDefT = Term['Unit']
 UnitRegistryT = DefinedItemRegistry['Unit']
 QuantityClsDefT = Term['QuantityMeta']
+ConverterT = Callable[['Quantity', 'Unit'], Optional[Rational]]
 
 # Cache for results of operations on unit definitions
 BinOpResT = Union['Quantity', Rational]
