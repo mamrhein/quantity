@@ -560,7 +560,7 @@ BinOpT = Callable[[Any, Any], Any]
 UnitDefT = Term['Unit']
 UnitRegistryT = DefinedItemRegistry['Unit']
 QuantityClsDefT = Term['QuantityMeta']
-ConverterT = Callable[['Quantity', 'Unit'], Optional[Rational]]
+ConverterT = Callable[..., Optional[Rational]]
 
 # Cache for results of operations on unit definitions
 BinOpResT = Union['Quantity', Rational]
@@ -1216,6 +1216,8 @@ class Quantity(metaclass=QuantityMeta):
 
     def equiv_amount(self, unit: Unit) -> Optional[Rational]:
         """Return amount e so that e * `unit` == `self`."""
+        if self.unit == unit:
+            return self.amount
         try:
             # noinspection PyProtectedMember
             factor = self.unit._get_factor(unit)
@@ -1413,6 +1415,8 @@ class Quantity(metaclass=QuantityMeta):
     def __add__(self: Q, other: Q) -> Q:
         """self + other"""
         if isinstance(other, self.__class__):
+            if self.unit == other.unit:
+                return self.__class__(self.amount + other.amount, self.unit)
             equiv = other.equiv_amount(self.unit)
             if equiv is None:
                 raise UnitConversionError("Can't convert '%s' to '%s'.",
@@ -1429,6 +1433,8 @@ class Quantity(metaclass=QuantityMeta):
     def __sub__(self: Q, other: Q) -> Q:
         """self - other"""
         if isinstance(other, self.__class__):
+            if self.unit == other.unit:
+                return self.__class__(self.amount - other.amount, self.unit)
             equiv = other.equiv_amount(self.unit)
             if equiv is None:
                 raise UnitConversionError("Can't convert '%s' to '%s'.",
