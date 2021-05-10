@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 # ----------------------------------------------------------------------------
-# Name:        currencies
-# Purpose:     Provide dict of currencies based on ISO 4217
-#
-# Author:      Michael Amrhein (michael@adrhinum.de)
-#
-# Copyright:   (c) 2015 Michael Amrhein
+# Copyright:   (c) 2015 ff. Michael Amrhein (michael@adrhinum.de)
 # License:     This program is free software. You can redistribute it, use it
 #              and/or modify it under the terms of the 2-clause BSD license.
 #              For license details please read the file LICENSE.txt provided
@@ -19,9 +14,14 @@
 
 
 import os.path
+from typing import List, MutableMapping, Tuple
 from xml.etree import ElementTree
+from xml.etree.ElementTree import Element
 
-from .moneybase import Currency
+CurrencyInfoT = Tuple[str, int, str, int, List[str]]
+CurrencyDictT = MutableMapping[str, CurrencyInfoT]
+
+_currency_dict: CurrencyDictT = {}
 
 # Create currency dict from ISO 4217 xml file
 iso_4217_file_name = "iso_4217.xml"
@@ -31,35 +31,34 @@ _root = _xmltree.getroot()
 
 published = f"{_root.attrib['Pblshd']}"
 
-_currencyDict = {}
-
 for entry in _root.findall("CcyTbl/CcyNtry"):
-    descr = [elem.text for elem in iter(entry)]
+    elem: Element
+    descr: List[str] = [elem.text or "" for elem in iter(entry)]
     if len(descr) == 5:
-        country, name, isoCode, isoNumCode, minorUnits = descr
-        if minorUnits.isdigit():
+        country, name, iso_code, iso_num_code, minor_units = descr
+        if iso_num_code.isdigit() and minor_units.isdigit():
             try:
-                currEntry = _currencyDict[isoCode]
+                curr_entry = _currency_dict[iso_code]
             except KeyError:
-                _currencyDict[isoCode] = (isoCode, int(isoNumCode), name,
-                                          int(minorUnits), [country])
+                _currency_dict[iso_code] = (iso_code, int(iso_num_code), name,
+                                            int(minor_units), [country])
             else:
-                currEntry[4].append(country)
+                curr_entry[4].append(country)
 
 
-def getCurrencyInfo(isoCode):
+def get_currency_info(iso_code: str) -> CurrencyInfoT:
     """Return infos from ISO 4217 currency database.
 
     Args:
-        isoCode (str): ISO 4217 3-character code for the currency to be
+        iso_code (str): ISO 4217 3-character code for the currency to be
             looked-up
 
     Returns:
-        tuple: 3-character code, numerical code, name, minorUnit and list of
+        tuple: 3-character code, numerical code, name, minor unit and list of
             countries which use the currency as functional currency
 
     Raises:
-        ValueError: currency with code `isoCode` not in database
+        ValueError: currency with code `iso_code` not in database
 
     .. note::
         The database available here does only include entries from ISO 4217
@@ -67,26 +66,6 @@ def getCurrencyInfo(isoCode):
         markets, noble metals and testing purposes.
     """
     try:
-        return _currencyDict[isoCode]
+        return _currency_dict[iso_code]
     except KeyError:
-        raise ValueError("Unknown ISO 4217 code: '%s'." % isoCode)
-
-
-def registerCurrency(isoCode):
-    """Register the currency with code `isoCode` from ISO 4217 database.
-
-    Args:
-        isoCode (string): ISO 4217 3-character code for the currency to be
-            registered
-
-    Returns:
-        :class:`Currency`: registered currency
-
-    Raises:
-        ValueError: currency with code `isoCode` not in database
-    """
-    regCurrency = Currency.get_unit_by_symbol(isoCode)
-    if regCurrency is not None:         # currency already registered
-        return regCurrency
-    isoCode, isoNumCode, name, minorUnit, countries = getCurrencyInfo(isoCode)
-    return Currency(isoCode, name, minorUnit)
+        raise ValueError(f"Unknown ISO 4217 code: '{iso_code}'.")
