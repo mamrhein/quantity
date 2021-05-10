@@ -342,7 +342,7 @@ from decimalfp import Decimal, ONE
 from .currencies import get_currency_info
 from .. import (
     Quantity, QuantityError, QuantityMeta, Unit,
-    UnitConversionError, UnitDefT, )
+    UnitConversionError, UnitDefT, _amnt_and_unit_from_term, )
 
 
 MoneyConverterT = Callable[['Money', 'Currency', Optional[date]], Rational]
@@ -787,13 +787,17 @@ class ExchangeRate:
                 raise ValueError("Can't multiply '%s/%s' and '%s/%s'."
                                  % (self.term_currency, self.unit_currency,
                                     other.term_currency, other.unit_currency))
-        # if isinstance(other, Quantity):
-        #     resTerm = other.normalizedDefinition * self._definition
-        #     try:
-        #         return other.Quantity._fromQTerm(resTerm)
-        #     except TypeError:
-        #         raise QuantityError("Resulting unit not defined: %s."
-        #                             % resTerm.unitTerm)
+        if isinstance(other, Quantity):
+            unit_term = other.unit.definition * \
+                        UnitDefT(((self.term_currency, 1),
+                                  (self.unit_currency, -1)))
+            try:
+                amnt, unit = _amnt_and_unit_from_term(unit_term)
+            except KeyError:
+                raise QuantityError(f"Resulting unit not defined: "
+                                    f"{unit_term}.") from None
+            amnt *= self.rate * other.amount
+            return other.__class__(amnt, unit)
         return NotImplemented
 
     __rmul__ = __mul__
