@@ -630,16 +630,25 @@ class ExchangeRate:
         if unit_multiple < 1:
             raise ValueError("Unit multiple must be >= 1.")
         if isinstance(term_amount, Decimal):
-            mgnt_term_amount = term_amount.magnitude
+            magnitude_term_amount = term_amount.magnitude
         else:
-            term_amount = Fraction(term_amount)
-            mgnt_term_amount = int(math.floor(math.log10(abs(term_amount))))
-        if mgnt_term_amount < -6:
+            try:
+                term_amount = Fraction(term_amount)
+            except (ValueError, OverflowError):
+                raise ValueError("Term amount must be convertable to a "
+                                 "Rational.") from None
+            except TypeError:
+                raise TypeError(f"Rational number expected as term amount; "
+                                f"{type(term_amount)} given.")
+            if term_amount <= 0:
+                raise ValueError("Term amount must be >= 0.000001.")
+            magnitude_term_amount = int(math.floor(math.log10(term_amount)))
+        if term_amount < Decimal("0.000001"):
             raise ValueError("Term amount must be >= 0.000001.")
         # adjust unit_multiple and term_amount so that
         # unit_multiple is a power to 10 and term_amount.magnitude >= -1
         mult = Decimal(10) ** (unit_multiple.magnitude
-                               - min(0, mgnt_term_amount + 1))
+                               - min(0, magnitude_term_amount + 1))
         self._unit_multiple = mult
         self._term_amount = Decimal(term_amount * mult / unit_multiple, 6)
 
