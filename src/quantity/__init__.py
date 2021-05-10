@@ -563,7 +563,8 @@ QuantityClsDefT = Term['QuantityMeta']
 ConverterT = Callable[..., Optional[Rational]]
 
 # Cache for results of operations on unit definitions
-BinOpResT = Union['Quantity', Rational]
+AmountUnitTupleT = Tuple[Rational, Optional['Unit']]
+BinOpResT = Union['Quantity', Rational, AmountUnitTupleT]
 UnitOpCacheT = MutableMapping[Tuple[BinOpT, 'Unit', 'Unit'], BinOpResT]
 _UNIT_OP_CACHE: UnitOpCacheT = {}
 
@@ -756,7 +757,7 @@ class Unit:
         ...
 
     @overload
-    def __mul__(self, other: Unit) -> BinOpResT:  # noqa: D105
+    def __mul__(self, other: Unit) -> AmountUnitTupleT:  # noqa: D105
         ...
 
     @overload
@@ -780,17 +781,20 @@ class Unit:
             # no cache hit
             res_def = UnitDefT(((self, 1), (other, 1)))
             try:
-                res = _qty_from_term(res_def)
+                amnt, unit = _amnt_and_unit_from_term(res_def)
             except KeyError:
                 raise UndefinedResultError(operator.mul,
                                            self._qty_cls.__name__,
                                            other._qty_cls.__name__,) \
                     from None
             # cache it
-            _op_cache[(operator.mul, self, other)] = res
-            return res
+            _op_cache[(operator.mul, self, other)] = (amnt, unit)
+            return amnt, unit
         if isinstance(other, Quantity):
-            return other.amount * (self * other.unit)
+            # The resulting quantity may get quantized. Therefore we
+            # have to calculate the final amount before creating the result!
+            amnt, unit = self * other.unit
+            return (other.amount * amnt) * unit
         return NotImplemented
 
     # other * self
@@ -809,7 +813,7 @@ class Unit:
         ...
 
     @overload
-    def __truediv__(self, other: Unit) -> BinOpResT:  # noqa: D105
+    def __truediv__(self, other: Unit) -> AmountUnitTupleT:  # noqa: D105
         ...
 
     @overload
@@ -831,7 +835,8 @@ class Unit:
             # no cache hit
             if self.qty_cls is other.qty_cls:
                 try:
-                    res: BinOpResT = self._equiv / other._equiv
+                    amnt = self._equiv / other._equiv
+                    unit: Optional[Unit] = None
                 except AttributeError:
                     raise UndefinedResultError(operator.truediv,
                                                self._qty_cls.__name__,
@@ -840,17 +845,20 @@ class Unit:
             else:
                 res_def = UnitDefT(((self, 1), (other, -1)))
                 try:
-                    res = _qty_from_term(res_def)
+                    amnt, unit = _amnt_and_unit_from_term(res_def)
                 except KeyError:
                     raise UndefinedResultError(operator.truediv,
                                                self._qty_cls.__name__,
                                                other._qty_cls.__name__) \
                         from None
             # cache it
-            _op_cache[(operator.truediv, self, other)] = res
-            return res
+            _op_cache[(operator.truediv, self, other)] = (amnt, unit)
+            return amnt, unit
         if isinstance(other, Quantity):
-            return other.amount * (self / other.unit)
+            # The resulting quantity may get quantized. Therefore we
+            # have to calculate the final amount before creating the result!
+            amnt, unit = self / other.unit
+            return (other.amount * amnt) * unit
         return NotImplemented
 
     def __rtruediv__(self, other: Any) -> Quantity:
@@ -861,9 +869,11 @@ class Unit:
             return Decimal(other) * self ** -1
         return NotImplemented
 
-    def __pow__(self, exp: Any) -> Quantity:
+    def __pow__(self, exp: Any) -> Union[Quantity, Rational]:
         """self ** exp"""
         if isinstance(exp, int):
+            if exp == 0:
+                return ONE
             if exp == 1:
                 return self._qty_cls(ONE, self)
             res_def = UnitDefT(((self, exp),))
@@ -1477,9 +1487,15 @@ class Quantity(metaclass=QuantityMeta):
         if isinstance(other, Rational):
             return self.__class__(self.amount * other, self.unit)
         if isinstance(other, Quantity):
-            return (self.amount * other.amount) * (self.unit * other.unit)
+            # The resulting quantity may get quantized. Therefore we
+            # have to calculate the final amount before creating the result!
+            amnt, unit = self.unit * other.unit
+            return (self.amount * other.amount * amnt) * unit
         if isinstance(other, Unit):
-            return self.amount * (self.unit * other)
+            # The resulting quantity may get quantized. Therefore we
+            # have to calculate the final amount before creating the result!
+            amnt, unit = self.unit * other
+            return (self.amount * amnt) * unit
         if isinstance(other, Real):
             return self.__class__(self.amount * Decimal(other), self.unit)
         return NotImplemented
@@ -1520,7 +1536,11 @@ class Quantity(metaclass=QuantityMeta):
                 else:
                     return self.amount / equiv_amount
             else:
-                return (self.amount / other.amount) * (self.unit / other.unit)
+                # The resulting quantity may get quantized. Therefore we
+                # have to calculate the final amount before creating the
+                # result!
+                amnt, unit = self.unit / other.unit
+                return (self.amount / other.amount * amnt) * unit
         if isinstance(other, Unit):
             if self.__class__ is other.qty_cls:
                 equiv_amount = self.equiv_amount(other)
@@ -1530,7 +1550,11 @@ class Quantity(metaclass=QuantityMeta):
                 else:
                     return equiv_amount
             else:
-                return self.amount * (self.unit / other)
+                # The resulting quantity may get quantized. Therefore we
+                # have to calculate the final amount before creating the
+                # result!
+                amnt, unit = self.unit / other
+                return (self.amount * amnt) * unit
         if isinstance(other, Real):
             return self.__class__(self.amount / Decimal(other), self.unit)
         return NotImplemented
@@ -1599,21 +1623,27 @@ def _iter_ref_units(cls_def: QuantityClsDefT) \
                 raise TypeError
 
 
-def _qty_from_term(term: UnitDefT) -> BinOpResT:
+def _amnt_and_unit_from_term(term: UnitDefT) -> AmountUnitTupleT:
     num: Rational = ONE
     try:
         res_unit = _unit_from_term(term)
     except KeyError:
         num, res_def = term.normalized().split()
         if not res_def:  # empty term
-            return num
+            return num, None
         elif res_def != term:
             res_unit = _unit_from_term(res_def)
         else:
             raise
-    qty_cls = res_unit.qty_cls
+    return num, res_unit
+
+
+def _qty_from_term(term: UnitDefT) -> BinOpResT:
+    amnt, unit = _amnt_and_unit_from_term(term)
+    assert unit is not None
+    qty_cls = unit.qty_cls
     assert qty_cls is not None
-    return qty_cls(num, res_unit)
+    return qty_cls(amnt, unit)
 
 
 def _floordiv_rounded(x: int, y: int,

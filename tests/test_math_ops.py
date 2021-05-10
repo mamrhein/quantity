@@ -178,9 +178,11 @@ def test_qty_mul_float(qty: Quantity, other: float) -> None:
                          ids=lambda p: str(p))
 def test_qty_mul_qty_defined_result(qty1: Quantity, qty2: Quantity) -> None:
     res = qty1 * qty2
-    amount = qty1.amount * qty2.amount
-    qty = qty1.unit * qty2.unit
-    assert res == amount * qty
+    amount, unit = qty1.unit * qty2.unit
+    amount *= qty1.amount * qty2.amount
+    assert isinstance(res, Quantity)
+    assert res.amount == amount
+    assert res.unit == unit
 
 
 @pytest.mark.parametrize("qty2",
@@ -204,7 +206,11 @@ def test_qty_mul_qty_undefined_result(qty1: Quantity, qty2: Quantity) -> None:
                          ids=lambda p: str(p))
 def test_qty_mul_unit_defined_result(qty: Quantity, unit: Unit) -> None:
     res = qty * unit
-    assert res == qty.amount * (qty.unit * unit)
+    res_amount, res_unit = qty.unit * unit
+    res_amount *= qty.amount
+    assert isinstance(res, Quantity)
+    assert res.amount == res_amount
+    assert res.unit == res_unit
 
 
 @pytest.mark.parametrize("unit",
@@ -283,9 +289,11 @@ def test_rational_div_qty_undefined_result(qty: Quantity, other: Rational) \
                          ids=lambda p: str(p))
 def test_qty_div_qty_defined_result(qty1: Quantity, qty2: Quantity) -> None:
     res = qty1 / qty2
-    amount = qty1.amount / qty2.amount
-    qty = qty1.unit / qty2.unit
-    assert res == amount * qty
+    amount, unit = qty1.unit / qty2.unit
+    amount *= qty1.amount / qty2.amount
+    assert isinstance(res, Quantity)
+    assert res.amount == amount
+    assert res.unit == unit
 
 
 @pytest.mark.parametrize("qty2",
@@ -310,7 +318,7 @@ def test_qty_div_qty_undefined_result(qty1: Quantity, qty2: Quantity) -> None:
 def test_qty_div_same_qty(qty1: Quantity, qty2: Quantity) -> None:
     res = qty1 / qty2
     amount = qty1.amount / qty2.amount
-    factor = qty1.unit / qty2.unit
+    factor, _ = qty1.unit / qty2.unit
     assert res == amount * factor
 
 
@@ -325,7 +333,14 @@ def test_qty_div_same_qty(qty1: Quantity, qty2: Quantity) -> None:
                          ids=lambda p: str(p))
 def test_qty_div_unit_defined_result(qty: Quantity, unit: Unit) -> None:
     res = qty / unit
-    assert res == qty.amount * (qty.unit / unit)
+    res_amount, res_unit = qty.unit / unit
+    res_amount *= qty.amount
+    if res_unit is None:
+        assert res == res_amount
+    else:
+        assert isinstance(res, Quantity)
+        assert res.amount == res_amount
+        assert res.unit == res_unit
 
 
 @pytest.mark.parametrize("unit",
