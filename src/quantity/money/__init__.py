@@ -1046,7 +1046,7 @@ class MoneyConverter:
             else:
                 raise ValueError(f"Not a valid period: {validity}.")
         elif isinstance(validity, tuple):
-            dt_str = f"{validity[0]}-{validity[1]}-01"
+            dt_str = f"{validity[0]:04d}-{validity[1]:02d}-01"
             try:                            # verify year and month
                 dt = date.fromisoformat(dt_str)
             except ValueError:
