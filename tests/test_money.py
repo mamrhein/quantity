@@ -42,6 +42,7 @@ EURpKg = PricePerMass.new_unit("EUR/kg", derive_from=(EUR, KILOGRAM))
 HKDpKg = PricePerMass.new_unit("HKD/kg", derive_from=(HKD, KILOGRAM))
 TNDpKg = PricePerMass.new_unit("TND/kg", derive_from=(TND, KILOGRAM))
 USDpKg = PricePerMass.new_unit("USD/kg", derive_from=(USD, KILOGRAM))
+ZWLpKg = PricePerMass.new_unit("ZWL/kg", derive_from=(ZWL, KILOGRAM))
 
 
 @pytest.mark.parametrize(("iso_code", "name", "minor_unit",
@@ -596,8 +597,6 @@ def test_exch_rate_div_wrong_type(exch_rate: ExchangeRate, other: Any) \
         -> None:
     with pytest.raises(TypeError):
         _ = exch_rate / other
-    with pytest.raises(TypeError):
-        _ = other / exch_rate
 
 
 @pytest.mark.parametrize(("mny", "exch_rate"),
@@ -632,3 +631,68 @@ def test_mny_div_exch_rate_wrong_curr(mny: Money, exch_rate: ExchangeRate) \
         -> None:
     with pytest.raises(ValueError):
         _ = mny / exch_rate
+
+
+@pytest.mark.parametrize(("price", "exch_rate"),
+                         [(Decimal("335.04") * USDpKg,
+                           ExchangeRate(EUR, ONE, USD, Decimal("1.09827"))),
+                          (Decimal("12033.20") * TNDpKg,
+                           ExchangeRate(ZWL, Decimal("100"), TND,
+                                        Decimal("1.09827"))),
+                          ],
+                         ids=lambda p: str(p))
+def test_mny_per_qty_div_exch_rate_ok(price: PricePerMass,
+                                      exch_rate: ExchangeRate) -> None:
+    res = price / exch_rate
+    amnt = price.amount / exch_rate.rate
+    _, unit = exch_rate.unit_currency / KILOGRAM
+    assert isinstance(res, PricePerMass)
+    assert res.amount == amnt
+    assert res.unit == unit
+
+
+@pytest.mark.parametrize("price",
+                         [Decimal("335.04") * EURpKg,
+                          Decimal("12033.20") * HKDpKg,
+                          ],
+                         ids=lambda p: str(p))
+@pytest.mark.parametrize("exch_rate",
+                         [ExchangeRate(EUR, ONE, USD, Decimal("1.09827")),
+                          ExchangeRate(ZWL, Decimal("100"), TND,
+                                       Decimal("1.09827")),
+                          ],
+                         ids=lambda p: str(p))
+def test_mny_per_qty_div_exch_rate_wrong_curr(price: PricePerMass,
+                                              exch_rate: ExchangeRate) \
+        -> None:
+    with pytest.raises(ValueError):
+        _ = price / exch_rate
+
+
+@pytest.mark.parametrize(("exch_rate", "qty"),
+                         [(ExchangeRate(TND, Decimal("10"), USD,
+                                        Decimal("0.302")),
+                           Mass(17.5)),
+                          ],
+                         ids=lambda p: str(p))
+def test_wrong_qty_div_exch_rate(exch_rate: ExchangeRate, qty: Quantity) \
+        -> None:
+    with pytest.raises(QuantityError):
+        _ = qty / exch_rate
+
+
+@pytest.mark.parametrize(("exch_rate", "other"),
+                         [(ExchangeRate(EUR, ONE, USD, Decimal("1.0204")),
+                           EUR),
+                          (ExchangeRate(ZWL, Decimal("1000"), TND,
+                                        Decimal("109.008247")),
+                           Decimal("120.322054")),
+                          (ExchangeRate(TND, Decimal("100"), USD,
+                                        Decimal("3.02")),
+                           Mass),
+                          ],
+                         ids=lambda p: str(p))
+def test_wrong_type_div_exch_rate(exch_rate: ExchangeRate, other: Any) \
+        -> None:
+    with pytest.raises(TypeError):
+        _ = other / exch_rate

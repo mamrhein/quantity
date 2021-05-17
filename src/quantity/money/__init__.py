@@ -359,6 +359,7 @@ RateDictT = Dict[Tuple[ValidityT, Union['Currency', str]], 'ExchangeRate']
 
 class Currency(Unit):
 
+    # noinspection PyUnresolvedReferences
     """Represents a currency, i.e. a money unit.
 
     Args:
@@ -492,6 +493,7 @@ class MoneyMeta(QuantityMeta):
 
 class Money(Quantity, metaclass=MoneyMeta):
 
+    # noinspection PyUnresolvedReferences
     """Represents a money amount, i.e. the combination of a numerical value
     and a money unit, aka. currency.
 
@@ -724,6 +726,7 @@ class ExchangeRate:
     def __mul__(self, other: Quantity) -> Quantity:
         ...
 
+    # noinspection DuplicatedCode
     def __mul__(self, other: Union[Money, ExchangeRate, Quantity]) \
             -> Union[Money, ExchangeRate, Quantity]:
         """self * other
@@ -838,6 +841,7 @@ class ExchangeRate:
     def __rtruediv__(self, other: Quantity) -> Quantity:
         ...
 
+    # noinspection DuplicatedCode
     def __rtruediv__(self, other: Union[Money, Quantity]) \
             -> Union[Money, Quantity]:
         """other / self
@@ -876,13 +880,17 @@ class ExchangeRate:
             raise ValueError("Can't divide '%s' by '%s/%s'"
                              % (other.unit, self.term_currency,
                                 self.unit_currency))
-        # if isinstance(other, Quantity):
-        #     resTerm = other.normalizedDefinition / self._definition
-        #     try:
-        #         return other.Quantity._fromQTerm(resTerm)
-        #     except TypeError:
-        #         raise QuantityError("Resulting unit not defined: %s."
-        #                             % resTerm.unitTerm)
+        if isinstance(other, Quantity):
+            unit_term = other.unit.definition * \
+                        UnitDefT(((self.unit_currency, 1),
+                                  (self.term_currency, -1)))
+            try:
+                amnt, unit = _amnt_and_unit_from_term(unit_term)
+            except KeyError:
+                raise QuantityError(f"Resulting unit not defined: "
+                                    f"{unit_term}.") from None
+            amnt *= self.inverse_rate * other.amount
+            return other.__class__(amnt, unit)
         return NotImplemented
 
     def __repr__(self) -> str:
@@ -1065,7 +1073,7 @@ class MoneyConverter:
         # check type of validity
         type_of_validity = self._type_of_validity
         if type_of_validity is None:
-            self._type_of_validity = type_of_validity = type(validity)
+            self._type_of_validity = type(validity)
         elif type_of_validity is not type(validity):
             raise ValueError('Different types of validity periods given.')
         # update internal dict
@@ -1149,4 +1157,4 @@ __all__ = [
     'get_currency_info',
     'Money',
     'MoneyConverter',
-]
+    ]
