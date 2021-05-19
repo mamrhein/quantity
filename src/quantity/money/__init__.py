@@ -490,6 +490,34 @@ class MoneyMeta(QuantityMeta):
             assert isinstance(reg_curr, Currency)
             return reg_curr
 
+    def register_converter(cls, conv: MoneyConverter) -> None:  # noqa: N805
+        """Add converter 'conv' to the list of converters registered in 'cls'.
+
+        Money converters should not be registered directly by using this
+        method. Instead, this should be done by using them as context managers
+        in a 'with' statement."""
+        cls._converters.append(conv)
+
+    def remove_converter(cls, conv: MoneyConverter) -> None:    # noqa: N805
+        """Remove the last instance of converter 'conv' from the list of
+        converters registered in 'cls'.
+
+        Raises ValueError if 'conv' is not the most recently registered
+        converter in 'cls'.
+
+        That means that money converters must be unregistered in reversed
+        order of registration. To enforce this, money converters should be
+        registered and unregistered by using them as context managers in a
+        'with' statement."""
+        if cls._converters[-1] is conv:
+            cls._converters.pop()
+        elif conv in cls._converters:
+            raise ValueError("Attempt to unregister converter which is not "
+                             "the most recently registered one.")
+        else:
+            raise ValueError("Attempt to unregister an unregistered "
+                             "converter.")
+
 
 class Money(Quantity, metaclass=MoneyMeta):
 
