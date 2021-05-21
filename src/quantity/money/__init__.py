@@ -923,9 +923,9 @@ class ExchangeRate:
 
     def __repr__(self) -> str:
         """repr(self)"""
-        return f"{self.__class__.__name__}({self.unit_currency}, " \
-               f"{self._unit_multiple}, {self.term_currency}, " \
-               f"{self._term_amount})"
+        return f"{self.__class__.__name__}({self.unit_currency!r}, " \
+               f"{self._unit_multiple!r}, {self.term_currency!r}, " \
+               f"{self._term_amount!r})"
 
     def __str__(self) -> str:
         """str(self)"""
