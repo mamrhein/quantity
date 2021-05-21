@@ -25,10 +25,11 @@ Registering a currency
 A currency must explicitly be registered as a unit for further use. The
 easiest way to do this is to call the function :func:`registerCurrency`:
 
-    >>> EUR = registerCurrency('EUR')
-    ... HKD = registerCurrency('HKD')
-    ... TND = registerCurrency('TND')
-    ... USD = registerCurrency('USD')
+    >>> from quantity.money import Money
+    >>> EUR = Money.register_currency('EUR')
+    >>> HKD = Money.register_currency('HKD')
+    >>> TND = Money.register_currency('TND')
+    >>> USD = Money.register_currency('USD')
     >>> EUR, HKD, TND, USD
     (Currency('EUR'), Currency('HKD'), Currency('TND'), Currency('USD'))
 
@@ -64,11 +65,11 @@ for the currency:
     Money(Decimal('41.178'), Currency('TND'))
 
 As with other quantities, money amounts can also be derived from a string or
-build using the operator `^`:
+build using the operator `*`:
 
     >>> Money('3.18 USD')
     Money(Decimal('3.18'), Currency('USD'))
-    >>> 3.18 ^ USD
+    >>> 3.18 * USD
     Money(Decimal('3.18'), Currency('USD'))
 
 Computing with money amounts
@@ -82,7 +83,8 @@ between money amounts of different currencies:
     >>> Money(30, EUR) + Money(3.18, EUR)
     Money(Decimal('33.18'), Currency('EUR'))
     >>> Money(30, EUR) + Money(3.18, USD)
-    IncompatibleUnitsError: Can't convert 'US Dollar' to 'Euro'
+    Traceback (most recent call last):
+    UnitConversionError: Can't convert 'USD' to 'EUR'
 
 Resulting values are always quantized to the smallest fraction defined with
 the currency:
@@ -133,9 +135,9 @@ The properties :attr:`ExchangeRate.inverseRate` and
 :attr:`ExchangeRate.inverseQuotation` give the rate and the quotation in the
 opposite direction (but do not round the rate!):
 
-    >>> fxTND2EUR.inverseRate
+    >>> fxTND2EUR.inverse_rate
     Fraction(50000000, 82073)
-    >>> fxTND2EUR.inverseQuotation
+    >>> fxTND2EUR.inverse_quotation
     (Currency('EUR'), Currency('TND'), Fraction(50000000, 82073))
 
 The inverse ExchangeRate can be created by calling the method
@@ -172,7 +174,7 @@ Converting money amounts using exchange rates
 Multiplying an amount in some currency with an exchange rate with the same
 currency as unit currency results in the equivalent amount in term currency:
 
-    >>> mEUR = 5.27 ^ EUR
+    >>> mEUR = 5.27 * EUR
     >>> mEUR * fxEUR2HKD
     Money(Decimal('44.25'), Currency('HKD'))
     >>> mEUR * fxEUR2TND
@@ -203,41 +205,42 @@ into the converter.
 
 For example, a money converter with monthly rates can be created like this:
 
-    >>> rates_2015_11 = [(USD, Decimal('1.1073'), 1),
-    ...                  (HKD, Decimal('8.7812'), 1)]
-    >>> conv.update((2015, 11), rates_2015_11)
-    >>> rates_2015_12 = [(USD, Decimal('1.0943'), 1),
-    ...                  (HKD, Decimal('8.4813'), 1)]
-    >>> conv.update((2015, 12), rates_2015_12)
+    >>> import datetime
+    >>> today = datetime.date.today()
+    >>> year, month, day = today.timetuple()[:3]
+    >>> prev_month = month - 1
+    >>> rates = [(USD, Decimal('1.1073'), 1),
+    ...          (HKD, Decimal('8.7812'), 1)]
+    >>> conv.update((year, prev_month), rates)
+    >>> rates = [(USD, Decimal('1.0943'), 1),
+    ...          (HKD, Decimal('8.4813'), 1)]
+    >>> conv.update((year, month), rates)
 
-Exchange rates can be retrieved by calling :meth:`MoneyConverter.getRate`. If
+Exchange rates can be retrieved by calling :meth:`MoneyConverter.get_rate`. If
 no reference date is given, the current date is used (unless a callable
 returning a different date is given when the converter is created, see below).
 The method returns not only rates directly given to the converter, but also
 inverted rates and rates calculated by triangulation:
 
-    >>> # assuming today is a date in December 2015
-    >>> conv.getRate(EUR, USD)
+    >>> conv.get_rate(EUR, USD)
     ExchangeRate(Currency('EUR'), Decimal(1), Currency('USD'), \
 Decimal('1.0943', 6))
-    >>> conv.getRate(HKD, EUR, date(2015, 11, 3))
+    >>> conv.get_rate(HKD, EUR, date(year, prev_month, 3))
     ExchangeRate(Currency('HKD'), Decimal(1), Currency('EUR'), \
 Decimal('0.11388', 6))
-    >>> conv.getRate(USD, EUR)
+    >>> conv.get_rate(USD, EUR)
     ExchangeRate(Currency('USD'), Decimal(1), Currency('EUR'), \
 Decimal('0.913826'))
-    >>> conv.getRate(HKD, USD)
+    >>> conv.get_rate(HKD, USD)
     ExchangeRate(Currency('HKD'), Decimal(1), Currency('USD'), \
 Decimal('0.129025'))
 
-A money converter can be registered with the class :class:`Currency` in order
+A money converter can be registered with the class :class:`Money` in order
 to support implicit conversion of money amounts from one currency into
 another (using the default reference date, see below):
 
-    >>> Currency.registerConverter(conv)
-    >>> USD(2 ^ EUR)
-    Decimal('2.1886', 8)
-    >>> twoEUR = 2 ^ EUR
+    >>> Money.register_converter(conv)
+    >>> twoEUR = 2 * EUR
     >>> twoEUR.convert(USD)
     Money(Decimal('2.19'), Currency('USD'))
 
@@ -247,19 +250,19 @@ context manager in a `with` statement.
 In order to use a default reference date other than the current date, a
 callable can be given to :class:`MoneyConverter`. It must be callable without
 arguments and return a date. It is then used by
-:meth:`~MoneyConverter.getRate` to get the default reference date:
+:meth:`~MoneyConverter.get_rate` to get the default reference date:
 
     >>> yesterday = lambda: datetime.date.today() - datetime.timedelta(1)
     >>> conv = MoneyConverter(EUR)      # uses today as default
     >>> conv.update(yesterday(), [(USD, Decimal('1.0943'), 1)])
     >>> conv.update(datetime.date.today(), [(USD, Decimal('1.0917'), 1)])
-    >>> conv.getRate(EUR, USD)
+    >>> conv.get_rate(EUR, USD)
     ExchangeRate(Currency('EUR'), Decimal(1), Currency('USD'), \
 Decimal('1.0917', 6))
     >>> conv = MoneyConverter(EUR, get_dflt_effective_date=yesterday)
     >>> conv.update(yesterday(), [(USD, Decimal('1.0943'), 1)])
     >>> conv.update(datetime.date.today(), [(USD, Decimal('1.0917'), 1)])
-    >>> conv.getRate(EUR, USD)
+    >>> conv.get_rate(EUR, USD)
     ExchangeRate(Currency('EUR'), Decimal(1), Currency('USD'), \
 Decimal('1.0943', 6))
 
@@ -280,49 +283,54 @@ As :class:`Money` derives from :class:`~quantity.Quantity`, it can be combined
 with other quantities in order to define a new quantity. This is, for example,
 useful for defining prices per quantum:
 
-    >>> class PricePerMass(Quantity):
-    ...     defineAs = Money / Mass
+    >>> from quantity import Quantity
+    >>> class Mass(Quantity,
+    ...            ref_unit_name='Kilogram',
+    ...            ref_unit_symbol='kg'):
+    ...     pass
+    >>> KILOGRAM = Mass.ref_unit
+    >>> class PricePerMass(Quantity, define_as=Money / Mass):
+    ...     pass
 
 Because :class:`Money` has no reference unit, there is no reference unit
 created for the derived quantity …:
 
-    >>> list(PricePerMass.Unit.registeredUnits())
-    []
+    >>> PricePerMass.units()
+    ()
 
 … instead, units must be explicitly defined:
 
-    >>> EURpKG = PricePerMass.Unit(defineAs=EUR/KILOGRAM)
-    >>> list(PricePerMass.Unit.registeredUnits())
-    [PricePerMass.Unit('EUR/kg')]
-
-As with other derived quantities, the function :func:`~quantity.generateUnits`
-can be used to create all units from the cross-product of units of the base
-quantities.
+    >>> EURpKG = PricePerMass.new_unit("EUR/kg", derive_from=(EUR, KILOGRAM))
+    >>> PricePerMass.units()
+    (Unit('EUR/kg'),)
 
 Instances of the derived quantity can be created and used just like those of
 other quantities:
 
-    >>> p = 17.45 ^ EURpKG
-    >>> p * Decimal('1.05')
-    PricePerMass(Decimal('18.354', 4), PricePerMass.Unit('EUR/kg'))
-    >>> m = 530 ^ GRAM
+    >>> from decimalfp import Decimal
+    >>> p = Decimal("17.45") * EURpKG
+    >>> p * Decimal("1.05")
+    PricePerMass(Decimal('18.3225'), Unit('EUR/kg'))
+    >>> GRAM = Mass.new_unit('g', 'Gram', Decimal("0.001") * KILOGRAM)
+    >>> m = 530 * GRAM
     >>> m * p
-    Money(Decimal('9.26'), Currency('EUR'))
+    Money(Decimal('9.25'), Currency('EUR'))
 
 Note that instances of the derived class are not automatically quantized to
 the quantum defined for the currency:
 
-    >>> PricePerMass.getQuantum(EURpKG) is None
+    >>> EURpKG.quantum is None
     True
 
 Instances of such a "money per quantum" class can also be converted using
 exchange rates, as long as the resulting unit is defined:
 
     >>> p * fxEUR2HKD
+    Traceback (most recent call last):
     QuantityError: Resulting unit not defined: HKD/kg.
-    >>> HKDpKG = PricePerMass.Unit(defineAs=HKD/KILOGRAM)
+    >>> HKDpKG = PricePerMass.new_unit("HKD/kg", derive_from=(HKD, KILOGRAM))
     >>> p * fxEUR2HKD
-    PricePerMass(Decimal('146.75865392'), PricePerMass.Unit('HKD/kg'))
+    PricePerMass(Decimal('146.5067798', 8), Unit('HKD/kg'))
 """
 
 
@@ -338,13 +346,21 @@ from typing import (
 
 from decimalfp import Decimal, ONE
 
-# from .converter import MoneyConverter
 from .currencies import get_currency_info
 from .. import (
     Quantity, QuantityError, QuantityMeta, Unit,
     UnitConversionError, UnitDefT, _amnt_and_unit_from_term, )
 
+# Public interface
+__all__ = [
+    'Currency',
+    'ExchangeRate',
+    'get_currency_info',
+    'Money',
+    'MoneyConverter',
+    ]
 
+# Parameterized types
 MoneyConverterT = Callable[['Money', 'Currency', Optional[date]], Rational]
 ConvertableToIntT = Union[str, SupportsInt]
 DateToValidityMapT = Dict[type,
@@ -945,7 +961,7 @@ class MoneyConverter:
         base_currency (:class:`Currency`): currency used as reference currency
         get_dflt_effective_date (Optional[Callable[[], date]]): a callable
             without parameters that must return a date which is then used as
-            default effective date in :meth:`MoneyConverter.getRate`
+            default effective date in :meth:`MoneyConverter.get_rate`
             (default: `datetime.date.today`)
     """
 
@@ -1177,12 +1193,3 @@ class MoneyConverter:
         """Unregister self as converter in :class:`Money`."""
         Money.remove_converter(self)
         return None
-
-
-__all__ = [
-    'Currency',
-    'ExchangeRate',
-    'get_currency_info',
-    'Money',
-    'MoneyConverter',
-    ]
