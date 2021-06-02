@@ -348,7 +348,7 @@ from decimalfp import Decimal, ONE
 
 from .currencies import get_currency_info
 from .. import (
-    Quantity, QuantityError, QuantityMeta, Unit,
+    ConverterT, Quantity, QuantityError, QuantityMeta, Unit,
     UnitConversionError, UnitDefT, _amnt_and_unit_from_term, )
 
 # Public interface
@@ -475,7 +475,7 @@ class MoneyMeta(QuantityMeta):
                  define_as: Optional[Union[Quantity, UnitDefT]] = None, *,
                  derive_from: Optional[Union[Unit, Tuple[Unit, ...]]] = None) \
             -> Currency:
-        """Create, register and return a new currency."""
+        """Create, register and return a new `Currency` instance."""
         unit = super().new_unit(symbol, name, define_as,
                                 derive_from=derive_from)
         assert isinstance(unit, Currency)
@@ -506,15 +506,18 @@ class MoneyMeta(QuantityMeta):
             assert isinstance(reg_curr, Currency)
             return reg_curr
 
-    def register_converter(cls, conv: MoneyConverter) -> None:  # noqa: N805
+    def register_converter(cls, conv: ConverterT) -> None:  # noqa: N805
         """Add converter 'conv' to the list of converters registered in 'cls'.
 
         Money converters should not be registered directly by using this
         method. Instead, this should be done by using them as context managers
         in a 'with' statement."""
-        cls._converters.append(conv)
+        if isinstance(conv, MoneyConverter):
+            cls._converters.append(conv)
+        else:
+            raise TypeError("Given `conv` is not a MoneyConverter.")
 
-    def remove_converter(cls, conv: MoneyConverter) -> None:    # noqa: N805
+    def remove_converter(cls, conv: ConverterT) -> None:    # noqa: N805
         """Remove the last instance of converter 'conv' from the list of
         converters registered in 'cls'.
 
