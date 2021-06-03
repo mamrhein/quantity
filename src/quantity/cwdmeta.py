@@ -56,11 +56,6 @@ class ClassWithDefinitionMeta(type):
             return ClassDefT(((cls, 1),))
         return cls._definition
 
-    def is_base_cls(cls) -> bool:
-        """Return True if `cls` is not derived from other class(es)."""
-        # base class -> definition is None or empty term
-        return cls._definition is None or len(cls._definition) == 0
-
     @property
     def normalized_definition(cls) -> ClassDefT:
         """Normalized definition of `cls`."""       # noqa: D401
@@ -68,6 +63,11 @@ class ClassWithDefinitionMeta(type):
             return ClassDefT(((cls, 1),))
         else:
             return cls._definition.normalized()
+
+    def is_base_cls(cls) -> bool:
+        """Return True if `cls` is not derived from other class(es)."""
+        # base class -> definition is None or empty term
+        return cls._definition is None or len(cls._definition) == 0
 
     def is_derived_cls(cls) -> bool:
         """Return True if `cls` is derived from other class(es)."""

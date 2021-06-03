@@ -14,8 +14,14 @@
 
 import sys
 import os
-import sphinx_py3doc_enhanced_theme
+from typing import Any, TYPE_CHECKING, Tuple
+
+import sphinx_py3doc_enhanced_theme as sphinx_theme
 from pkg_resources import get_distribution
+
+if TYPE_CHECKING:
+    from sphinx.application import Sphinx
+    from sphinx.ext.autodoc import Options
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -26,15 +32,15 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-# needs_sphinx = '1.0'
+needs_sphinx = '4.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
-]
+    'sphinx.ext.autodoc',
+    ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -52,6 +58,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'quantity'
+# noinspection PyShadowingBuiltins
 copyright = '2014 ff., Michael Amrhein'
 author = 'Michael Amrhein'
 
@@ -91,7 +98,7 @@ exclude_patterns = ['_build']
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-# add_module_names = True
+add_module_names = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
@@ -106,24 +113,33 @@ pygments_style = 'sphinx'
 # If true, keep warnings as "system message" paragraphs in the built documents.
 # keep_warnings = False
 
+# -- Options for the Python domain ----------------------------------------
+
+# how to use type names
+python_use_unqualified_type_names = True
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_py3doc_enhanced_theme'
+# html_theme = 'sphinx_py3doc_enhanced_theme'
+html_theme = sphinx_theme.__name__
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
 add_css = """
 /* light lilac background for class and function head-lines */
-dl.class > dt, dl.function > dt{
+dl.class > dt, dl.function > dt, dl.exception > dt{
     background: rgb(245,245,255) none repeat scroll 0% 0%;
     border-radius: 4px;
     padding-left: 10px;
     margin-left: -10px;
     line-height: 2em
+}
+/* light grey background for labels in signature table */
+dl.field-list > dt{
+    background: rgb(245,245,245) 
 }
 /* overwrite enlarged font for toc */
 .toctree-l1 {
@@ -143,12 +159,12 @@ html_theme_options = {
     "sidebardepth": 3,
     "codebgcolor": "rgb(255,255,245) !important",
     "appendcss": add_css
-}
+    }
 
 # Add any paths that contain custom themes here, relative to this directory.
 html_theme_path = [
-    sphinx_py3doc_enhanced_theme.get_html_theme_path(),
-]
+    sphinx_theme.get_html_theme_path(),
+    ]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -231,7 +247,7 @@ latex_elements = {
 
     # Additional stuff for the LaTeX preamble.
     # 'preamble': '',
-}
+    }
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title,
@@ -239,7 +255,7 @@ latex_elements = {
 latex_documents = [
     ('index', 'quantity.tex', 'quantity Documentation',
      'Michael Amrhein', 'manual'),
-]
+    ]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.
@@ -269,7 +285,7 @@ latex_documents = [
 man_pages = [
     ('index', 'quantity', 'quantity Documentation',
      ['Michael Amrhein'], 1)
-]
+    ]
 
 # If true, show URL addresses after external links.
 # man_show_urls = False
@@ -284,7 +300,7 @@ texinfo_documents = [
     ('index', 'quantity', 'quantity Documentation',
      'Michael Amrhein', 'Quantity',
      'Unit-safe computations with quantities.', 'Miscellaneous'),
-]
+    ]
 
 # Documents to append as an appendix to all manuals.
 # texinfo_appendices = []
@@ -298,7 +314,48 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
 
-# -- Options for ext.autodoc ----------------------------------------------
+type_aliases = {
+    'AmountUnitTupleT': 'AmountUnitTupleT',
+    'BinOpResT': 'BinOpResT',
+    'ClassWithDefinitionMeta': 'QuantityMeta',
+    'ConverterT': 'ConverterT',
+    'ConvMapT': 'ConvMapT',
+    'ConvSpecIterableT': 'ConvSpecIterableT',
+    'CurrencyInfoT': 'CurrencyInfoT',
+    'MoneyConverterT': 'MoneyConverterT',
+    'Q': 'Quantity',
+    'QuantityClsDefT': 'QuantityClsDefT',
+    'RateSpecT': 'RateSpecT',
+    'UnitDefT': 'UnitDefT',
+    'ValidityT': 'ValidityT',
+    }
 
-autoclass_content = 'both'
-autodoc_member_order = 'bysource'
+
+def process_signature(app: 'Sphinx', what: str, name: str, obj: Any,
+                      options: 'Options', signature: str,
+                      return_annotation: str) \
+        -> Tuple[str, str]:
+    """Signature processed by autodoc"""
+    if what == 'class':
+        # suppress signature of Unit and Currency
+        if name.endswith('Unit') or name.endswith('Currency'):
+            return "", ""
+    return signature, return_annotation
+
+
+def setup(app: 'Sphinx'):
+    """Register event handler"""
+    app.connect('autodoc-process-signature', process_signature)
+
+
+# -- Options for ext.napoleon ---------------------------------------------
+napoleon_use_rtype = False
+napoleon_type_aliases = type_aliases
+
+# -- Options for ext.autodoc ----------------------------------------------
+autoclass_content = 'class'
+autodoc_class_signature = 'separated'
+autodoc_member_order = 'groupwise'
+autodoc_typehints = 'signature'
+autodoc_type_aliases = type_aliases
+autodoc_preserve_defaults = True

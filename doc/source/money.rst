@@ -4,26 +4,39 @@ Money
 
 .. automodule:: quantity.money
 
+Types
+=====
+
+.. autodata:: MoneyConverterT
+
+.. autodata:: ValidityT
+
+.. autodata:: RateSpecT
+
+
 Classes
 =======
 
 .. autoclass:: Currency
-    :members: isoCode, name, smallestFraction
+    :members: iso_code, name, smallest_fraction
 
 .. autoclass:: Money
-    :members: getQuantum, currency
+    :show-inheritance:
+    :members: currency
+
+    .. automethod:: MoneyMeta.register_currency
+
+    .. automethod:: MoneyMeta.new_unit
 
 .. autoclass:: ExchangeRate
-    :members: unitCurrency, termCurrency, rate, inverseRate, quotation,
-        inverseQuotation, inverted, __hash__, __eq__, __mul__, __div__,
-        __rdiv__
+    :members:
+    :special-members: __hash__, __eq__, __mul__, __truediv__, __rtruediv__
 
 .. autoclass:: MoneyConverter
-    :members: baseCurrency, update, getRate, __call__, __enter__, __exit__
+    :members:
+    :special-members: __call__, __enter__, __exit__
 
 Functions
 =========
 
-.. autofunction:: getCurrencyInfo
-
-.. autofunction:: registerCurrency
+.. autofunction:: get_currency_info

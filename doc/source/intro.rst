@@ -98,7 +98,4 @@ Money differs from physical quantities mainly in two aspects:
   over time.
 
 The sub-package :mod:`quantity.money` provides classes and functions dealing
-with these specifics. Its main classes :class:`~quantity.money.Money`,
-:class:`~quantity.money.Currency`, :class:`~quantity.money.ExchangeRate` and
-the function :func:`~quantity.money.registerCurrency` can also be imported
-from :mod:`quantity`.
+with these specifics.

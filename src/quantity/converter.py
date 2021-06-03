@@ -38,16 +38,16 @@ class Converter:
     """
 
     def __call__(self, qty: Quantity, to_unit: Unit) \
-            -> Optional['Rational']:
-        """Convert a `qty`s amount to the equivalent amount for `to_unit`.
+            -> Optional[Rational]:
+        """Convert `qty`'s amount to the equivalent amount for `to_unit`.
 
         Args:
-            qty (sub-class of :class:`Quantity`): quantity to be converted
-            to_unit (:class:`Unit`): unit for equivalent amount
+            qty: quantity to be converted
+            to_unit: unit for equivalent amount
 
         Returns:
-            Optional[Rational]: factor f so that f * `to_unit` == `qty`,
-                or None if no such factor is available
+          factor f so that f * `to_unit` == `qty`, or None if no such factor
+          is available
 
         Raises:
             IncompatibleUnitsError: `qty` and `to_unit` are incompatible
@@ -62,7 +62,7 @@ class Converter:
             qty.__class__, to_unit.qty_cls)
 
     def _get_factor(self, qty: Quantity, to_unit: Unit) \
-            -> Optional['Rational']:
+            -> Optional[Rational]:
         """Return factor f so that f * `to_unit` == `qty`.
 
         Returns None if factor can't be determined.
@@ -84,13 +84,13 @@ class TableConverter(Converter):
     Each item of the conversion table defines a conversion from one unit to
     another unit and consists of four elements:
 
-    * from_unit (:class:`Unit`): unit of the quantity to be converted
+    * from_unit (Unit): unit of the quantity to be converted
 
-    * to_unit (:class:`Unit`): target unit of the conversion
+    * to_unit (Unit): target unit of the conversion
 
-    * factor (`Rational`): factor to be applied to the quantity's amount
+    * factor (Rational): factor to be applied to the quantity's amount
 
-    * offset (`Rational`): an amount added after applying the factor
+    * offset (Rational): an amount added after applying the factor
 
     When a `Mapping` is given as `convTable`, each key / value pair must map a
     tuple (from_unit, to_unit) to a tuple (factor, offset).
@@ -119,7 +119,7 @@ class TableConverter(Converter):
     in one direction.
 
     An instance of `TableConverter` can be directly registered as a converter
-    by calling the method :meth:`Unit.register_converter`.
+    by calling the method `Quantity.register_converter`.
     """
 
     def __init__(self, conv_table: Union[ConvMapT, ConvSpecIterableT]):

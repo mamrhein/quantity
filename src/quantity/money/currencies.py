@@ -50,11 +50,10 @@ def get_currency_info(iso_code: str) -> CurrencyInfoT:
     """Return infos from ISO 4217 currency database.
 
     Args:
-        iso_code (str): ISO 4217 3-character code for the currency to be
-            looked-up
+        iso_code: ISO 4217 3-character code for the currency to be looked-up
 
     Returns:
-        tuple: 3-character code, numerical code, name, minor unit and list of
+        3-character code, numerical code, name, minor unit and list of
             countries which use the currency as functional currency
 
     Raises:

@@ -4,43 +4,55 @@ Quantity
 
 .. automodule:: quantity
 
+Types
+=====
+
+.. autodata:: QuantityClsDefT
+
+.. autodata:: UnitDefT
+
+.. autodata:: AmountUnitTupleT
+
+.. autodata:: BinOpResT
+
+.. autodata:: ConverterT
+
+.. autodata:: ConvMapT
+
+.. autodata:: ConvSpecIterableT
+
+
 Classes
 =======
 
-.. autoclass:: Quantity
-    :members: amount, unit, refUnit, definition, normalizedDefinition,
-        getUnitBySymbol, getQuantum, convert, quantize, allocate, __hash__,
-        __eq__, __lt__, __le__, __gt__, __ge__,
-        __abs__, __neg__, __pos__,
-        __add__, __radd__, __sub__, __rsub__,
-        __mul__, __rmul__, __div__, __rdiv__,
-        __truediv__, __rtruediv__, __pow__, __round__,
-        __repr__, __str__, __format__
-
 .. autoclass:: Unit
-    :members: symbol, name, refUnit, definition, normalizedDefinition,
-        registeredUnits,
-        registerConverter, removeConverter, registeredConverters,
-        isBaseUnit, isDerivedUnit, isRefUnit,
-        __eq__, __lt__, __le__, __gt__, __ge__,
-        __call__
+    :members:
+    :special-members:
+    :exclude-members: __new__, is_base_elem, norm_sort_key
+
+.. autoclass:: QuantityMeta(name, define_as, ref_unit_symbol, ref_unit_name, quantum)
+    :inherited-members: type
+    :members:
+    :special-members: __mul__, __rmul__, __truediv__, __rtuediv__
+    :exclude-members: is_base_elem, norm_sort_key
+
+.. autoclass:: Quantity
+    :members:
+    :special-members:
+    :exclude-members: __new__
 
 .. _converter_classes_label:
 
 .. autoclass:: Converter
-    :members: __call__
+    :special-members: __call__
 
 .. autoclass:: TableConverter
-    :members:
+    :show-inheritance:
 
 .. _functions_label:
 
 Functions
 =========
-
-.. autofunction:: getUnitBySymbol
-
-.. autofunction:: generateUnits
 
 .. autofunction:: sum
 
@@ -49,10 +61,10 @@ Functions
 Exceptions
 ==========
 
-.. autoclass:: QuantityError
+.. autoexception:: QuantityError
 
-.. autoclass:: IncompatibleUnitsError
+.. autoexception:: IncompatibleUnitsError
 
-.. autoclass:: UndefinedResultError
+.. autoexception:: UndefinedResultError
 
-.. autoclass:: UnitConversionError
+.. autoexception:: UnitConversionError

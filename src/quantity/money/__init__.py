@@ -333,7 +333,6 @@ exchange rates, as long as the resulting unit is defined:
     PricePerMass(Decimal('146.5067798', 8), Unit('HKD/kg'))
 """
 
-
 from __future__ import annotations
 
 from datetime import date
@@ -361,15 +360,22 @@ __all__ = [
     ]
 
 # Parameterized types
+
+#: Type of money converters
 MoneyConverterT = Callable[['Money', 'Currency', Optional[date]], Rational]
+#: Types convertable to int
 ConvertableToIntT = Union[str, SupportsInt]
-DateToValidityMapT = Dict[type,
-                          Callable[[date],
-                                   Union[int, Tuple[int, int], date, None]]]
+#: Mapping a type of validity period to a function that converts a date to that
+#: type of period
+TypeToConvDateToValidityMapT = \
+    Dict[type, Callable[[date], Union[int, Tuple[int, int], date, None]]]
+#: Types used to specify time periods for the validity of exchange rates
 ValidityT = Union[date, int, str, ConvertableToIntT, Tuple[int, int],
                   Tuple[ConvertableToIntT, ConvertableToIntT], None]
+#: Type of tuple to specify an exchange rate
 RateSpecT = Tuple[Union['Currency', str], Union[Rational, float, str],
                   Rational]
+#: Dict type mappping a validity period and a currency to an exchange rate
 RateDictT = Dict[Tuple[ValidityT, Union['Currency', str]], 'ExchangeRate']
 
 
@@ -378,33 +384,34 @@ class Currency(Unit):
     # noinspection PyUnresolvedReferences
     """Represents a currency, i.e. a money unit.
 
-    Args:
-        iso_code (str): ISO 4217 3-character code
-        name (Optional[str]): name of the currency
-        minor_unit (Optional[int]): amount of minor unit (as exponent to
-            10), optional, defaults to precision of smallest fraction, if that
-            is given, otherwise to 2
-        smallest_fraction (Union[Real, str, None]): smallest fraction available
-            for the currency, optional, defaults to Decimal(10) ** -minor_unit.
-            Can also be given as a string, as long as it is convertable to a
-            Decimal.
+    .. note::
+        Currencies should not be created directly. Instead, use
+        `Money.register_currency` or `Money.new_unit`.
 
-    Returns:
-        :class:`Currency` instance
-
-    Raises:
-        TypeError: given `iso_code` is not a string
-        ValueError: no `iso_code` was given
-        TypeError: given `minor_unit` is not an Integral number
-        ValueError: given `minor_unit` < 0
-        ValueError: given `smallest_fraction` can not be converted to a
-            Decimal
-        ValueError: given `smallest_fraction` not > 0
-        ValueError: 1 is not an integer multiple of given
-            `smallest_fraction`
-        ValueError: given `smallest_fraction` does not fit given
-            `minor_unit`
     """
+
+    # Args:
+    #     iso_code: ISO 4217 3-character code
+    #     name: name of the currency
+    #     minor_unit: amount of minor unit (as exponent to 10), optional,
+    #         defaults to precision of smallest fraction, if that is given,
+    #         otherwise to 2
+    #     smallest_fraction: smallest fraction available for the currency,
+    #         optional, defaults to Decimal(10) ** -minor_unit. Can also be
+    #         given as a string, as long as it is convertable to a Decimal.
+    #
+    # Raises:
+    #     TypeError: given `iso_code` is not a string
+    #     ValueError: no `iso_code` was given
+    #     TypeError: given `minor_unit` is not an Integral number
+    #     ValueError: given `minor_unit` < 0
+    #     ValueError: given `smallest_fraction` can not be converted to a
+    #         Decimal
+    #     ValueError: given `smallest_fraction` not > 0
+    #     ValueError: 1 is not an integer multiple of given
+    #         `smallest_fraction`
+    #     ValueError: given `smallest_fraction` does not fit given
+    #         `minor_unit`
 
     __slots__ = ['_smallest_fraction']
 
@@ -485,11 +492,11 @@ class MoneyMeta(QuantityMeta):
         """Register the currency with code `iso_code` from ISO 4217 database.
 
         Args:
-            iso_code (string): ISO 4217 3-character code for the currency to be
+            iso_code: ISO 4217 3-character code for the currency to be
                 registered
 
         Returns:
-            :class:`Currency`: registered currency
+            registered currency
 
         Raises:
             ValueError: currency with code `iso_code` not in database
@@ -551,15 +558,12 @@ class Money(Quantity, metaclass=MoneyMeta):
     **1. Form**
 
     Args:
-        amount (number): money amount (gets rounded to a Decimal according
+        amount: money amount (gets rounded to a Decimal according
             to smallest fraction of currency)
-        currency(Currency): money unit
+        currency: money unit
 
     `amount` must convertable to a `decimalfp.Decimal`, it can also be given
     as a string.
-
-    Returns:
-        :class:`Money` instance
 
     Raises:
         TypeError: `amount` can not be converted to a Decimal number
@@ -568,7 +572,7 @@ class Money(Quantity, metaclass=MoneyMeta):
     **2. Form**
 
     Args:
-        mStr(string): unicode string representation of a money amount (incl.
+        mStr: unicode string representation of a money amount (incl.
             currency symbol)
         currency: the money's unit (optional)
 
@@ -578,7 +582,7 @@ class Money(Quantity, metaclass=MoneyMeta):
     this currency and its amount is converted accordingly, if possible.
 
     Returns:
-        :class:`Money` instance
+        `Money` instance
 
     Raises:
         TypeError: amount given in `mStr` can not be converted to a Decimal
@@ -609,13 +613,13 @@ class ExchangeRate:
     """Basic representation of a conversion factor between two currencies.
 
     Args:
-        unit_currency (Union[Currency, str]): currency to be converted from,
+        unit_currency: currency to be converted from,
             aka base currency
-        unit_multiple (Rational): amount of base currency (must be equal to
+        unit_multiple: amount of base currency (must be equal to
             an integer)
-        term_currency (Union[Currency, str]): currency to be converted to, aka
+        term_currency: currency to be converted to, aka
             price currency
-        term_amount (Union[Rational, float, str]): equivalent amount of term
+        term_amount: equivalent amount of term
             currency
 
     `unit_currency` and `term_currency` can also be given as 3-character ISO
@@ -630,9 +634,6 @@ class ExchangeRate:
     Example:
 
     1 USD = 0.9683 EUR   =>   ExchangeRate('USD', 1, 'EUR', '0.9683')
-
-    Returns:
-        :class:`ExchangeRate` instance
 
     `unit_multiple` and `term_amount` will always be adjusted so that
     the resulting unit multiple is a power to 10 and the resulting term
@@ -737,12 +738,6 @@ class ExchangeRate:
         return ExchangeRate(self._term_currency, ONE, self._unit_currency,
                             self.inverse_rate)
 
-    # @property
-    # def _definition(self):
-    #     """Return self as QTerm."""
-    #     return Quantity._QTerm(((self.rate, 1), (self.term_currency, 1),
-    #                             (self.unit_currency, -1)))
-
     def __hash__(self) -> int:
         """hash(self)"""
         return hash(self.quotation)
@@ -751,7 +746,7 @@ class ExchangeRate:
         """self == other
 
         Args:
-            other (object): object to compare with
+            other: object to compare with
 
         Returns:
             True if other is an instance of ExchangeRate and
@@ -781,10 +776,10 @@ class ExchangeRate:
         **1. Form**
 
         Args:
-            other (:class:`Money`): money amount to multiply with
+            other: money amount to multiply with
 
         Returns:
-            :class:`Money` instance: equivalent of `other` in term currency
+            `Money` equivalent of `other` in term currency
 
         Raises:
             ValueError: currency of `other` is not equal to unit currency
@@ -792,10 +787,10 @@ class ExchangeRate:
         **2. Form**
 
         Args:
-            other (:class:`ExchangeRate`): exchange rate to multiply with
+            other: exchange rate to multiply with
 
         Returns:
-            :class:`ExchangeRate` instance: "triangulated" exchange rate
+            "triangulated" exchange rate
 
         Raises:
             ValueError: unit currency of one multiplicant does not equal the
@@ -804,15 +799,14 @@ class ExchangeRate:
         **3. Form**
 
         Args:
-            other (:class:`Quantity` sub-class): quantity to multiply with
+            other: quantity to multiply with
 
         The type of `other` must be a sub-class of :class:`Quantity` derived
         from :class:`Money` divided by some other sub-class of
         :class:`Quantity`.
 
         Returns:
-            :class:`Quantity` sub-class instance: equivalent of `other` in
-                term currency
+            equivalent of `other` in term currency
 
         Raises:
             ValueError: resulting unit is not defined
@@ -856,10 +850,10 @@ class ExchangeRate:
         """self / other
 
         Args:
-            other (:class:`ExchangeRate`): exchange rate to divide with
+            other: exchange rate to divide with
 
         Returns:
-            :class:`ExchangeRate` instance: "triangulated" exchange rate
+            "triangulated" exchange rate
 
         Raises:
             ValueError: unit currencies of operands not equal and term
@@ -896,10 +890,10 @@ class ExchangeRate:
         **1. Form**
 
         Args:
-            other (:class:`Money`): money amount to divide
+            other: money amount to divide
 
         Returns:
-            :class:`Money` instance: equivalent of `other` in unit currency
+            equivalent of `other` in unit currency
 
         Raises:
             ValueError: currency of `other` is not equal to term currency
@@ -907,15 +901,14 @@ class ExchangeRate:
         **2. Form**
 
         Args:
-            other (:class:`Quantity` sub-class): quantity to divide
+            other: quantity to divide
 
         The type of `other` must be a sub-class of :class:`Quantity` derived
         from :class:`Money` divided by some other sub-class of
         :class:`Quantity`.
 
         Returns:
-            :class:`Quantity` sub-class instance: equivalent of `other` in
-                unit currency
+            equivalent of `other` in unit currency
 
         Raises:
             :class:`~quantity.QuantityError`: resulting unit is not defined
@@ -961,14 +954,13 @@ class MoneyConverter:
     another.
 
     Args:
-        base_currency (:class:`Currency`): currency used as reference currency
-        get_dflt_effective_date (Optional[Callable[[], date]]): a callable
-            without parameters that must return a date which is then used as
-            default effective date in :meth:`MoneyConverter.get_rate`
-            (default: `datetime.date.today`)
+        base_currency: currency used as reference currency
+        get_dflt_effective_date: a callable without parameters that must return
+            a date which is then used as default effective date in
+            :meth:`MoneyConverter.get_rate` (default: `datetime.date.today`)
     """
 
-    _date2validity: DateToValidityMapT = {
+    _date2validity: TypeToConvDateToValidityMapT = {
         type(None): lambda d: None,
         int: lambda d: d.year,
         tuple: lambda d: (d.year, d.month),
@@ -992,18 +984,18 @@ class MoneyConverter:
         another currency.
 
         Args:
-            money_amnt (:class:`Money`): money amount to be converted
-            to_currency (:class:`Currency`): currency for which the  equivalent
-                amount is to be returned
-            effective_date (Optional[date]): date for which the exchange rate
-                to be used must be effective (default: None)
+            money_amnt: money amount to be converted
+            to_currency: currency for which the  equivalent amount is to be
+                returned
+            effective_date: date for which the exchange rate to be used must be
+                effective (default: None)
 
         If `effective_date` is not given, the return value of the callable
         given as `get_dflt_effective_date` to :class:`MoneyConverter` is
         used as reference (default: today).
 
         Returns:
-            Decimal: amount equiv so that equiv * to_currency == money_amnt
+            amount equiv so that equiv * to_currency == money_amnt
 
         Raises:
             UnitConversionError: exchange rate not available
@@ -1026,9 +1018,9 @@ class MoneyConverter:
         """Update the exchange rate dictionary used by the converter.
 
         Args:
-            validity (see below): specifies the validity period of the given
+            validity: specifies the validity period of the given
                 exchange rates
-            rate_specs (iterable): list of entries to update the converter
+            rate_specs: list of entries to update the converter
 
         `validity` can be given in different ways:
 
@@ -1138,19 +1130,18 @@ class MoneyConverter:
         effective for `effective_date`.
 
         Args:
-            unit_currency (:class:`Currency`): currency to be converted from
-            term_currency (:class:`Currency`): currency to be converted to
-            effective_date (Optional[date]): date at which the rate must be
-                effective (default: None)
+            unit_currency: currency to be converted from
+            term_currency: currency to be converted to
+            effective_date: date at which the rate must be effective
+                (default: None)
 
         If `effective_date` is not given, the return value of the callable
         given as `get_dflt_effective_date` to :class:`MoneyConverter` is
         used as reference (default: today).
 
         Returns:
-            :class:`ExchangeRate`: exchange rate from `unit_currency` to
-                `term_currency` that is effective for `effective_date`,
-                `None` if there is no such rate
+            exchange rate from `unit_currency` to `term_currency` that is
+                effective for `effective_date`, `None` if there is no such rate
         """
         if unit_currency is term_currency:
             return ExchangeRate(unit_currency, ONE, term_currency, ONE)

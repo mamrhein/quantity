@@ -297,7 +297,7 @@ defined for numbers:
     True
 
 Different units are taken in to account automatically, as long as they are
-compatible, i. e. a conversion is available:
+compatible, that means a conversion is available:
 
     >>> Length(27, METRE) <= Length(91, CENTIMETRE)
     False
@@ -521,6 +521,7 @@ import operator
 from decimal import Decimal as StdLibDecimal
 from fractions import Fraction
 from numbers import Integral, Rational, Real
+from types import MappingProxyType
 from typing import (
     Any, Callable, Collection, Dict, Generator, Iterator, List,
     MutableMapping, Optional, Tuple, Type, TypeVar, Union, overload,
@@ -528,7 +529,7 @@ from typing import (
 
 from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
 
-from .converter import Converter, TableConverter
+from .converter import Converter, ConvMapT, ConvSpecIterableT, TableConverter
 from .cwdmeta import ClassDefT, ClassWithDefinitionMeta
 from .exceptions import (
     IncompatibleUnitsError, QuantityError, UndefinedResultError,
@@ -557,15 +558,22 @@ CmpOpT = Callable[[Any, Any], bool]
 BinOpT = Callable[[Any, Any], Any]
 
 # Parameterized types
-UnitDefT = Term['Unit']
-UnitRegistryT = DefinedItemRegistry['Unit']
-QuantityClsDefT = Term['QuantityMeta']
-ConverterT = Callable[..., Optional[Rational]]
 
-# Cache for results of operations on unit definitions
+#: Defintion of derived Quantity sub-classes.
+QuantityClsDefT = Term['QuantityMeta']
+#: Definition of derived units.
+UnitDefT = Term['Unit']
+#: Unit registry
+UnitRegistryT = DefinedItemRegistry['Unit']
+#: Type of converters
+ConverterT = Callable[..., Optional[Rational]]
+#: Tuple of an amount and an optional unit
 AmountUnitTupleT = Tuple[Rational, Optional['Unit']]
+#: Result of binary operations on quantities / units
 BinOpResT = Union['Quantity', Rational, AmountUnitTupleT]
+#: Cache for results of operations on unit definitions
 UnitOpCacheT = MutableMapping[Tuple[BinOpT, 'Unit', 'Unit'], BinOpResT]
+
 _UNIT_OP_CACHE: UnitOpCacheT = {}
 
 # Global registry of units
@@ -590,7 +598,26 @@ def _unit_from_term(term: UnitDefT) -> Unit:
 
 
 class Unit:
-    """Unit of measure"""
+    """Unit of measure.
+
+    .. note::
+        Units should not be created directly. Instead, use
+        `<Quantity sub-class>.new_unit`.
+
+    """
+
+    # Args:
+    #     qty_cls: related `Quantity` sub-class
+    #     symbol: symbol of the unit
+    #     name: name of the unit
+    #     define_as: definition of the unit
+    #     ref_unit: True, if the unit shall be the reference unit of the
+    #         related quantity
+    #
+    # Raises:
+    #     AssertionError: `define_as` is None
+    #     AssertionError: `symbol` is None
+    #     ValueError: a unit with the given symbol is already registered
 
     __slots__ = ['_qty_cls', '_symbol', '_name', '_equiv', '_definition']
 
@@ -636,7 +663,7 @@ class Unit:
 
     @property
     def symbol(self) -> str:
-        """Return `self`s symbol.
+        """Return the units symbol.
 
         The symbol is a unique string representation of the unit.
         """
@@ -644,7 +671,7 @@ class Unit:
 
     @property
     def name(self) -> str:
-        """Return `self`s name.
+        """Return the units name.
 
         If the unit was not given a name, its symbol is returned.
         """
@@ -652,40 +679,40 @@ class Unit:
 
     @property
     def definition(self) -> UnitDefT:
-        """Return the definition of `self`."""
+        """Return the units definition."""
         return self._definition or UnitDefT(((self, 1),))
 
     @property
     def normalized_definition(self) -> UnitDefT:
-        """Return the normalized definition of `self`."""
+        """Return the units normalized definition."""
         definition = self._definition
         if definition is None:
             return UnitDefT(((self, 1),))
         return definition.normalized()
 
     def is_base_unit(self) -> bool:
-        """Return True if `self` is not derived from another unit."""
+        """Return True if the unit is not derived from another unit."""
         return self._definition is None
 
     def is_derived_unit(self) -> bool:
-        """Return True if `self` is derived from another unit."""
+        """Return True if the unit is derived from another unit."""
         return self._definition is not None
 
     def is_ref_unit(self) -> bool:
-        """Return True if `self` is a reference unit."""
+        """Return True if the unit is a reference unit."""
         return self is self._qty_cls.ref_unit
 
     @property
     def qty_cls(self) -> QuantityMeta:
-        """Return the `Quantity` subclass related to `self`."""
+        """Return the `Quantity` subclass related to the unit."""
         return self._qty_cls
 
     @property
     def quantum(self) -> Optional[Rational]:
-        """Return the minimum amount of a quantity with unit `self`.
+        """Return the minimum amount of a quantity with the unit as unit.
 
-        Returns None if the quantity class related to `self` does not define a
-        quantum.
+        Returns None if the quantity class related to the unit does not
+        define a quantum.
         """
         cls = self.qty_cls
         if cls.quantum is None:
@@ -785,7 +812,7 @@ class Unit:
             except KeyError:
                 raise UndefinedResultError(operator.mul,
                                            self._qty_cls.__name__,
-                                           other._qty_cls.__name__,) \
+                                           other._qty_cls.__name__, ) \
                     from None
             # cache it
             _op_cache[(operator.mul, self, other)] = (amnt, unit)
@@ -797,8 +824,33 @@ class Unit:
             return (other.amount * amnt) * unit
         return NotImplemented
 
-    # other * self
-    __rmul__ = __mul__
+    @overload
+    def __rmul__(self, other: int) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
+    def __rmul__(self, other: float) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
+    def __rmul__(self, other: Real) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
+    def __rmul__(self, other: SIPrefix) -> Quantity:  # noqa: D105
+        ...
+
+    @overload
+    def __rmul__(self, other: Unit) -> AmountUnitTupleT:  # noqa: D105
+        ...
+
+    @overload
+    def __rmul__(self, other: Quantity) -> BinOpResT:  # noqa: D105
+        ...
+
+    def __rmul__(self, other: Any) -> BinOpResT:
+        """other * self"""
+        return self.__mul__(other)
 
     @overload
     def __truediv__(self, other: int) -> Quantity:  # noqa: D105
@@ -817,7 +869,7 @@ class Unit:
         ...
 
     @overload
-    def __truediv__(self, other: Quantity) -> BinOpResT:  # noqa: D105
+    def __truediv__(self, other: 'Quantity') -> BinOpResT:  # noqa: D105
         ...
 
     def __truediv__(self, other: Any,
@@ -921,7 +973,18 @@ class Unit:
 
 
 class QuantityMeta(ClassWithDefinitionMeta):
-    """Meta class allowing to construct Quantity subclasses."""
+    """Meta class allowing to construct Quantity subclasses.
+
+    Args:
+        name: name of the new quantity type
+        define_as(Optional[QuantityClsDefT]): definition of the new derived
+            quantity type
+        ref_unit_symbol(Optional[str]): symbol of the reference unit to be
+            created
+        ref_unit_name(Optional[str]): name of the reference unit
+        quantum(Optional[Rational]): minimum absolute amount for an instance of
+            the new quantity type
+    """
 
     # Registry of Quantity classes (by normalized definition)
     _registry = DefinedItemRegistry['QuantityMeta']()
@@ -932,14 +995,15 @@ class QuantityMeta(ClassWithDefinitionMeta):
     _ref_unit: Optional[Unit]
     _quantum: Rational
 
-    def __new__(mcs, name: str, bases: Tuple[type, ...],  # noqa: N804
-                clsdict: Dict[str, Any], **kwds: Any) -> QuantityMeta:
+    def __new__(mcs, name: str, bases: Tuple[type, ...] = (),  # noqa: N804
+                clsdict: Dict[str, Any] = MappingProxyType({}), **kwds: Any) \
+            -> QuantityMeta:
         """Create new Quantity (sub-)class."""
         ref_unit_def: Optional[UnitDefT] = None
         # optional definition
         define_as: Optional[QuantityClsDefT] = kwds.pop('define_as', None)
         # reference unit
-        if define_as is not None:   # empty Term
+        if define_as is not None:  # empty Term
             assert define_as, "Given definition is not valid."
             try:
                 ref_unit_def = UnitDefT(_iter_ref_units(define_as))
@@ -978,8 +1042,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
         return cls
 
     # noinspection PyUnusedLocal
-    def __init__(cls, name: str, bases: Tuple[type, ...],  # noqa: N805
-                 clsdict: Dict[str, Any], **kwds: Any):
+    def __init__(cls, name: str, bases: Tuple[type, ...] = (),  # noqa: N804
+                 clsdict: Dict[str, Any] = MappingProxyType({}), **kwds: Any):
         super().__init__(name, bases, clsdict)
         # register cls
         cls._reg_id = QuantityMeta._registry.register_item(cls)
@@ -1005,10 +1069,10 @@ class QuantityMeta(ClassWithDefinitionMeta):
 
     @property
     def quantum(cls) -> Optional[Rational]:  # noqa: N805
-        """Return the minumum amount for an instance of `cls`.
+        """Return the minimum absolute amount for an instance of `cls`.
 
         The quantum is the minimum amount (in terms of the reference unit) an
-        instance of `cls` can take (None no quantum is defined).
+        instance of `cls` can take (None if no quantum is defined).
         """
         return cls._quantum
 
@@ -1016,7 +1080,22 @@ class QuantityMeta(ClassWithDefinitionMeta):
                  define_as: Optional[Union[Quantity, UnitDefT]] = None, *,
                  derive_from: Optional[Union[Unit, Tuple[Unit, ...]]] = None) \
             -> Unit:
-        """Create, register and return a new unit for `cls`."""
+        """Create, register and return a new unit for `cls`.
+
+        Args:
+            symbol: symbol of the new unit
+            name: name of the new unit, defaults to `symbol` if not given
+            define_as: definition of the new unit in terms of another unit
+                (usually given by multiplying a scalar or a SI scale and a
+                unit)
+            derive_from: a unit of the base quantity or a tuple of units of
+                the base quantities of the quantity type
+
+        Raises:
+            TypeError: `define_as` does not match the quantity type
+            ValueError: term given as `define_as` does not define a unit.
+
+        """
         unit_cls = cls._unit_cls
         if derive_from is None:
             if define_as is None:
@@ -1085,10 +1164,10 @@ class QuantityMeta(ClassWithDefinitionMeta):
         """Return the unit with symbol `symbol`.
 
         Args:
-            symbol (str): symbol to look-up
+            symbol: symbol to look-up
 
         Returns:
-            :class:`Unit`: unit with given `symbol`
+            unit with given `symbol`
 
         Raises:
             ValueError: a unit with given `symbol` is not registered with `cls`
@@ -1127,11 +1206,12 @@ class QuantityMeta(ClassWithDefinitionMeta):
         return cls._reg_id
 
 
+#: sub-class of :class:`~Quantity`
 Q = TypeVar("Q", bound="Quantity")
 
 
 class Quantity(metaclass=QuantityMeta):
-    """Base class used to define types of quantities."""
+    """Base class for all types of quantities."""
 
     __slots__ = ['_amount', '_unit']
 
@@ -1204,7 +1284,7 @@ class Quantity(metaclass=QuantityMeta):
                                 f"'{cls.__name__}' unit.")
         # make raw instance
         # noinspection PyTypeChecker
-        qty = super().__new__(cls)      # type: ignore
+        qty = super().__new__(cls)  # type: ignore
         # check whether it should be quantized
         quantum = unit.quantum
         if quantum is not None:
@@ -1216,12 +1296,12 @@ class Quantity(metaclass=QuantityMeta):
 
     @property
     def amount(self) -> Rational:
-        """Return `self`s amount, i.e. the numerical part of the quantity."""
+        """Return the numerical part of the quantity."""
         return self._amount
 
     @property
     def unit(self) -> Unit:
-        """Return `self`s unit."""
+        """Return the quantity's unit."""
         return self._unit
 
     def equiv_amount(self, unit: Unit) -> Optional[Rational]:
@@ -1253,10 +1333,10 @@ class Quantity(metaclass=QuantityMeta):
         """Return quantity q where q == `self` and q.unit is `to_unit`.
 
         Args:
-            to_unit (Unit): unit to be converted to
+            to_unit: unit to be converted to
 
         Returns:
-            type(self): resulting quantity
+            quantity equivalent to `self`, having unit `to_unit`
 
         Raises:
             IncompatibleUnitsError: `self` can't be converted to `to_unit`.
@@ -1271,15 +1351,15 @@ class Quantity(metaclass=QuantityMeta):
         """Return integer multiple of `quant` closest to `self`.
 
         Args:
-            quant (type(self)): quantum to get a multiple from
-            rounding (ROUNDING): rounding mode (default: None)
+            quant: quantum to get a multiple from
+            rounding: rounding mode (default: None)
 
         If no `rounding` mode is given, the current default mode from
         module `decimalfp` is used.
 
         Returns:
-            type(self) instance that is the integer multiple of `quant` closest
-                to `self` (according to `rounding` mode)
+            integer multiple of `quant` closest to `self` (according to
+                `rounding` mode)
 
         Raises:
             IncompatibleUnitsError: `quant` can not be converted to self.unit
@@ -1314,14 +1394,14 @@ class Quantity(metaclass=QuantityMeta):
         """Apportion `self` according to `ratios`.
 
         Args:
-            ratios (Collection[Union[Rational, Quantity]]): sequence of values
-                defining the relative amount of the requested portions
-            disperse_rounding_error (bool): determines whether a rounding error
+            ratios: sequence of values defining the relative amount of the
+                requested portions
+            disperse_rounding_error: determines whether a rounding error
                 (if there is one due to quantization) shall be dispersed
 
         Returns:
-            List[Q]: portions of `self` according to `ratios`
-            Q: remainder = `self` - sum(portions)
+            (portions of `self` according to `ratios`,
+                remainder = `self` - sum(portions))
 
         Raises:
             TypeError: `ratios` contains elements that can not be added
@@ -1577,11 +1657,10 @@ class Quantity(metaclass=QuantityMeta):
         """Return copy of `self` with its amount rounded to `n_digits`.
 
         Args:
-            n_digits (`Integral`): number of fractional digits to be rounded
-                to
+            n_digits: number of fractional digits to be rounded to
 
         Returns:
-            type(self): round(self.amount, n_digits) * self.unit
+            round(self.amount, n_digits) * self.unit
         """
         return self.__class__(round(self.amount, n_digits), self.unit)
 
@@ -1732,3 +1811,15 @@ def _quantize_fraction(self: Fraction, quant: Rational,
     mult = _floordiv_rounded(quot.numerator, quot.denominator,
                              rounding=rounding)
     return mult * quant
+
+
+# Redefine types with forward-references
+
+#: Defintion of derived Quantity sub-classes.
+QuantityClsDefT = Term[QuantityMeta]
+#: Definition of derived units.
+UnitDefT = Term[Unit]
+#: Tuple of an amount and an optional unit
+AmountUnitTupleT = Tuple[Rational, Optional[Unit]]
+#: Result of binary operations on quantities / units
+BinOpResT = Union[Quantity, Rational, AmountUnitTupleT]
