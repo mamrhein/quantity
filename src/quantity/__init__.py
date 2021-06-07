@@ -1077,8 +1077,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
         return cls._quantum
 
     def new_unit(cls, symbol: str, name: Optional[str] = None,  # noqa: N805
-                 define_as: Optional[Union[Quantity, UnitDefT]] = None, *,
-                 derive_from: Optional[Union[Unit, Tuple[Unit, ...]]] = None) \
+                 define_as: Optional[Union[Quantity, UnitDefT]] = None) \
             -> Unit:
         """Create, register and return a new unit for `cls`.
 
@@ -1088,58 +1087,79 @@ class QuantityMeta(ClassWithDefinitionMeta):
             define_as: definition of the new unit in terms of another unit
                 (usually given by multiplying a scalar or a SI scale and a
                 unit)
-            derive_from: a unit of the base quantity or a tuple of units of
-                the base quantities of the quantity type
 
         Raises:
+            TypeError: `symbol` must be a string
+            ValueError: `symbol` is empty
+            ValueError: a unit with the given symbol is already registered
             TypeError: `define_as` does not match the quantity type
             ValueError: term given as `define_as` does not define a unit.
 
         """
         unit_cls = cls._unit_cls
-        if derive_from is None:
-            if define_as is None:
-                unit = unit_cls(cls, symbol, name=name)
-            elif isinstance(define_as, Quantity):
-                if not isinstance(define_as, cls):
-                    raise TypeError(f"Can't use an instance of "
-                                    f"'{define_as.__class__.__name__}' to "
-                                    f"define a '{cls.__name__}' unit.")
-                # noinspection PyTypeChecker
-                unit = unit_cls(cls, symbol, name=name, define_as=define_as)
-            elif isinstance(define_as, Term):
-                try:
-                    qty = _qty_from_term(define_as)
-                except KeyError:
-                    raise ValueError("Given term doesn't define a unit.")
-                else:
-                    if qty.__class__ is not cls:
-                        raise ValueError(f"Given term doesn't define a "
-                                         f"'{cls.__name__}' unit.")
-                unit = unit_cls(cls, symbol, name=name, define_as=define_as)
-            else:
-                raise TypeError(f"'define_as' must be an instance of "
-                                f"'{cls.__name__}' or a term denoting such "
-                                f"an instance.")
-        else:
-            if cls.is_base_cls():
-                raise TypeError(
-                    "'derive_from' can't be used with a base quantity.")
-            if define_as is not None:
-                raise ValueError(
-                    "'define_as' and 'derive_from' can't be used together.")
-            if isinstance(derive_from, Unit):
-                derive_from = (derive_from,)
-            assert cls._definition is not None
-            unit_def_items: List[Tuple[Unit, int]] = []
-            for (qty_cls, exp), unit in zip(cls._definition, derive_from):
-                if qty_cls is not unit.qty_cls:
-                    raise ValueError(
-                        "Given base units don't match base quantities.")
-                unit_def_items.append((unit, exp))
+        if not isinstance(symbol, str):
+            raise TypeError("'symbol' must be a string.")
+        if not symbol:
+            raise ValueError("'symbol' must not be an empty string.")
+        if define_as is None:
+            unit = unit_cls(cls, symbol, name=name)
+        elif isinstance(define_as, Quantity):
+            if not isinstance(define_as, cls):
+                raise TypeError(f"Can't use an instance of "
+                                f"'{define_as.__class__.__name__}' to "
+                                f"define a '{cls.__name__}' unit.")
             # noinspection PyTypeChecker
-            unit_def_term = Term(unit_def_items)
-            unit = unit_cls(cls, symbol, name=name, define_as=unit_def_term)
+            unit = unit_cls(cls, symbol, name=name, define_as=define_as)
+        elif isinstance(define_as, Term):
+            try:
+                qty = _qty_from_term(define_as)
+            except KeyError:
+                raise ValueError("Given term doesn't define a unit.")
+            else:
+                if qty.__class__ is not cls:
+                    raise ValueError(f"Given term doesn't define a "
+                                     f"'{cls.__name__}' unit.")
+            unit = unit_cls(cls, symbol, name=name, define_as=define_as)
+        else:
+            raise TypeError(f"'define_as' must be an instance of "
+                            f"'{cls.__name__}' or a term denoting such "
+                            f"an instance.")
+        cls._unit_map[unit.symbol] = unit
+        return unit
+
+    def derive_unit_from(cls, derive_from: Union[Unit, Tuple[Unit, ...]],
+                         symbol: Optional[str] = None,
+                         name: Optional[str] = None) -> Unit:
+        """Derive a new unit for `cls` from units of its base quantities.
+
+        Args:
+            symbol: symbol of the new unit
+            name: name of the new unit, defaults to `symbol` if not given
+            derive_from: a unit of the base quantity or a tuple of units of
+                the base quantities of the quantity type
+
+        Raises:
+            TypeError: 'derive_unit' called on a base quantity
+            ValueError: given base units don't match base quantities
+
+        """
+        if cls.is_base_cls():
+            raise TypeError(
+                "'derive_unit' can't be used with a base quantity.")
+        if isinstance(derive_from, Unit):
+            derive_from = (derive_from,)
+        assert cls._definition is not None
+        unit_def_items: List[Tuple[Unit, int]] = []
+        for (qty_cls, exp), unit in zip(cls._definition, derive_from):
+            if qty_cls is not unit.qty_cls:
+                raise ValueError(
+                    "Given base units don't match base quantities.")
+            unit_def_items.append((unit, exp))
+        # noinspection PyTypeChecker
+        unit_def_term = Term(unit_def_items)
+        if symbol is None:
+            symbol = str(unit_def_term)
+        unit = cls._unit_cls(cls, symbol, name=name, define_as=unit_def_term)
         cls._unit_map[unit.symbol] = unit
         return unit
 

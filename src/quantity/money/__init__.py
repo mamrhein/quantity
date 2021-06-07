@@ -300,7 +300,7 @@ created for the derived quantity …:
 
 … instead, units must be explicitly defined:
 
-    >>> EURpKG = PricePerMass.new_unit("EUR/kg", derive_from=(EUR, KILOGRAM))
+    >>> EURpKG = PricePerMass.derive_unit_from((EUR, KILOGRAM))
     >>> PricePerMass.units()
     (Unit('EUR/kg'),)
 
@@ -328,7 +328,7 @@ exchange rates, as long as the resulting unit is defined:
     >>> p * fxEUR2HKD
     Traceback (most recent call last):
     QuantityError: Resulting unit not defined: HKD/kg.
-    >>> HKDpKG = PricePerMass.new_unit("HKD/kg", derive_from=(HKD, KILOGRAM))
+    >>> HKDpKG = PricePerMass.derive_unit_from((HKD, KILOGRAM))
     >>> p * fxEUR2HKD
     PricePerMass(Decimal('146.5067798', 8), Unit('HKD/kg'))
 """
@@ -479,12 +479,10 @@ class MoneyMeta(QuantityMeta):
     """Meta class for Money"""
 
     def new_unit(cls, symbol: str, name: Optional[str] = None,  # noqa: N805
-                 define_as: Optional[Union[Quantity, UnitDefT]] = None, *,
-                 derive_from: Optional[Union[Unit, Tuple[Unit, ...]]] = None) \
+                 define_as: Optional[Union[Quantity, UnitDefT]] = None) \
             -> Currency:
         """Create, register and return a new `Currency` instance."""
-        unit = super().new_unit(symbol, name, define_as,
-                                derive_from=derive_from)
+        unit = super().new_unit(symbol, name, define_as)
         assert isinstance(unit, Currency)
         return unit
 

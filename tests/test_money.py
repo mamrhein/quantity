@@ -35,14 +35,14 @@ ZWL = Money.register_currency("ZWL")
 
 class PricePerMass(Quantity,
                    define_as=Money / Mass):
-    pass
+    """Price per Mass"""
 
 
-EURpKg = PricePerMass.new_unit("EUR/kg", derive_from=(EUR, KILOGRAM))
-HKDpKg = PricePerMass.new_unit("HKD/kg", derive_from=(HKD, KILOGRAM))
-TNDpKg = PricePerMass.new_unit("TND/kg", derive_from=(TND, KILOGRAM))
-USDpKg = PricePerMass.new_unit("USD/kg", derive_from=(USD, KILOGRAM))
-ZWLpKg = PricePerMass.new_unit("ZWL/kg", derive_from=(ZWL, KILOGRAM))
+EURpKg = PricePerMass.derive_unit_from((EUR, KILOGRAM))
+HKDpKg = PricePerMass.derive_unit_from((HKD, KILOGRAM))
+TNDpKg = PricePerMass.derive_unit_from((TND, KILOGRAM))
+USDpKg = PricePerMass.derive_unit_from((USD, KILOGRAM))
+ZWLpKg = PricePerMass.derive_unit_from((ZWL, KILOGRAM))
 
 
 @pytest.mark.parametrize(("iso_code", "name", "minor_unit",

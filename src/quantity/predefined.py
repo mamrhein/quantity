@@ -393,22 +393,18 @@ class Area(Quantity,
 assert Area.ref_unit is not None
 SQUARE_METRE = Area.ref_unit
 
-SQUARE_MILLIMETRE = Area.new_unit('mm²', 'Square Millimetre',
-                                  derive_from=MILLIMETRE)
-SQUARE_CENTIMETRE = Area.new_unit('cm²', 'Square Centimetre',
-                                  derive_from=CENTIMETRE)
-SQUARE_DECIMETRE = Area.new_unit('dm²', 'Square Decimetre',
-                                 derive_from=DECIMETRE)
-SQUARE_KILOMETRE = Area.new_unit('km²', 'Square Kilometre',
-                                 derive_from=KILOMETRE)
+SQUARE_MILLIMETRE = Area.derive_unit_from(MILLIMETRE, name='Square Millimetre')
+SQUARE_CENTIMETRE = Area.derive_unit_from(CENTIMETRE, name='Square Centimetre')
+SQUARE_DECIMETRE = Area.derive_unit_from(DECIMETRE, name='Square Decimetre')
+SQUARE_KILOMETRE = Area.derive_unit_from(KILOMETRE, name='Square Kilometre')
 ARE = Area.new_unit('a', 'Are', Decimal(100) * SQUARE_METRE)
 HECTARE = Area.new_unit('ha', 'Hectare', Decimal(100) * ARE)
 
 # some imperial units
-SQUARE_INCH = Area.new_unit('in²', 'Square Inch', derive_from=INCH)
-SQUARE_FOOT = Area.new_unit('ft²', 'Square Foot', derive_from=FOOT)
-SQUARE_YARD = Area.new_unit('yd²', 'Square Yard', derive_from=YARD)
-SQUARE_MILE = Area.new_unit('mi²', 'Square Mile', derive_from=MILE)
+SQUARE_INCH = Area.derive_unit_from(INCH, name='Square Inch')
+SQUARE_FOOT = Area.derive_unit_from(FOOT, name='Square Foot')
+SQUARE_YARD = Area.derive_unit_from(YARD, name='Square Yard')
+SQUARE_MILE = Area.derive_unit_from(MILE, name='Square Mile')
 ACRE = Area.new_unit('ac', 'Acre', Decimal(4840) * SQUARE_YARD)
 
 
@@ -421,14 +417,10 @@ class Volume(Quantity,
 assert Volume.ref_unit is not None
 CUBIC_METRE = Volume.ref_unit
 
-CUBIC_MILLIMETRE = Volume.new_unit('mm³', 'Cubic Millimetre',
-                                   derive_from=MILLIMETRE)
-CUBIC_CENTIMETRE = Volume.new_unit('cm³', 'Cubic Centimetre',
-                                   derive_from=CENTIMETRE)
-CUBIC_DECIMETRE = Volume.new_unit('dm³', 'Cubic Decimetre',
-                                  derive_from=DECIMETRE)
-CUBIC_KILOMETRE = Volume.new_unit('km³', 'Cubic Kilometre',
-                                  derive_from=KILOMETRE)
+CUBIC_MILLIMETRE = Volume.derive_unit_from(MILLIMETRE, name='Cubic Millimetre')
+CUBIC_CENTIMETRE = Volume.derive_unit_from(CENTIMETRE, name='Cubic Centimetre')
+CUBIC_DECIMETRE = Volume.derive_unit_from(DECIMETRE, name='Cubic Decimetre')
+CUBIC_KILOMETRE = Volume.derive_unit_from(KILOMETRE, name='Cubic Kilometre')
 
 # litre
 LITRE = Volume.new_unit('l', 'Litre', MILLI * CUBIC_METRE)
@@ -437,9 +429,9 @@ CENTILITRE = Volume.new_unit('cl', 'Centilitre', CENTI * LITRE)
 DECILITRE = Volume.new_unit('dl', 'Decilitre', DECI * LITRE)
 
 # some imperial units
-CUBIC_INCH = Volume.new_unit('in³', 'Cubic Inch', derive_from=INCH)
-CUBIC_FOOT = Volume.new_unit('ft³', 'Cubic Foot', derive_from=FOOT)
-CUBIC_YARD = Volume.new_unit('yd³', 'Cubic Yard', derive_from=YARD)
+CUBIC_INCH = Volume.derive_unit_from(INCH, name='Cubic Inch')
+CUBIC_FOOT = Volume.derive_unit_from(FOOT, name='Cubic Foot')
+CUBIC_YARD = Volume.derive_unit_from(YARD, name='Cubic Yard')
 
 
 class Velocity(Quantity,
@@ -450,14 +442,15 @@ class Velocity(Quantity,
 
 assert Velocity.ref_unit is not None
 METRE_PER_SECOND = Velocity.ref_unit
-KILOMETRE_PER_HOUR = Velocity.new_unit('km/h', 'Kilometre per hour',
-                                       derive_from=(KILOMETRE, HOUR))
+KILOMETRE_PER_HOUR = Velocity.derive_unit_from((KILOMETRE, HOUR),
+                                               name='Kilometre per Hour')
 
 # some imperial units
-FOOT_PER_SECOND = Velocity.new_unit('ft/s', 'Foot per Second',
-                                    derive_from=(FOOT, SECOND))
-MILE_PER_HOUR = Velocity.new_unit('mph', 'Mile per Hour',
-                                  derive_from=(MILE, HOUR))
+FOOT_PER_SECOND = Velocity.derive_unit_from((FOOT, SECOND),
+                                            name='Foot per Second')
+MILE_PER_HOUR = Velocity.derive_unit_from((MILE, HOUR),
+                                          symbol='mph',
+                                          name='Mile per Hour')
 
 
 class Acceleration(Quantity,
@@ -470,9 +463,10 @@ assert Acceleration.ref_unit is not None
 METRE_PER_SECOND_SQUARED = Acceleration.ref_unit
 
 # some imperial units
-MILE_PER_SECOND_SQUARED = Acceleration.new_unit(
-    'mps²', 'Mile per Second squared',
-    derive_from=(MILE, SECOND))
+MILE_PER_SECOND_SQUARED = \
+    Acceleration.derive_unit_from((MILE, SECOND),
+                                  symbol='mps²',
+                                  name='Mile per Second squared')
 
 
 class Force(Quantity,
@@ -496,8 +490,9 @@ class Energy(Quantity,
 assert Energy.ref_unit is not None
 JOULE = Energy.ref_unit
 
-NEWTON_METER = Energy.new_unit('Nm', 'Newton Meter',
-                               derive_from=(NEWTON, METRE))
+NEWTON_METRE = Energy.derive_unit_from((NEWTON, METRE),
+                                       symbol='Nm',
+                                       name='Newton Metre')
 
 
 class Power(Quantity,
@@ -604,8 +599,8 @@ GIBIBYTE_PER_SECOND = DataThroughput.new_unit(
 TEBIBYTE_PER_SECOND = DataThroughput.new_unit(
     'TiB/s', 'Tebibyte per Second', Decimal(2) ** 40 * BYTE_PER_SECOND)
 
-BIT_PER_SECOND = DataThroughput.new_unit(
-    'b/s', 'Bit per Second', derive_from=(BIT, SECOND))
+BIT_PER_SECOND = DataThroughput.derive_unit_from((BIT, SECOND),
+                                                 name='Bit per Second')
 KILOBIT_PER_SECOND = DataThroughput.new_unit(
     'kb/s', 'Kilobit per Second', KILO * BIT_PER_SECOND)
 MEGABIT_PER_SECOND = DataThroughput.new_unit(
@@ -741,7 +736,7 @@ __all__ = [
     'NANOMETRE',
     'NANOSECOND',
     'NEWTON',
-    'NEWTON_METER',
+    'NEWTON_METRE',
     'OUNCE',
     'POUND',
     'Power',

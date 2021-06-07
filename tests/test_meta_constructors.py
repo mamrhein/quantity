@@ -241,8 +241,8 @@ def test_derived_units(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
         for c_unit in C.units():
             for d_unit in D.units():
                 symbol = f"{c_unit.symbol}2{b_unit.symbol}{d_unit.symbol}"
-                unit = Q.new_unit(symbol,
-                                  derive_from=(c_unit, b_unit, d_unit))
+                unit = Q.derive_unit_from((c_unit, b_unit, d_unit),
+                                          symbol=symbol)
                 assert isinstance(unit, Unit)
                 assert unit.qty_cls is Q
                 assert unit in Q.units()
@@ -283,17 +283,7 @@ def test_derive_unit_fails_on_base_qty(qties_bcd: Tuple[QuantityMeta, ...]) \
         -> None:
     B, C, D = qties_bcd  # noqa: N806
     with pytest.raises(TypeError):
-        B.new_unit('x', derive_from=B.units()[1])
-
-
-# noinspection PyPep8Naming
-def test_define_and_derive_fails(qties_bcd: Tuple[QuantityMeta, ...]) -> None:
-    B, C, D = qties_bcd  # noqa: N806
-    Q = QuantityMeta("D_C", (Quantity,), {},      # noqa: N806
-                     define_as=D / C)
-    assert Q.ref_unit is not None   # for mypy
-    with pytest.raises(ValueError):
-        Q.new_unit('x', define_as=10 * Q.ref_unit, derive_from=Q.ref_unit)
+        B.derive_unit_from(B.units()[1])
 
 
 # noinspection PyPep8Naming
@@ -307,4 +297,4 @@ def test_derive_unit_mismatched_units(qties_bcd: Tuple[QuantityMeta, ...]) \
                      define_as=B ** 2 * C / D)
     assert Q.ref_unit is not None   # for mypy
     with pytest.raises(ValueError):
-        Q.new_unit('x', derive_from=(C.ref_unit, B.ref_unit, D.units()[1]))
+        Q.derive_unit_from((C.ref_unit, B.ref_unit, D.units()[1]))
