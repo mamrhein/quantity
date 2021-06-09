@@ -442,13 +442,13 @@ class Velocity(Quantity,
 
 assert Velocity.ref_unit is not None
 METRE_PER_SECOND = Velocity.ref_unit
-KILOMETRE_PER_HOUR = Velocity.derive_unit_from((KILOMETRE, HOUR),
+KILOMETRE_PER_HOUR = Velocity.derive_unit_from(KILOMETRE, HOUR,
                                                name='Kilometre per Hour')
 
 # some imperial units
-FOOT_PER_SECOND = Velocity.derive_unit_from((FOOT, SECOND),
+FOOT_PER_SECOND = Velocity.derive_unit_from(FOOT, SECOND,
                                             name='Foot per Second')
-MILE_PER_HOUR = Velocity.derive_unit_from((MILE, HOUR),
+MILE_PER_HOUR = Velocity.derive_unit_from(MILE, HOUR,
                                           symbol='mph',
                                           name='Mile per Hour')
 
@@ -464,7 +464,7 @@ METRE_PER_SECOND_SQUARED = Acceleration.ref_unit
 
 # some imperial units
 MILE_PER_SECOND_SQUARED = \
-    Acceleration.derive_unit_from((MILE, SECOND),
+    Acceleration.derive_unit_from(MILE, SECOND,
                                   symbol='mps²',
                                   name='Mile per Second squared')
 
@@ -490,7 +490,7 @@ class Energy(Quantity,
 assert Energy.ref_unit is not None
 JOULE = Energy.ref_unit
 
-NEWTON_METRE = Energy.derive_unit_from((NEWTON, METRE),
+NEWTON_METRE = Energy.derive_unit_from(NEWTON, METRE,
                                        symbol='Nm',
                                        name='Newton Metre')
 
@@ -599,7 +599,7 @@ GIBIBYTE_PER_SECOND = DataThroughput.new_unit(
 TEBIBYTE_PER_SECOND = DataThroughput.new_unit(
     'TiB/s', 'Tebibyte per Second', Decimal(2) ** 40 * BYTE_PER_SECOND)
 
-BIT_PER_SECOND = DataThroughput.derive_unit_from((BIT, SECOND),
+BIT_PER_SECOND = DataThroughput.derive_unit_from(BIT, SECOND,
                                                  name='Bit per Second')
 KILOBIT_PER_SECOND = DataThroughput.new_unit(
     'kb/s', 'Kilobit per Second', KILO * BIT_PER_SECOND)

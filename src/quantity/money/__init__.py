@@ -300,7 +300,7 @@ created for the derived quantity …:
 
 … instead, units must be explicitly defined:
 
-    >>> EURpKG = PricePerMass.derive_unit_from((EUR, KILOGRAM))
+    >>> EURpKG = PricePerMass.derive_unit_from(EUR, KILOGRAM)
     >>> PricePerMass.units()
     (Unit('EUR/kg'),)
 
@@ -328,7 +328,7 @@ exchange rates, as long as the resulting unit is defined:
     >>> p * fxEUR2HKD
     Traceback (most recent call last):
     QuantityError: Resulting unit not defined: HKD/kg.
-    >>> HKDpKG = PricePerMass.derive_unit_from((HKD, KILOGRAM))
+    >>> HKDpKG = PricePerMass.derive_unit_from(HKD, KILOGRAM)
     >>> p * fxEUR2HKD
     PricePerMass(Decimal('146.5067798', 8), Unit('HKD/kg'))
 """

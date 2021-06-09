@@ -132,7 +132,17 @@ in that definition have a reference unit.
     >>> Velocity.ref_unit.symbol
     'm/s'
 
-Other units have to be defined explicitly.
+Other units have to be defined explicitly. This can be done either as shown
+above or by deriving them from units of the base quantities:
+
+    >>> CUBIC_CENTIMETRE = Volume.derive_unit_from(CENTIMETRE,
+    ...                                            name='Cubic Centimetre')
+    >>> CUBIC_CENTIMETRE
+    Unit('cm³')
+    >>> HOUR = Duration.new_unit('h', 'Hour', 3600 * Duration.ref_unit)
+    >>> KILOMETRE_PER_HOUR = Velocity.derive_unit_from(KILOMETRE, HOUR)
+    >>> KILOMETRE_PER_HOUR
+    Unit('km/h')
 
 In order to define a **quantized** quantity, the smallest possible fraction
 (in terms of the reference unit) can be given as `quantum`:
@@ -1127,30 +1137,36 @@ class QuantityMeta(ClassWithDefinitionMeta):
         cls._unit_map[unit.symbol] = unit
         return unit
 
-    def derive_unit_from(cls, derive_from: Union[Unit, Tuple[Unit, ...]],
-                         symbol: Optional[str] = None,
+    def derive_unit_from(cls, *args: Unit, symbol: Optional[str] = None,
                          name: Optional[str] = None) -> Unit:
         """Derive a new unit for `cls` from units of its base quantities.
 
         Args:
-            symbol: symbol of the new unit
+            args: iterable of units of the base quantities of the quantity type
+            symbol: symbol of the new unit, generated based on `args` if not
+                given
             name: name of the new unit, defaults to `symbol` if not given
-            derive_from: a unit of the base quantity or a tuple of units of
-                the base quantities of the quantity type
 
         Raises:
-            TypeError: 'derive_unit' called on a base quantity
+            TypeError: 'derive_unit_from' called on a base quantity
+            TypeError: not all members of `args` are instances of `Unit`
+            ValueError: number of given base units doesn't match number of
+                base quantities of `cls`
             ValueError: given base units don't match base quantities
 
         """
         if cls.is_base_cls():
             raise TypeError(
                 "'derive_unit' can't be used with a base quantity.")
-        if isinstance(derive_from, Unit):
-            derive_from = (derive_from,)
-        assert cls._definition is not None
+        assert cls._definition is not None      # for mypy
+        for unit in args:
+            if not isinstance(unit, Unit):
+                raise TypeError("All given positional args must be `Unit`s.")
+        if len(args) != len(cls._definition):
+            raise ValueError("Number of given base units doesn't match "
+                             "number of base quantities of `cls`.")
         unit_def_items: List[Tuple[Unit, int]] = []
-        for (qty_cls, exp), unit in zip(cls._definition, derive_from):
+        for (qty_cls, exp), unit in zip(cls._definition, args):
             if qty_cls is not unit.qty_cls:
                 raise ValueError(
                     "Given base units don't match base quantities.")

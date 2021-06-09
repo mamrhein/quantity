@@ -38,11 +38,11 @@ class PricePerMass(Quantity,
     """Price per Mass"""
 
 
-EURpKg = PricePerMass.derive_unit_from((EUR, KILOGRAM))
-HKDpKg = PricePerMass.derive_unit_from((HKD, KILOGRAM))
-TNDpKg = PricePerMass.derive_unit_from((TND, KILOGRAM))
-USDpKg = PricePerMass.derive_unit_from((USD, KILOGRAM))
-ZWLpKg = PricePerMass.derive_unit_from((ZWL, KILOGRAM))
+EURpKg = PricePerMass.derive_unit_from(EUR, KILOGRAM)
+HKDpKg = PricePerMass.derive_unit_from(HKD, KILOGRAM)
+TNDpKg = PricePerMass.derive_unit_from(TND, KILOGRAM)
+USDpKg = PricePerMass.derive_unit_from(USD, KILOGRAM)
+ZWLpKg = PricePerMass.derive_unit_from(ZWL, KILOGRAM)
 
 
 @pytest.mark.parametrize(("iso_code", "name", "minor_unit",
