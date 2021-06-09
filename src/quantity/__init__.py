@@ -1009,7 +1009,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
     _quantum: Rational
 
     def __new__(mcs, name: str, bases: Tuple[type, ...] = (),  # noqa: N804
-                clsdict: Dict[str, Any] = MappingProxyType({}), **kwds: Any) \
+                clsdict = MappingProxyType({}), **kwds: Any) \
             -> QuantityMeta:
         """Create new Quantity (sub-)class."""
         ref_unit_def: Optional[UnitDefT] = None
@@ -1056,7 +1056,7 @@ class QuantityMeta(ClassWithDefinitionMeta):
 
     # noinspection PyUnusedLocal
     def __init__(cls, name: str, bases: Tuple[type, ...] = (),  # noqa: N804
-                 clsdict: Dict[str, Any] = MappingProxyType({}), **kwds: Any):
+                 clsdict = MappingProxyType({}), **kwds: Any):
         super().__init__(name, bases, clsdict)
         # register cls
         cls._reg_id = QuantityMeta._registry.register_item(cls)
