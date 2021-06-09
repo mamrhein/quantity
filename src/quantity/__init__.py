@@ -744,8 +744,15 @@ class Unit:
 
     def __eq__(self, other: Any) -> bool:
         """self == other"""
-        # Unit instances are singletons!
-        return self is other
+        if isinstance(other, Unit):
+            if self.qty_cls is other.qty_cls:
+                if self._equiv is None:
+                    assert other._equiv is None
+                    return self is other
+                else:
+                    assert other._equiv is not None
+                    return self._equiv == other._equiv
+        return False
 
     def _compare(self, other: Any, op: CmpOpT) -> bool:
         """Compare self and other using operator op."""
