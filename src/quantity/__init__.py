@@ -635,7 +635,7 @@ class Unit:
     _qty_cls: QuantityMeta
     _symbol: str
     _name: Optional[str]
-    _equiv: Rational
+    _equiv: Optional[Rational]
     _definition: UnitDefT
 
     def __new__(cls, qty_cls: QuantityMeta, symbol: str,
@@ -896,14 +896,15 @@ class Unit:
                 pass
             # no cache hit
             if self.qty_cls is other.qty_cls:
-                try:
+                unit: Optional[Unit] = None
+                if self is other:
+                    amnt = ONE
+                else:
+                    if self._equiv is None or other._equiv is None:
+                        raise UnitConversionError(
+                            "Can't devide '%s' and '%s'.", self, other) \
+                            from None
                     amnt = self._equiv / other._equiv
-                    unit: Optional[Unit] = None
-                except AttributeError:
-                    raise UndefinedResultError(operator.truediv,
-                                               self._qty_cls.__name__,
-                                               other._qty_cls.__name__) \
-                        from None
             else:
                 res_def = UnitDefT(((self, 1), (other, -1)))
                 try:
@@ -978,6 +979,8 @@ class Unit:
             if self.qty_cls is other.qty_cls:
                 if qty_cls.ref_unit is None:
                     return None
+                assert self._equiv is not None
+                assert other._equiv is not None
                 return self._equiv / other._equiv
         raise TypeError(f"Can't compare a unit to a '{type(other)}'.")
 
