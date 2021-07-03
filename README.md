@@ -3,112 +3,157 @@ quantities, including money.
 
 ### Defining a quantity class
 
-A **basic** type of quantity is declared just by sub-classing the class
-_Quantity_:
+A **basic** type of quantity is declared just by sub-classing _Quantity_:
 
     >>> class Length(Quantity):
     ...     pass
+    ...
 
-In addition to the new quantity class the meta-class of class _Quantity_
-creates a corresponding class for the units automatically. It can be
-referenced via the quantity class:
+But, as long as there is no unit defined for that class, you can not create
+any instance for the new quantity class:
 
-    >>> Length.Unit
-    <class 'quantity.quantity.LengthUnit'>
+    >>> l = Length(1)
+    Traceback (most recent call last):
+    ValueError: A unit must be given.
 
-If the quantity has a unit which is used as a reference for defining other
-units, the simplest way to define it is giving a name and a symbol for it as
-class variables. The meta-class of class _Quantity_ will then create a unit
-automatically:
+If there is a reference unit, the simplest way to define it is giving a name
+and a symbol for it as keywords. The meta-class of _Quantity_ will
+then create a unit automatically:
 
-    >>> class Length(Quantity):
-    ...     refUnitName = 'Meter'
-    ...     refUnitSymbol = 'm'
-    >>> Length.refUnit
-    Length.Unit('m')
+    >>> class Mass(Quantity,
+    ...            ref_unit_name='Kilogram',
+    ...            ref_unit_symbol='kg'):
+    ...     pass
+    ...
+    >>> Mass.ref_unit
+    Unit('kg')
+    >>> class Length(Quantity,
+    ...              ref_unit_name='Metre',
+    ...              ref_unit_symbol='m'):
+    ...     pass
+    ...
+    >>> Length.ref_unit
+    Unit('m')
 
 Now, this unit can be given to create a quantity:
 
-    >>> METER = Length.refUnit
-    >>> print(Length(15, METER))
+    >>> METRE = Length.ref_unit
+    >>> print(Length(15, METRE))
+    15 m
+
+If no unit is given, the reference unit is used:
+
+    >>> print(Length(15))
     15 m
 
 Other units can be derived from the reference unit (or another unit), giving
 a definition by multiplying a scaling factor with that unit:
 
-    >>> MILLIMETER = Length.Unit('mm', 'Millimeter', Decimal('0.001') * METER)
-    >>> MILLIMETER
-    Length.Unit('mm')
-    >>> KILOMETER = Length.Unit('km', 'Kilometer', 1000 * METER)
-    >>> KILOMETER
-    Length.Unit('km')
-    >>> CENTIMETER = Length.Unit('cm', 'Centimeter', 10 * MILLIMETER)
-    >>> CENTIMETER
-    Length.Unit('cm')
+    >>> a_thousandth = Decimal("0.001")
+    >>> KILOGRAM = Mass.ref_unit
+    >>> GRAM = Mass.new_unit('g', 'Gram', a_thousandth * KILOGRAM)
+    >>> MILLIMETRE = Length.new_unit('mm', 'Millimetre', a_thousandth * METRE)
+    >>> MILLIMETRE
+    Unit('mm')
+    >>> KILOMETRE = Length.new_unit('km', 'Kilometre', 1000 * METRE)
+    >>> KILOMETRE
+    Unit('km')
+    >>> CENTIMETRE = Length.new_unit('cm', 'Centimetre', 10 * MILLIMETRE)
+    >>> CENTIMETRE
+    Unit('cm')
 
-Using one unit as a reference and defining all other units by giving
-a scaling factor is only possible if the units have the same scale. Otherwise,
-units have to be instantiated via the corresponding class _Unit_ sub-class
-without giving a definition.
+Instead of a number a SI prefix can be used as scaling factor. SI prefixes are
+provided in a sub-module:
+
+    >>> from quantity.si_prefixes import *
+    >>> NANO.abbr, NANO.name, NANO.factor
+    ('n', 'Nano', Decimal('0.000000001'))
+
+    >>> NANOMETRE = Length.new_unit('nm', 'Nanometre', NANO * METRE)
+    >>> NANOMETRE
+    Unit('nm')
+
+Using one unit as a reference and defining all other units by giving a
+scaling factor is only possible if the units have the same scale. Otherwise,
+units can just be instantiated without giving a definition:
 
     >>> class Temperature(Quantity):
     ...     pass
-    >>> CELSIUS = Temperature.Unit('°C', 'Degree Celsius')
-    >>> FAHRENHEIT = Temperature.Unit('°F', 'Degree Fahrenheit')
+    ...
+    >>> CELSIUS = Temperature.new_unit('°C', 'Degree Celsius')
+    >>> FAHRENHEIT = Temperature.new_unit('°F', 'Degree Fahrenheit')
+    >>> KELVIN = Temperature.new_unit('K', 'Kelvin')
 
 **Derived** types of quantities are declared by giving a definition based on
 more basic types of quantities:
 
-    >>> class Volume(Quantity):
-    ...     defineAs = Length ** 3
-    ...     refUnitName = 'Cubic Meter'
-    >>> class Duration(Quantity):
-    ...     refUnitName = 'Second'
-    ...     refUnitSymbol = 's'
-    >>> class Velocity(Quantity):
-    ...     defineAs = Length / Duration
-    ...     refUnitName = 'Meter per Second'
+    >>> class Volume(Quantity,
+    ...              define_as=Length ** 3,
+    ...              ref_unit_name='Cubic Metre'):
+    ...     pass
+    ...
+    >>> class Duration(Quantity,
+    ...                ref_unit_name='Second',
+    ...                ref_unit_symbol='s'):
+    ...     pass
+    ...
+    >>> class Velocity(Quantity,
+    ...                define_as=Length / Duration,
+    ...                ref_unit_name='Metre per Second'):
+    ...     pass
+    ...
 
 If no symbol for the reference unit is given with the class declaration, a
 symbol is generated from the definition, as long as all types of quantities
 in that definition have a reference unit.
 
-    >>> print(Volume.refUnit.symbol)
-    m³
-    >>> print(Velocity.refUnit.symbol)
-    m/s
+    >>> Volume.ref_unit.symbol
+    'm³'
+    >>> Velocity.ref_unit.symbol
+    'm/s'
+
+Other units have to be defined explicitly. This can be done either as shown
+above or by deriving them from units of the base quantities:
+
+    >>> CUBIC_CENTIMETRE = Volume.derive_unit_from(CENTIMETRE,
+    ...                                            name='Cubic Centimetre')
+    >>> CUBIC_CENTIMETRE
+    Unit('cm³')
+    >>> HOUR = Duration.new_unit('h', 'Hour', 3600 * Duration.ref_unit)
+    >>> KILOMETRE_PER_HOUR = Velocity.derive_unit_from(KILOMETRE, HOUR)
+    >>> KILOMETRE_PER_HOUR
+    Unit('km/h')
 
 ### Instantiating quantities
 
 The simplest way to create an instance of a class _Quantity_ subclass is to
 call the class giving an amount and a unit. If the unit is omitted, the
-quantity's reference unit is used (if one is defined).
+quantity's reference unit is used (if one is defined):
 
-    >>> Length(15, MILLIMETER)
-    Length(Decimal(15), Length.Unit(u'mm'))
+    >>> Length(15, MILLIMETRE)
+    Length(Decimal(15), Unit('mm'))
 
-Alternatively, the two-args infix operator '^' can be used to combine an
-amount and a unit:
+Alternatively, an amount and a unit can be multiplied:
 
-    >>> 17.5 ^ KILOMETER
-    Length(Decimal('17.5'), Length.Unit(u'km'))
+    >>> 17.5 * KILOMETRE
+    Length(Decimal('17.5'), Unit('km'))
 
 Also, it's possible to create a _Quantity_ sub-class instance from a string
 representation:
 
     >>> Length('17.5 km')
-    Length(Decimal('17.5'), Length.Unit(u'km'))
+    Length(Decimal('17.5'), Unit('km'))
 
 ### Unit-safe computations
 
 A quantity can be converted to a quantity using a different unit by calling
 the method _Quantity.convert_:
 
-    >>> l5cm = Length(Decimal(5), CENTIMETER)
-    >>> l5cm.convert(MILLIMETER)
-    Length(Decimal('50'), Length.Unit('mm'))
-    >>> l5cm.convert(KILOMETER)
-    Length(Decimal('0.00005'), Length.Unit('km'))
+    >>> l5cm = Length(Decimal(5), CENTIMETRE)
+    >>> l5cm.convert(MILLIMETRE)
+    Length(Decimal(50), Unit('mm'))
+    >>> l5cm.convert(KILOMETRE)
+    Length(Decimal('0.00005'), Unit('km'))
 
 Quantities can be compared to other quantities using all comparison operators
 defined for numbers. Different units are taken into account automatically, as
@@ -116,7 +161,7 @@ long as they are compatible, i.e. a conversion is available:
 
     >>> Length(27) <= Length(91)
     True
-    >>> Length(27, METER) <= Length(91, CENTIMETER)
+    >>> Length(27, METRE) <= Length(91, CENTIMETRE)
     False
 
 Quantities can be added to or subtracted from other quantities …:
@@ -133,24 +178,25 @@ Quantities can be added to or subtracted from other quantities …:
 … as long as they are instances of the same quantity type:
 
     >>> Length(27) + Duration(9)
-    quantity.quantity.IncompatibleUnitsError: Can't add a 'Length' and a
-        'Duration'
+    Traceback (most recent call last):
+    IncompatibleUnitsError: Can't add a 'Length' and a 'Duration'
 
 Quantities can be multiplied or divided by scalars, preserving the unit:
 
-    >>> 7.5 * Length(3, CENTIMETER)
-    Length(Decimal('22.5'), Length.Unit(u'cm'))
+    >>> 7.5 * Length(3, CENTIMETRE)
+    Length(Decimal('22.5'), Unit('cm'))
     >>> Duration(66, MINUTE) / 11
-    Duration(Decimal(6), Duration.Unit(u'min'))
+    Duration(Decimal(6), Unit('min'))
 
 Quantities can be multiplied or divided by other quantities …:
 
-    >>> Length(15, METER) / Duration(3, SECOND)
+    >>> Length(15, METRE) / Duration(3, SECOND)
     Velocity(Decimal(5))
 
 … as long as the resulting type of quantity is defined …:
 
     >>> Duration(4, SECOND) * Length(7)
+    Traceback (most recent call last):
     UndefinedResultError: Undefined result: Duration * Length
 
 … or the result is a scalar:
