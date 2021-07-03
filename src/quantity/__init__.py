@@ -550,7 +550,6 @@ from .registry import DefinedItemRegistry
 from .si_prefixes import SIPrefix
 from .term import NonNumTermElem, Term
 from .utils import sum
-from .version import version_tuple as __version__  # noqa: F401
 
 # Public interface
 __all__ = [
