@@ -534,7 +534,8 @@ from numbers import Integral, Rational, Real
 from types import MappingProxyType
 from typing import (
     Any, Callable, Collection, Dict, Generator, Iterator, List,
-    MutableMapping, Optional, Tuple, Type, TypeVar, Union, overload,
+    MutableMapping, Optional, TYPE_CHECKING, Tuple, Type, TypeVar, Union,
+    overload,
     )
 
 from decimalfp import Decimal, ONE, ROUNDING, get_dflt_rounding_mode
@@ -559,6 +560,7 @@ __all__ = [
     'QuantityError',
     'TableConverter',
     'UndefinedResultError',
+    'Unit',
     'UnitConversionError',
     'sum',
     ]
@@ -611,23 +613,10 @@ class Unit:
     """Unit of measure.
 
     .. note::
-        Units should not be created directly. Instead, use
-        `<Quantity sub-class>.new_unit`.
+        New instances of `Unit` can not be created directly by calling `Unit`.
+        Instead, use `<Quantity sub-class>.new_unit`.
 
     """
-
-    # Args:
-    #     qty_cls: related `Quantity` sub-class
-    #     symbol: symbol of the unit
-    #     name: name of the unit
-    #     define_as: definition of the unit
-    #     ref_unit: True, if the unit shall be the reference unit of the
-    #         related quantity
-    #
-    # Raises:
-    #     AssertionError: `define_as` is None
-    #     AssertionError: `symbol` is None
-    #     ValueError: a unit with the given symbol is already registered
 
     __slots__ = ['_qty_cls', '_symbol', '_name', '_equiv', '_definition']
 
@@ -638,38 +627,20 @@ class Unit:
     _equiv: Optional[Rational]
     _definition: UnitDefT
 
-    def __new__(cls, qty_cls: QuantityMeta, symbol: str,
-                name: Optional[str] = None,
-                define_as: Optional[Union[Quantity, UnitDefT]] = None,
-                ref_unit: bool = False) -> Unit:
-        self = super().__new__(cls)
-        self._qty_cls = qty_cls
-        if isinstance(define_as, Quantity):
-            definition = UnitDefT([(define_as.amount, 1),
-                                   (define_as.unit, 1)])
-            self._definition = definition
-            self._equiv = definition.normalized().num_elem or ONE
-        elif isinstance(define_as, Term):
-            self._definition = define_as
-            self._equiv = define_as.normalized().num_elem or ONE
-        else:
-            assert define_as is None, "Unknown type of Unit definition."
-            self._definition = None
-            self._equiv = ONE if ref_unit else None
-        assert symbol, "A symbol must be given for the unit."
+    def __new__(cls, symbol: str) -> Unit:
+        """Return the Unit registered with symbol `symbol`.
+
+        Args:
+           symbol: symbol of the requested unit
+
+        Raises:
+            ValueEror: no unit with given symbol registered
+        """
         try:
-            _SYMBOL_UNIT_MAP[symbol]
+            return _SYMBOL_UNIT_MAP[symbol]
         except KeyError:
-            _SYMBOL_UNIT_MAP[symbol] = self
-        else:
             raise ValueError(
-                f"Unit with symbol '{symbol}' already registered.")
-        self._symbol = symbol
-        self._name = name
-        # UnitRegistryT has unique_items=False, so this will not raise an
-        # exception!
-        _TERM_UNIT_MAP.register_item(self)
-        return self
+                f"No unit with symbol '{symbol}' registered.") from None
 
     @property
     def symbol(self) -> str:
@@ -892,6 +863,8 @@ class Unit:
     def __truediv__(self, other: Any,
                     _op_cache: UnitOpCacheT = _UNIT_OP_CACHE) -> BinOpResT:
         """self / other"""
+        amnt: Rational
+        unit: Optional[Unit]
         if isinstance(other, Rational):
             return self._qty_cls(ONE / other, self)
         if isinstance(other, Real):
@@ -903,7 +876,7 @@ class Unit:
                 pass
             # no cache hit
             if self.qty_cls is other.qty_cls:
-                unit: Optional[Unit] = None
+                unit = None
                 if self is other:
                     amnt = ONE
                 else:
@@ -1023,8 +996,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
         # optional definition
         define_as: Optional[QuantityClsDefT] = kwds.pop('define_as', None)
         # reference unit
-        if define_as is not None:  # empty Term
-            assert define_as, "Given definition is not valid."
+        if define_as is not None:
+            assert define_as, "Given definition is not valid."  # empty Term
             try:
                 ref_unit_def = UnitDefT(_iter_ref_units(define_as))
             except TypeError:
@@ -1055,7 +1028,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
                               define_as=define_as)
         assert isinstance(cls, QuantityMeta)
         if ref_unit_symbol:
-            cls._make_ref_unit(ref_unit_symbol, ref_unit_name, ref_unit_def)
+            cls._ref_unit = cls._make_ref_unit(ref_unit_symbol, ref_unit_name,
+                                               ref_unit_def)
         else:
             cls._ref_unit = None
         cls._quantum = quantum
@@ -1076,11 +1050,39 @@ class QuantityMeta(ClassWithDefinitionMeta):
         # converter registry
         cls._converters: List[ConverterT] = []
 
-    def _make_ref_unit(cls, symbol: str, name: str,  # noqa: N805
-                       define_as: Optional[UnitDefT]) -> None:
+    def _make_unit(cls, symbol: str, name: Optional[str],  # noqa: N805
+                   define_as: Optional[UnitDefT]) -> Unit:
         unit_cls = cls._unit_cls
-        cls._ref_unit = unit_cls(cls, symbol, name=name, define_as=define_as,
-                                 ref_unit=True)
+        unit = object.__new__(unit_cls)
+        unit._qty_cls = cls
+        if isinstance(define_as, Term):
+            unit._definition = define_as
+            unit._equiv = define_as.normalized().num_elem or ONE
+        else:
+            assert define_as is None, "Unknown type of Unit definition."
+            unit._definition = None
+            unit._equiv = None
+        assert symbol, "A symbol must be given for the unit."
+        try:
+            _SYMBOL_UNIT_MAP[symbol]
+        except KeyError:
+            _SYMBOL_UNIT_MAP[symbol] = unit
+        else:
+            raise ValueError(
+                f"Unit with symbol '{symbol}' already registered.")
+        unit._symbol = symbol
+        unit._name = name
+        cls._unit_map[symbol] = unit
+        # UnitRegistryT has unique_items=False, so this will not raise an
+        # exception!
+        _TERM_UNIT_MAP.register_item(unit)
+        return unit
+
+    def _make_ref_unit(cls, symbol: str, name: Optional[str],  # noqa: N805
+                       define_as: Optional[UnitDefT]) -> Unit:
+        unit = cls._make_unit(symbol, name, define_as=define_as)
+        unit._equiv = ONE
+        return unit
 
     @property
     def ref_unit(cls) -> Optional[Unit]:  # noqa: N805
@@ -1104,48 +1106,45 @@ class QuantityMeta(ClassWithDefinitionMeta):
         Args:
             symbol: symbol of the new unit
             name: name of the new unit, defaults to `symbol` if not given
-            define_as: definition of the new unit in terms of another unit
+            define_as: equivalent of the new unit in terms of another unit
                 (usually given by multiplying a scalar or a SI scale and a
-                unit)
+                unit) or a term defining the new unit in terms of other units
 
         Raises:
-            TypeError: `symbol` must be a string
+            TypeError: `symbol` is not a string or None
             ValueError: `symbol` is empty
             ValueError: a unit with the given symbol is already registered
             TypeError: `define_as` does not match the quantity type
-            ValueError: term given as `define_as` does not define a unit.
+            ValueError: term given as `define_as` does not define a unit
 
         """
-        unit_cls = cls._unit_cls
+        unit_def: Optional[UnitDefT] = None
         if not isinstance(symbol, str):
             raise TypeError("'symbol' must be a string.")
         if not symbol:
             raise ValueError("'symbol' must not be an empty string.")
-        if define_as is None:
-            unit = unit_cls(cls, symbol, name=name)
-        elif isinstance(define_as, Quantity):
+        if isinstance(define_as, Quantity):
             if not isinstance(define_as, cls):
                 raise TypeError(f"Can't use an instance of "
-                                f"'{define_as.__class__.__name__}' to "
-                                f"define a '{cls.__name__}' unit.")
-            # noinspection PyTypeChecker
-            unit = unit_cls(cls, symbol, name=name, define_as=define_as)
+                                f"'{define_as.__class__.__name__}' as "
+                                f"equivalent of a '{cls.__name__}' unit.")
+            # noinspection PyUnresolvedReferences
+            unit_def = UnitDefT([(define_as.amount, 1), (define_as.unit, 1)])
         elif isinstance(define_as, Term):
             try:
-                qty = _qty_from_term(define_as)
+                _, unit = _amnt_and_unit_from_term(define_as)
             except KeyError:
                 raise ValueError("Given term doesn't define a unit.")
             else:
-                if qty.__class__ is not cls:
+                if unit is None or unit.qty_cls is not cls:
                     raise ValueError(f"Given term doesn't define a "
                                      f"'{cls.__name__}' unit.")
-            unit = unit_cls(cls, symbol, name=name, define_as=define_as)
-        else:
+            unit_def = define_as
+        elif define_as is not None:
             raise TypeError(f"'define_as' must be an instance of "
                             f"'{cls.__name__}' or a term denoting such "
                             f"an instance.")
-        cls._unit_map[unit.symbol] = unit
-        return unit
+        return cls._make_unit(symbol, name, unit_def)
 
     def derive_unit_from(cls, *args: Unit, symbol: Optional[str] = None,
                          name: Optional[str] = None) -> Unit:
@@ -1163,6 +1162,8 @@ class QuantityMeta(ClassWithDefinitionMeta):
             ValueError: number of given base units doesn't match number of
                 base quantities of `cls`
             ValueError: given base units don't match base quantities
+            TypeError: `symbol` is not a string or None
+            ValueError: `symbol` is empty
 
         """
         if cls.is_base_cls():
@@ -1185,9 +1186,12 @@ class QuantityMeta(ClassWithDefinitionMeta):
         unit_def_term = Term(unit_def_items)
         if symbol is None:
             symbol = str(unit_def_term)
-        unit = cls._unit_cls(cls, symbol, name=name, define_as=unit_def_term)
-        cls._unit_map[unit.symbol] = unit
-        return unit
+        else:
+            if not isinstance(symbol, str):
+                raise TypeError("'symbol' must be a string.")
+            if symbol == '':
+                raise ValueError("'symbol' must not be an empty string.")
+        return cls._make_unit(symbol, name, unit_def_term)
 
     def units(cls) -> Tuple[Unit, ...]:  # noqa: N805
         """Return all registered units of `cls` as tuple."""
@@ -1426,6 +1430,7 @@ class Quantity(metaclass=QuantityMeta):
         amnt = self.amount
         if amnt == 0:
             return self
+        assert isinstance(num_quant, (Decimal, Fraction))
         if isinstance(amnt, Decimal):
             res_amnt = amnt.quantize(num_quant, rounding=rounding)
         elif isinstance(amnt, Fraction):
@@ -1859,13 +1864,14 @@ def _quantize_fraction(self: Fraction, quant: Rational,
     return mult * quant
 
 
-# Redefine types with forward-references
+# Redefine types with forward-references (needed for sphinx)
 
-#: Defintion of derived Quantity sub-classes.
-QuantityClsDefT = Term[QuantityMeta]
-#: Definition of derived units.
-UnitDefT = Term[Unit]
-#: Tuple of an amount and an optional unit
-AmountUnitTupleT = Tuple[Rational, Optional[Unit]]
-#: Result of binary operations on quantities / units
-BinOpResT = Union[Quantity, Rational, AmountUnitTupleT]
+if not TYPE_CHECKING:   # needed to avoid mypy error
+    #: Defintion of derived Quantity sub-classes.
+    QuantityClsDefT = Term[QuantityMeta]
+    #: Definition of derived units.
+    UnitDefT = Term[Unit]
+    #: Tuple of an amount and an optional unit
+    AmountUnitTupleT = Tuple[Rational, Optional[Unit]]
+    #: Result of binary operations on quantities / units
+    BinOpResT = Union[Quantity, Rational, AmountUnitTupleT]

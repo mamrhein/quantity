@@ -538,7 +538,6 @@ JOULE_PER_METRE = Force.new_unit('J/m', 'Joule per Metre',
 WATT_SECOND = Energy.new_unit('Ws', 'Watt Second',
                               Term(((WATT, 1), (SECOND, 1))))
 # noinspection PyTypeChecker
-
 KILOWATT_HOUR = Energy.new_unit('kWh', 'Kilowatt Hour',
                                 Term(((KILOWATT, 1), (HOUR, 1))))
 

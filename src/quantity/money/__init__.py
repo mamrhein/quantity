@@ -380,13 +380,12 @@ RateDictT = Dict[Tuple[ValidityT, Union['Currency', str]], 'ExchangeRate']
 
 
 class Currency(Unit):
-
     # noinspection PyUnresolvedReferences
     """Represents a currency, i.e. a money unit.
 
     .. note::
-        Currencies should not be created directly. Instead, use
-        `Money.register_currency` or `Money.new_unit`.
+        New instances of `Currency` can not be created directly by calling
+        `Currency`. Instead, use `Money.register_currency` or `Money.new_unit`.
 
     """
 
@@ -418,43 +417,6 @@ class Currency(Unit):
     # TODO: remove these class variables after mypy issue #1021 got fixed:
     _smallest_fraction: Decimal
 
-    def __new__(cls, iso_code: str, name: Optional[str] = None,
-                minor_unit: Optional[int] = None,
-                smallest_fraction: Union[Real, str, None] = None) -> Currency:
-        """Create `Currency` instance."""
-        if not isinstance(iso_code, str):
-            raise TypeError("'iso_code' must be a string.")
-        if not iso_code:
-            raise ValueError("'iso_code' must be given.")
-        if minor_unit is not None:
-            if not isinstance(minor_unit, Integral):
-                raise TypeError("'minor_unit' must be an Integral number.")
-            if minor_unit < 0:
-                raise ValueError("'minor_unit' must be >= 0.")
-        if smallest_fraction is None:
-            if minor_unit is None:
-                smallest_fraction = Decimal('0.01')
-            else:
-                smallest_fraction = Decimal(10) ** -minor_unit
-        else:
-            smallest_fraction = Decimal(smallest_fraction)
-            if minor_unit is None:
-                if smallest_fraction <= 0:
-                    raise ValueError("'smallest_fraction' must be > 0.")
-                multiple = 1 / smallest_fraction
-                if not (multiple.denominator == 1 and multiple.numerator > 1):
-                    raise ValueError("1 must be an integer multiple of given "
-                                     "'smallest_fraction'.")
-            else:
-                if minor_unit != smallest_fraction.precision:
-                    raise ValueError(
-                        "'smallest_fraction' does not fit 'minor_unit'.")
-        curr = super().__new__(cls, Money, iso_code, name)
-        assert isinstance(curr, Currency)
-        assert isinstance(smallest_fraction, Decimal)
-        curr._smallest_fraction = smallest_fraction
-        return curr
-
     @property
     def iso_code(self) -> str:
         """ISO 4217 3-character code."""
@@ -478,13 +440,39 @@ class Currency(Unit):
 class MoneyMeta(QuantityMeta):
     """Meta class for Money"""
 
-    def new_unit(cls, symbol: str, name: Optional[str] = None,  # noqa: N805
-                 define_as: Optional[Union[Quantity, UnitDefT]] = None) \
+    def new_unit(cls, symbol: str, name: Optional[str] = None,
+                 minor_unit: Optional[int] = None,
+                 smallest_fraction: Union[Real, str, None] = None) \
             -> Currency:
         """Create, register and return a new `Currency` instance."""
-        unit = super().new_unit(symbol, name, define_as)
-        assert isinstance(unit, Currency)
-        return unit
+        if minor_unit is not None:
+            if not isinstance(minor_unit, Integral):
+                raise TypeError("'minor_unit' must be an Integral number.")
+            if minor_unit < 0:
+                raise ValueError("'minor_unit' must be >= 0.")
+        if smallest_fraction is None:
+            if minor_unit is None:
+                smallest_fraction = Decimal('0.01')
+            else:
+                smallest_fraction = Decimal(10) ** -minor_unit
+        else:
+            smallest_fraction = Decimal(smallest_fraction)
+            if minor_unit is None:
+                if smallest_fraction <= 0:
+                    raise ValueError("'smallest_fraction' must be > 0.")
+                multiple = 1 / smallest_fraction
+                if not (multiple.denominator == 1 and multiple.numerator > 1):
+                    raise ValueError("1 must be an integer multiple of given "
+                                     "'smallest_fraction'.")
+            else:
+                if minor_unit != smallest_fraction.precision:
+                    raise ValueError(
+                        "'smallest_fraction' does not fit 'minor_unit'.")
+        assert isinstance(smallest_fraction, Decimal)
+        curr = super().new_unit(symbol, name)
+        assert isinstance(curr, Currency)
+        curr._smallest_fraction = smallest_fraction
+        return curr
 
     def register_currency(cls, iso_code: str) -> Currency:
         """Register the currency with code `iso_code` from ISO 4217 database.
@@ -504,10 +492,9 @@ class MoneyMeta(QuantityMeta):
         except ValueError:
             iso_code, iso_num_code, name, minor_unit, countries = \
                 get_currency_info(iso_code)
-            curr = Currency(iso_code, name, minor_unit)
-            cls._unit_map[iso_code] = curr
+            curr = cls.new_unit(iso_code, name, minor_unit)
             return curr
-        else:   # currency already registered
+        else:  # currency already registered
             assert isinstance(reg_curr, Currency)
             return reg_curr
 
@@ -522,7 +509,7 @@ class MoneyMeta(QuantityMeta):
         else:
             raise TypeError("Given `conv` is not a MoneyConverter.")
 
-    def remove_converter(cls, conv: ConverterT) -> None:    # noqa: N805
+    def remove_converter(cls, conv: ConverterT) -> None:  # noqa: N805
         """Remove the last instance of converter 'conv' from the list of
         converters registered in 'cls'.
 
@@ -544,7 +531,6 @@ class MoneyMeta(QuantityMeta):
 
 
 class Money(Quantity, metaclass=MoneyMeta):
-
     # noinspection PyUnresolvedReferences
     """Represents a money amount, i.e. the combination of a numerical value
     and a money unit, aka. currency.
@@ -607,7 +593,6 @@ class Money(Quantity, metaclass=MoneyMeta):
 
 
 class ExchangeRate:
-
     """Basic representation of a conversion factor between two currencies.
 
     Args:
@@ -697,6 +682,7 @@ class ExchangeRate:
         # unit_multiple is a power to 10 and term_amount.magnitude >= -1
         mult = Decimal(10) ** (unit_multiple.magnitude
                                - min(0, magnitude_term_amount + 1))
+        assert isinstance(mult, Decimal)
         self._unit_multiple = mult
         self._term_amount = Decimal(term_amount * mult / unit_multiple, 6)
 
@@ -943,7 +929,6 @@ class ExchangeRate:
 
 
 class MoneyConverter:
-
     """Converter for money amounts.
 
     Money converters can be used to hold different exchange rates.
@@ -1004,7 +989,7 @@ class MoneyConverter:
                                       money_amnt.currency, to_currency)
         else:
             # TODO: remove 'type: ignore' when number.pyi got fixed
-            return rate.rate * money_amnt.amount    # type: ignore
+            return rate.rate * money_amnt.amount  # type: ignore
 
     @property
     def base_currency(self) -> Currency:
@@ -1065,14 +1050,14 @@ class MoneyConverter:
             n_parts = len(parts)
             if n_parts == 3:
                 dt_str = validity
-                try:                        # verify date
+                try:  # verify date
                     validity = date.fromisoformat(dt_str)
                 except ValueError:
                     raise ValueError(f"Not a valid date: "
                                      f"{validity}.") from None
             elif n_parts == 2:
                 dt_str = f"{validity}-01"
-                try:                        # verify year and month
+                try:  # verify year and month
                     dt = date.fromisoformat(dt_str)
                 except ValueError:
                     raise ValueError(f"Not a valid year / month: "
@@ -1081,7 +1066,7 @@ class MoneyConverter:
                     validity = (dt.year, dt.month)
             elif n_parts == 1:
                 dt_str = f"{validity}-01-01"
-                try:                        # verify year
+                try:  # verify year
                     dt = date.fromisoformat(dt_str)
                 except ValueError:
                     raise ValueError(f"Not a valid year: "
@@ -1092,7 +1077,7 @@ class MoneyConverter:
                 raise ValueError(f"Not a valid period: {validity}.")
         elif isinstance(validity, tuple):
             dt_str = f"{validity[0]:04d}-{validity[1]:02d}-01"
-            try:                            # verify year and month
+            try:  # verify year and month
                 dt = date.fromisoformat(dt_str)
             except ValueError:
                 raise ValueError(f"Not a valid year / month: "
@@ -1101,7 +1086,7 @@ class MoneyConverter:
                 validity = (dt.year, dt.month)
         elif isinstance(validity, int):
             try:
-                date(validity, 1, 1)        # verify year
+                date(validity, 1, 1)  # verify year
             except ValueError:
                 raise ValueError(f"Not a valid year: "
                                  f"{validity}.") from None

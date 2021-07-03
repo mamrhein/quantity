@@ -29,7 +29,7 @@ class SIPrefix:
     @property
     def factor(self) -> Rational:
         """Scale factor"""
-        return Decimal(10) ** self.exp
+        return Decimal(10) ** self.exp  # type: ignore
 
 
 YOCTO = SIPrefix('Yocto', 'y', -24)

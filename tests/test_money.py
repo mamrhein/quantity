@@ -56,7 +56,7 @@ def test_currency_constructor(iso_code: str, name: Optional[str],
                               minor_unit: Optional[int],
                               smallest_fraction: Union[Real, str, None]) \
         -> None:
-    curr = Currency(iso_code, name, minor_unit, smallest_fraction)
+    curr = Money.new_unit(iso_code, name, minor_unit, smallest_fraction)
     assert curr.iso_code == iso_code
     assert curr.name == name or iso_code
     if minor_unit is None:
@@ -91,7 +91,7 @@ def test_new_currency_fails(iso_code: str, name: Optional[str],
                             smallest_fraction: Union[Real, str, None],
                             exc: Type[BaseException]) -> None:
     with pytest.raises(exc):
-        _ = Currency(iso_code, name, minor_unit, smallest_fraction)
+        _ = Money.new_unit(iso_code, name, minor_unit, smallest_fraction)
 
 
 @pytest.mark.parametrize("reg_curr",
