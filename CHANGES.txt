@@ -5,6 +5,16 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
+0.11.0      Complete redesign with simplified meta classes.
+            API not compatible to previous version!
+            Required Python version set to 3.7.
+            Updated required version of 'decimalfp' to 0.11.4.
+            Added 'pytest' as required for tests.
+            Ported tests to 'pytest'.
+            Added module defining SI prefixes.
+            Reformatted code and fixed names according to PEP 8.
+            Added and revised test cases and type hints.
+
 0.10.1      Updated ISO 4217 currency database.
 
 0.10.0      Dropped compatibility with Python 2.x.
