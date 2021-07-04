@@ -220,9 +220,9 @@ The sub-package _quantity.money_ provides classes and functions to deal
 with these specifics.
 
 A currency must explicitly be registered as a unit for further use. The
-easiest way to do this is to call the function _registerCurrency_. The
-function is backed by a database of currencies defined in ISO 4217. It takes
-the 3-character ISO 4217 code as parameter.
+easiest way to do this is to call _Money.register_currency_. The method
+is backed by a database of currencies defined in ISO 4217. It takes the 
+3-character ISO 4217 code as parameter.
 
 _Money_ derives from _Quantity_, so all operations on quantities can also be
 applied to instances of _Money_. But because there is no fixed relation
