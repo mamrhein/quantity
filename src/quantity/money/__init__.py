@@ -23,7 +23,7 @@ Registering a currency
 ----------------------
 
 A currency must explicitly be registered as a unit for further use. The
-easiest way to do this is to call the function :func:`registerCurrency`:
+easiest way to do this is to call :meth:`Money.register_currency`:
 
     >>> from quantity.money import Money
     >>> EUR = Money.register_currency('EUR')
@@ -33,12 +33,12 @@ easiest way to do this is to call the function :func:`registerCurrency`:
     >>> EUR, HKD, TND, USD
     (Currency('EUR'), Currency('HKD'), Currency('TND'), Currency('USD'))
 
-The function is backed by a database of currencies defined in ISO 4217. It
+The method is backed by a database of currencies defined in ISO 4217. It
 takes the 3-character ISO 4217 code as parameter.
 
 :class:`Currency` derives from :class:`~quantity.Unit`. Each instance has a
-symbol (which is the 3-character ISO 4217 code) and a name. In addition, it
-holds the smallest fraction defined for amounts in this currency:
+symbol (which is usually the 3-character ISO 4217 code) and a name. In
+addition, it holds the smallest fraction defined for amounts in this currency:
 
     >>> TND.symbol
     'TND'
