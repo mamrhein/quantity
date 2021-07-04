@@ -5,6 +5,8 @@ History
 =========== ==================================================================
 Version     Changes
 =========== ==================================================================
+0.11.2      Updated documentation.
+
 0.11.0      Complete redesign with simplified meta classes.
             API not compatible to previous version!
             Required Python version set to 3.7.
