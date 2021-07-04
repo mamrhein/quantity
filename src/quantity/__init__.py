@@ -11,7 +11,6 @@
 
 # mypy: no-warn-return-any
 
-# TODO: update doc
 r"""Unit-safe computations with quantities.
 
 Usage
