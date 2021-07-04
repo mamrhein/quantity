@@ -389,29 +389,6 @@ class Currency(Unit):
 
     """
 
-    # Args:
-    #     iso_code: ISO 4217 3-character code
-    #     name: name of the currency
-    #     minor_unit: amount of minor unit (as exponent to 10), optional,
-    #         defaults to precision of smallest fraction, if that is given,
-    #         otherwise to 2
-    #     smallest_fraction: smallest fraction available for the currency,
-    #         optional, defaults to Decimal(10) ** -minor_unit. Can also be
-    #         given as a string, as long as it is convertable to a Decimal.
-    #
-    # Raises:
-    #     TypeError: given `iso_code` is not a string
-    #     ValueError: no `iso_code` was given
-    #     TypeError: given `minor_unit` is not an Integral number
-    #     ValueError: given `minor_unit` < 0
-    #     ValueError: given `smallest_fraction` can not be converted to a
-    #         Decimal
-    #     ValueError: given `smallest_fraction` not > 0
-    #     ValueError: 1 is not an integer multiple of given
-    #         `smallest_fraction`
-    #     ValueError: given `smallest_fraction` does not fit given
-    #         `minor_unit`
-
     __slots__ = ['_smallest_fraction']
 
     # TODO: remove these class variables after mypy issue #1021 got fixed:
@@ -444,7 +421,32 @@ class MoneyMeta(QuantityMeta):
                  minor_unit: Optional[int] = None,
                  smallest_fraction: Union[Real, str, None] = None) \
             -> Currency:
-        """Create, register and return a new `Currency` instance."""
+        """Create, register and return a new `Currency` instance.
+
+        Args:
+            symbol: symbol of the currency (should be a ISO 4217 3-character
+                code, if possible)
+            name: name of the currency
+            minor_unit: amount of minor unit (as exponent to 10), optional,
+                defaults to precision of smallest fraction, if that is given,
+                otherwise to 2
+            smallest_fraction: smallest fraction available for the currency,
+                optional, defaults to Decimal(10) ** -minor_unit. Can also be
+                given as a string, as long as it is convertable to a Decimal.
+
+        Raises:
+            TypeError: given `symbol` is not a string
+            ValueError: no `symbol` was given
+            TypeError: given `minor_unit` is not an Integral number
+            ValueError: given `minor_unit` < 0
+            ValueError: given `smallest_fraction` can not be converted to a
+                Decimal
+            ValueError: given `smallest_fraction` not > 0
+            ValueError: 1 is not an integer multiple of given
+                `smallest_fraction`
+            ValueError: given `smallest_fraction` does not fit given
+                `minor_unit`
+        """
         if minor_unit is not None:
             if not isinstance(minor_unit, Integral):
                 raise TypeError("'minor_unit' must be an Integral number.")
