@@ -700,7 +700,7 @@ class ExchangeRate:
 
     @property
     def rate(self) -> Rational:
-        """Relative value of term_currency to unit_currency."""
+        """Relative value of term currency to unit currency."""
         return self._term_amount / self._unit_multiple
 
     @property
